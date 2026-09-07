@@ -10,9 +10,9 @@ export const destinations = {
   dasi: {
     name: '다시초등학교', area: '다시초등학교', worldUrl: '/dasi-world.json', modelUrl: '/models/dasi-elementary.glb',
     heading: ['학교 앞에서,', '다시 한 걸음.'],
-    introduction: ['실제 부지와 건물 윤곽, 사진을 참고했어요.', '운동장과 건물 사이를 자유롭게 걸어보세요.'],
+    introduction: ['운동장을 지나 열린 본관 문으로 들어가 보세요.', '1층 복도와 교실, 작은 도서실이 이어집니다.'],
     sourceUrl: 'https://najudasi.es.jne.kr/', sourceLabel: '다시초등학교',
-    limitation: '사진 참고 외관 · 높이·조경 추정 · 실내 미구현',
+    limitation: '배치·치수 추정 · 실내는 체험용',
     overview: { center: [-2, -14], radius: 188, elevation: .67, angle: -.15 },
   },
 } as const;

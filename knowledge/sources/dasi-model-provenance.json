@@ -135,8 +135,9 @@
   "limitations": [
     "School boundary and two building footprints use OpenStreetMap coordinates.",
     "Two-story brick facades, light window frames, round emblem, ivy, stone gate and barrel roof are photo-informed.",
-    "Heights, window counts, emblem placement, lawn extent, paths, trees, gate location, fence openings and details are approximate.",
-    "The blue-roof annex and court are photo-informed approximations without surveyed or OSM footprints. Matching the barrel roof to the west OSM building is an inference.",
-    "Flat terrain. Exterior only; no surveyed interior, classroom layout or photogrammetric reconstruction."
+    "Heights, window counts, emblem placement, paths, individual trees, gate location and details are approximate.",
+    "Lawn, parking, south grove and southeast structures are visually traced from Esri World Imagery dated 2022-10-14, with roughly 5m or greater placement uncertainty; 2025/2026 photos inform appearance. Southeast building ownership and current changes are unverified.",
+    "The court and blue-roof structure are photo-informed without surveyed footprints. Matching the barrel roof to the west OSM building is an inference.",
+    "Flat terrain. The first-floor corridor, classroom, reading room and furniture are illustrative, not the real school interior. Upper floors remain exterior-only."
   ]
 }

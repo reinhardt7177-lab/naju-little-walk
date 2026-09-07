@@ -7,25 +7,33 @@
 - 화면 왼쪽의 **다시초등학교**를 누르거나 `/?place=dasi`로 열면 학교 탐험으로 이동합니다. 기본 주소의 금성관 체험은 유지합니다.
 - 나주시 다시로 203의 실제 학교 부지와 건물 2개 윤곽을 사용했습니다.
 - 공식 학교앨범 사진을 참고해 2층 벽돌 외관, 흰 창틀, 원형 표식, 분홍색 계단실, 둥근 붉은 지붕, 돌 문기둥을 표현했습니다.
-- 운동장과 건물 사이를 걸을 수 있습니다. 학교 실내는 구현하지 않았습니다.
-- 높이·창문 수·조경·정문 위치와 작은 파란 지붕 건물·코트 배치는 추정입니다. 실측 복원물이 아닙니다.
+- 본관의 열린 문으로 들어가 1층 복도·체험 교실·작은 도서실을 걸어볼 수 있습니다. 실내는 실제 학교 배치와 다른 체험용 구성입니다.
+- 뒤집혀 보이던 학교명 간판의 방향과 크기를 수정했습니다. 교실의 책상·의자·칠판, 도서실의 책장·독서 테이블을 추가했습니다.
+- 2022-10-14 항공영상과 2025/2026 사진을 대조해 운동장 전체, 서쪽 주차 공간, 남쪽 수목 구역과 길, 코트·농구대, 남동쪽 건물 배치를 보완했습니다.
+- 높이·창문 수·개별 수목·정문 위치·코트 치수는 추정입니다. 항공영상으로 잡은 위치도 약 5m 이상 차이 날 수 있습니다. 실측 복원물이 아닙니다.
 - 출처 및 확인 범위: `knowledge/sources/DASI_REFERENCES.md`
 
 학교 파일은 기존 금성관 파일과 별도로 관리합니다.
 
 | 파일 | 용도 |
 |---|---|
-| `outputs/dasi-elementary.blend` | 편집 가능한 블렌더 원본 |
+| `outputs/dasi-elementary-detailed.blend` | 실내·운동장·간판 개선본 |
+| `outputs/dasi-elementary.blend` | 보존한 최초 학교 원본 |
 | `outputs/dasi-overview.png` | 블렌더 조감도 |
+| `outputs/dasi-sign-detail.png` | 간판 방향 확인 렌더 |
+| `outputs/dasi-classroom.png`, `outputs/dasi-library.png` | 실내 렌더 |
 | `public/models/dasi-elementary.glb` | 웹 탐험용 모델 |
 | `public/dasi-world.json` | 학교 충돌·위치·출처 데이터 |
 | `scripts/build_dasi_school.py` | 학교 모델 재현 스크립트 |
+| `scripts/dasi_interior.py` | 출입구·교실·도서실·운동장 세부 구성 |
 
 ```powershell
 & '.\work\tools\blender-4.5.13-windows-x64\blender.exe' --background --python scripts/build_dasi_school.py -- --render
 ```
 
 기존 학교 생성본이 있으면 중단합니다. 직접 편집한 파일은 다른 이름으로 보관하고, 생성본 갱신 시에만 `-- --replace --render`를 사용하세요.
+
+`--render-details`를 함께 전달하면 간판과 실내 렌더도 저장합니다. `.blend`에는 개별 편집 가능한 물체를 유지하고, 웹에서는 같은 불투명 재질의 고정 물체를 묶어 그려 렌더링 부담을 줄입니다.
 
 ## 체험 범위
 

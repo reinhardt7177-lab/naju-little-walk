@@ -11,7 +11,7 @@ export type Solid = {
   collision?: boolean;
 };
 export type Sign = { text: string; position: Vec3; width: number; rotation?: number; color?: string };
-export type Place = { id: string; name: string; description: string; position: Point; radius: number };
+export type Place = { id: string; name: string; description: string; position: Point; radius: number; indoor?: boolean; footprint?: Point[] };
 export type World = {
   title: string;
   subtitle: string;
@@ -21,7 +21,12 @@ export type World = {
   solids: Solid[];
   signs: Sign[];
   places: Place[];
+  lights?: { position: Vec3; color: string; intensity: number; distance: number }[];
 };
+
+export function currentPlace(x: number, z: number, places: Place[]): Place | undefined {
+  return places.find(p => p.footprint ? hitsPolygon(x,z,p.footprint,0) : Math.hypot(p.position[0]-x,p.position[1]-z)<p.radius);
+}
 
 export type Collider = Point[];
 export type Floor = { polygon: Collider; height: number };
