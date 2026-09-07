@@ -2,8 +2,8 @@ import type { Metadata } from 'next';
 import './globals.css';
 
 export const metadata: Metadata = {
-  title: '나주 산책 — 금성관 주변을 걷다',
-  description: '실제 지도에서 가져온 금성관 주변의 길과 건물을 블렌더로 만든 3D 산책 공간입니다. 높이, 외관, 실내는 단순화한 체험 모형입니다.',
+  title: '나주 산책 — 금성관과 다시초등학교',
+  description: '실제 지도와 사진을 참고해 블렌더로 만든 금성관과 다시초등학교를 걸어보세요. 높이와 세부 치수는 추정한 체험 모형입니다.',
 };
 
 export default function RootLayout({

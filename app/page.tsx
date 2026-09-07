@@ -5,6 +5,7 @@ import { ArrowUpRight, Footprints, MapPin, RotateCcw, Pause, MoveUpRight, ArrowU
 import * as THREE from 'three';
 import { GLTFLoader } from 'three/addons/loaders/GLTFLoader.js';
 import { movePlayer, solidCollider, worldFloors, floorHeight, type World } from '@/lib/world';
+import { destinations, destinationFromSearch, type DestinationId } from '@/lib/destinations';
 
 type ViewState = { x: number; z: number; yaw: number; place: string; detail: string; indoor: boolean };
 type Engine = { start: () => void; pause: () => void; reset: () => void; overview: () => void; key: (key: string, down: boolean) => void };
@@ -18,15 +19,21 @@ export default function Home() {
   const [started, setStarted] = useState(false);
   const [overview, setOverview] = useState(true);
   const [error, setError] = useState('');
+  const [destinationId, setDestinationId] = useState<DestinationId>('geumseonggwan');
+  const destination = destinations[destinationId];
   const [view, setView] = useState<ViewState>({ x: 0, z: 0, yaw: 0, place: '금성관 주변', detail: '', indoor: false });
 
   useEffect(() => {
+    const selectedId = destinationFromSearch(window.location.search);
+    const selected = destinations[selectedId];
+    setDestinationId(selectedId);
+    document.title = `나주 산책 — ${selected.area}`;
     const mount = host.current!;
     let disposed = false, renderer: THREE.WebGLRenderer | undefined, animation = 0;
     const cleanups: (() => void)[] = [];
     const scene = new THREE.Scene();
     const setup = async () => {
-      const response = await fetch('/city-world.json');
+      const response = await fetch(selected.worldUrl);
       if (!response.ok) throw new Error('도시 자료를 불러오지 못했습니다.');
       const data: World = await response.json();
       if (disposed) return;
@@ -34,12 +41,12 @@ export default function Home() {
       renderer = new THREE.WebGLRenderer({ antialias: true, powerPreference: 'high-performance' });
       renderer.setPixelRatio(Math.min(window.devicePixelRatio, 1.75));
       renderer.shadowMap.enabled = true;
-      renderer.shadowMap.type = THREE.PCFSoftShadowMap;
+      renderer.shadowMap.type = THREE.PCFShadowMap;
       renderer.outputColorSpace = THREE.SRGBColorSpace;
       renderer.toneMapping = THREE.ACESFilmicToneMapping;
       renderer.toneMappingExposure = 1.25;
       const canvas = renderer.domElement;
-      canvas.setAttribute('aria-label', '금성관 주변 3D 탐험 화면. 마우스를 끌어서 시선을 움직일 수 있습니다.');
+      canvas.setAttribute('aria-label', `${selected.area} 3D 탐험 화면. 마우스를 끌어서 시선을 움직일 수 있습니다.`);
       canvas.tabIndex = 0;
       mount.appendChild(canvas);
       scene.background = new THREE.Color('#bbd9e6');
@@ -52,7 +59,7 @@ export default function Home() {
       sun.shadow.camera.right = sun.shadow.camera.top = 165;
       sun.shadow.camera.far = 420; sun.shadow.normalBias = 0.06;
       scene.add(sun);
-      const gltf = await new GLTFLoader().loadAsync('/models/geumseonggwan.glb');
+      const gltf = await new GLTFLoader().loadAsync(selected.modelUrl);
       if (disposed) { gltf.scene.traverse(disposeObject); return; }
       gltf.scene.traverse(o => { if (o instanceof THREE.Mesh) { o.castShadow = !o.name.startsWith('ground'); o.receiveShadow = true; } });
       scene.add(gltf.scene);
@@ -61,8 +68,9 @@ export default function Home() {
       const floors = worldFloors(data.solids);
       let px = data.spawn.x, pz = data.spawn.z, yaw = data.spawn.yaw, pitch = 0;
       let playing = false, bird = true, drag = false, lastX = 0, lastY = 0;
-      let orbit = 0.25, orbitElevation = 0.62, orbitRadius = 165;
-      const center = new THREE.Vector3(data.spawn.x, 0, data.spawn.z - 3), keys = new Set<string>();
+      let orbit: number = selected.overview.angle, orbitElevation: number = selected.overview.elevation, orbitRadius: number = selected.overview.radius;
+      const center = selectedId === 'geumseonggwan' ? new THREE.Vector3(data.spawn.x, 0, data.spawn.z - 3) : new THREE.Vector3(selected.overview.center[0], 0, selected.overview.center[1]);
+      const keys = new Set<string>();
       const resize = () => {
         if (!renderer) return;
         camera.aspect = mount.clientWidth / mount.clientHeight; camera.updateProjectionMatrix();
@@ -96,7 +104,7 @@ export default function Home() {
       if (context?.registerTool) {
         const lifecycle = new AbortController();
         cleanups.push(() => lifecycle.abort());
-        const state = () => ({ mode: bird ? 'overview' : playing ? 'walking' : 'paused', position: { x: px, z: pz }, source: data.source });
+        const state = () => ({ destination: selected.name, mode: bird ? 'overview' : playing ? 'walking' : 'paused', position: { x: px, z: pz }, source: data.source });
         const registrations = [
           { name: 'get_naju_walk_state', description: 'Read the current Naju exploration view and position.', inputSchema: { type: 'object', properties: {}, additionalProperties: false }, annotations: { readOnlyHint: true }, execute: () => state() },
           { name: 'set_naju_walk_view', description: 'Switch the same exploration view as the visible overview, walk, or pause controls.', inputSchema: { type: 'object', properties: { view: { type: 'string', enum: ['overview', 'walk', 'pause'] } }, required: ['view'], additionalProperties: false }, annotations: { readOnlyHint: false }, execute: async (input: unknown) => {
@@ -156,7 +164,7 @@ export default function Home() {
         } else { camera.position.set(px, 1.72 + floorHeight(px, pz, floors), pz); camera.rotation.order = 'YXZ'; camera.rotation.set(pitch, yaw, 0); }
         if (now - lastHud > 180) {
           const place = data.places.find(p => Math.hypot(p.position[0] - px, p.position[1] - pz) < p.radius);
-          setView({ x: px, z: pz, yaw, place: place?.name ?? '금성관 주변 골목', detail: place?.description ?? '길을 따라 천천히 둘러보세요.', indoor: place?.id === 'interior' }); lastHud = now;
+          setView({ x: px, z: pz, yaw, place: place?.name ?? selected.area, detail: place?.description ?? '길을 따라 천천히 둘러보세요.', indoor: place?.id === 'interior' }); lastHud = now;
         }
         renderer.render(scene, camera); animation = requestAnimationFrame(frame);
       };
@@ -184,22 +192,25 @@ export default function Home() {
       <div className="scene" ref={host} /><div className="vignette" />
       <header className="topbar">
         <div className="brand"><span className="brand-mark"><Compass size={25} strokeWidth={1.4} /></span><div><strong>나주 산책</strong><span>NAJU, ON FOOT</span></div></div>
-        <div className="location-pill"><span className="live-dot" /><span>금성관 주변</span><span className="pill-divider" /><span>실제 지도 기반</span></div>
+        <div className="location-pill"><span className="live-dot" /><span>{destination.area}</span><span className="pill-divider" /><span>실제 지도 기반</span></div>
         <div className="view-actions"><button className={overview ? 'active' : ''} onClick={() => engine.current?.overview()} disabled={!ready}><MoveUpRight size={16} />전체 보기</button><button className={!overview ? 'active' : ''} onClick={() => engine.current?.start()} disabled={!ready}><Footprints size={16} />걷기</button></div>
       </header>
+      <nav className="destination-nav" aria-label="산책 장소">
+        {(Object.entries(destinations) as [DestinationId, typeof destination][]).map(([id, item]) => <a key={id} href={`/?place=${id}`} aria-current={destinationId === id ? 'page' : undefined}>{item.name}</a>)}
+      </nav>
       {world && <aside className="minimap" aria-label="현재 위치 지도">
         <div className="map-heading"><span>동네 지도</span><span>N ↑</span></div>
         <svg viewBox={`${world.bounds[0]} ${world.bounds[2]} ${world.bounds[1] - world.bounds[0]} ${world.bounds[3] - world.bounds[2]}`} role="img" aria-label={`현재 위치: ${view.place}`}>
           <rect x={world.bounds[0]} y={world.bounds[2]} width={world.bounds[1] - world.bounds[0]} height={world.bounds[3] - world.bounds[2]} fill="#e5e8df" />
-          {world.solids.filter(s => s.name.startsWith('osm-building') || s.name.startsWith('ground_floor') || s.name.startsWith('road') || s.name.startsWith('hall-wall')).map((s, i) => <polygon key={i} points={solidCollider(s).map(p => p.join(',')).join(' ')} fill={s.name.startsWith('road') ? '#fafaf6' : s.name.startsWith('hall') ? '#407064' : '#b5c1b8'} stroke={s.kind === 'building' ? '#9aada2' : 'none'} strokeWidth="0.7" />)}
+          {world.solids.filter(s => s.name.startsWith('osm-building') || s.name.startsWith('photo-building') || s.name.startsWith('ground_floor') || s.name.startsWith('road') || s.name.startsWith('hall-wall')).map((s, i) => <polygon key={i} points={solidCollider(s).map(p => p.join(',')).join(' ')} fill={s.name.includes('lawn') ? '#adc489' : s.name.includes('court') ? '#c98c73' : s.name.startsWith('road') ? '#fafaf6' : s.name.startsWith('hall') ? '#407064' : '#b5c1b8'} stroke={s.kind === 'building' ? '#9aada2' : 'none'} strokeWidth="0.7" />)}
           <circle cx={view.x} cy={view.z} r="6" fill="#fff" /><circle cx={view.x} cy={view.z} r="3.5" fill="#c96734" />
           <path d="M 0,-11 L -3,-6 L 3,-6 Z" fill="#c96734" transform={`translate(${view.x} ${view.z}) rotate(${-view.yaw * 180 / Math.PI})`} />
-        </svg><div className="map-legend"><span className="you-dot" />내 위치<span>약 280m 구역</span></div>
+        </svg><div className="map-legend"><span className="you-dot" />내 위치<span>약 {Math.round((world.bounds[1] - world.bounds[0]) / 10) * 10}m 구역</span></div>
       </aside>}
       {!active && <section className="welcome" aria-label="산책 시작">
-        <div className="eyebrow"><span />전라남도 나주 · 금성관</div>
-        <h1>{started ? '잠시, 쉬어가기.' : <>골목 안으로,<br />나주 한 걸음.</>}</h1>
-        <p>{started ? '산책을 이어가거나, 위에서 동네를 둘러보세요.' : <>지도 위의 건물과 길을 입체로 옮겼어요.<br />마당을 지나 금성관 안까지 걸어가 보세요.</>}</p>
+        <div className="eyebrow"><span />나주 · {destination.name}</div>
+        <h1>{started ? '잠시, 쉬어가기.' : <>{destination.heading[0]}<br />{destination.heading[1]}</>}</h1>
+        <p>{started ? '산책을 이어가거나, 위에서 동네를 둘러보세요.' : <>{destination.introduction[0]}<br />{destination.introduction[1]}</>}</p>
         <button className="start-button" onClick={() => engine.current?.start()} disabled={!ready || !!error}><Footprints size={20} /><span>{error ? '화면을 열 수 없어요' : !ready ? '동네 불러오는 중…' : started ? '이어서 걷기' : '산책 시작하기'}</span><ArrowUpRight size={21} /></button>
         <div className="welcome-help"><span><kbd>W A S D</kbd> 이동</span><span>마우스 / 드래그로 둘러보기</span></div>
         {error && <div className="error-message" role="alert">{error}<button onClick={() => window.location.reload()}>다시 불러오기</button></div>}
@@ -207,7 +218,7 @@ export default function Home() {
       {active && <><div className="crosshair" aria-hidden="true" /><div className="place-card"><span className="place-icon"><MapPin size={21} /></span><div><span>{view.indoor ? '실내에 도착했어요' : '지금 걷는 곳'}</span><strong>{view.place}</strong><p>{view.detail}</p></div></div>
         <div className="touch-controls" aria-label="이동 버튼"><button aria-label="앞으로" {...press('KeyW')}><ArrowUp /></button><div><button aria-label="왼쪽으로" {...press('KeyA')}><ArrowLeft /></button><button aria-label="뒤로" {...press('KeyS')}><ArrowDown /></button><button aria-label="오른쪽으로" {...press('KeyD')}><ArrowRight /></button></div><div className="turn-controls"><button aria-label="왼쪽 보기" {...press('KeyQ')}>↶</button><button aria-label="오른쪽 보기" {...press('KeyE')}>↷</button></div></div></>}
       <footer className="bottom-bar"><div className="keyboard-guide"><span><kbd>W A S D</kbd> 이동</span><span><kbd>← →</kbd> 시선 회전</span><span><kbd>Shift</kbd> 빠르게</span><span><kbd>Esc</kbd> 쉬기</span></div><div className="bottom-actions"><button onClick={() => engine.current?.reset()} disabled={!ready} aria-label="출발 위치로 돌아가기"><RotateCcw size={16} />처음 위치</button>{active && <button onClick={() => engine.current?.pause()}><Pause size={16} />쉬기</button>}</div></footer>
-      <div className="source-note"><a href="https://www.openstreetmap.org/copyright" target="_blank" rel="noreferrer">© OpenStreetMap 기여자</a><span>·</span><a href="https://encykorea.aks.ac.kr/Article/E0011462" target="_blank" rel="noreferrer">금성관 사진 참고</a><span>· 높이·실내는 추정한 체험 모형</span></div>
+      <div className="source-note"><a href="https://www.openstreetmap.org/copyright" target="_blank" rel="noreferrer">© OpenStreetMap 기여자</a><span>·</span><a href={destination.sourceUrl} target="_blank" rel="noreferrer">{destination.sourceLabel}</a><span>· {destination.limitation}</span></div>
     </main>
   );
 }

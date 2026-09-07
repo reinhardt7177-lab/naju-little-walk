@@ -2,6 +2,31 @@
 
 금성관 주변의 실제 OpenStreetMap 건물 윤곽과 도로 좌표를 **Blender 4.5 LTS**에서 입체로 제작하고, Blender에서 내보낸 GLB를 **Three.js**로 불러와 탐험합니다.
 
+## 다시초등학교 추가
+
+- 화면 왼쪽의 **다시초등학교**를 누르거나 `/?place=dasi`로 열면 학교 탐험으로 이동합니다. 기본 주소의 금성관 체험은 유지합니다.
+- 나주시 다시로 203의 실제 학교 부지와 건물 2개 윤곽을 사용했습니다.
+- 공식 학교앨범 사진을 참고해 2층 벽돌 외관, 흰 창틀, 원형 표식, 분홍색 계단실, 둥근 붉은 지붕, 돌 문기둥을 표현했습니다.
+- 운동장과 건물 사이를 걸을 수 있습니다. 학교 실내는 구현하지 않았습니다.
+- 높이·창문 수·조경·정문 위치와 작은 파란 지붕 건물·코트 배치는 추정입니다. 실측 복원물이 아닙니다.
+- 출처 및 확인 범위: `knowledge/sources/DASI_REFERENCES.md`
+
+학교 파일은 기존 금성관 파일과 별도로 관리합니다.
+
+| 파일 | 용도 |
+|---|---|
+| `outputs/dasi-elementary.blend` | 편집 가능한 블렌더 원본 |
+| `outputs/dasi-overview.png` | 블렌더 조감도 |
+| `public/models/dasi-elementary.glb` | 웹 탐험용 모델 |
+| `public/dasi-world.json` | 학교 충돌·위치·출처 데이터 |
+| `scripts/build_dasi_school.py` | 학교 모델 재현 스크립트 |
+
+```powershell
+& '.\work\tools\blender-4.5.13-windows-x64\blender.exe' --background --python scripts/build_dasi_school.py -- --render
+```
+
+기존 학교 생성본이 있으면 중단합니다. 직접 편집한 파일은 다른 이름으로 보관하고, 생성본 갱신 시에만 `-- --replace --render`를 사용하세요.
+
 ## 체험 범위
 
 - 금성관 주변 약 283 × 256m 구역

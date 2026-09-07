@@ -1,6 +1,7 @@
 # 프로젝트 기록 안내
 
 - 작업 결정과 범위: `knowledge/MVP.md`
+- 다시초등학교 모델 범위와 검증: `knowledge/DASI_MVP.md`
 - 원본 자료 및 출처: `knowledge/sources/`
 - 실행 방법: `README.md`
 - 최종 3D 산출물: `outputs/`, `public/models/`
