@@ -48,7 +48,11 @@ for name,builder,views in [
         for obj in dest.objects:
             if obj and obj.type in ('MESH','FONT'):
                 scene.collection.objects.link(obj);obj.parent=root
-    bpy.ops.file.pack_all();bpy.ops.wm.save_as_mainfile(filepath=str(ROOT/f'outputs/{name}-detail.blend'))
+    output=ROOT/f'outputs/{name}-detail.blend'
+    if '--output-blend' in sys.argv:
+        if '--only' not in sys.argv:raise ValueError('--output-blend requires --only')
+        output=ROOT/sys.argv[sys.argv.index('--output-blend')+1]
+    bpy.ops.file.pack_all();bpy.ops.wm.save_as_mainfile(filepath=str(output))
     print(json.dumps(dict(model=name,objects=len(scene.objects),solids=len(g.solids),bytes=model.stat().st_size,gzipBytes=model.with_suffix('.glb.gz').stat().st_size)),flush=True)
     if '--render' in sys.argv:
         for view,eye,target in views:

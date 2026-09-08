@@ -2,6 +2,8 @@
 import json, math, random
 from pathlib import Path
 from yeongsanpo_geometry import Geometry,world_data,place
+from literature_courtyard import courtyard
+from literature_context import build_context
 
 ROOT=Path(__file__).resolve().parents[1]
 ORIGIN=[126.7105,35.0008]
@@ -162,16 +164,25 @@ def exterior(g,kind):
         for i in range(20):g.box('brick_mortar',-8.7+i*.28+(row%2)*.14,.05+row*.105,10.615,.265,.012,.015,'#b9ae97',record=False)
     g.window('gable_wing_door',-6,1.35,10.64,1.7,2.6,lattice=True)
     for i in range(13):g.box('gable_vent',-6.45+i*.075,4.55,10.54,.025,.6,.04,'#4b4940',record=False)
-    g.label('타오르는 강',-6,3.3,10.66,4.6,.38,color='#645347')
-    rng=random.Random(21)
-    g.box('ground_floor_literature_garden',1,-.008,15,24,.016,11,'#9ca873')
-    for i in range(16):
-        z=8+i*.6;x=math.sin(i*.16)*1.9;g.rock('garden_stepping_stone',x,.025,z,.85,.09,.58,'#a2a394',rng)
-    for x,z in [(-8,14),(-4,16),(7,12),(9,17)]:
-        g.tree('garden_pruned_tree',x,z,.6,seed=int(z+x));g.rock('garden_natural_rock',x+1,.35,z,1.4,.85,1.05,'#7f8070',rng)
-    for i in range(80):
-        a=i*math.tau/80;x=5+math.cos(a)*3.2;z=15+math.sin(a)*2
-        g.rock('garden_white_gravel',x,.04,z,.28,.1,.22,'#d6d5c7',rng)
+    g.box('literature_open_entry_recess',0,1.15,5.9,1.75,2.3,.06,'#333f37',record=False)
+    # A narrow timber clerestory closes the step between the two roof levels.
+    g.box('literature_clerestory_front',1,4.05,5.75,17.3,1.5,.10,'#b8b4a4',record=False)
+    for x in (-5,-1,3,7):
+        g.box('literature_clerestory_dark_pane',x,4.2,5.81,2.8,.58,.04,'#586b66',record=False)
+        g.window('literature_clerestory_window',x,4.2,5.85,2.8,.58)
+    # Rear details visible in the JNFC exterior photographs.
+    for x in (-7,-3,2,6):
+        g.box('literature_rear_window_recess',x,1.80,-6.61,2.3,1.8,.06,'#454d43',record=False)
+        g.window('literature_rear_timber_window',x,1.80,-6.65,2.3,1.8,rotation=math.pi,lattice=True)
+    for x in (-8.8,8.8):g.tube('literature_rear_downpipe',(x,.08,-6.75),(x,3.25,-6.75),.055,'#4d5854',n=10)
+    g.box('literature_gutter',0,3.28,-6.85,18.4,.12,.14,'#4d5854',record=False)
+    for x in (-1,1):g.box('literature_rear_water_trough_side',x,.30,-7.7,.12,.60,1.1,'#959c91',True)
+    for z in (-8.2,-7.2):g.box('literature_rear_water_trough_edge',0,.30,z,2.1,.60,.1,'#959c91',True)
+    g.box('literature_rear_water_trough_base',0,.07,-7.7,2.1,.14,1.1,'#788c85',record=False)
+    # Under-eave infill and wood soffit make the garden view read as a closed house.
+    g.box('literature_closed_roof_core',0,3.4,0,17.8,.8,12.8,'#e5dfce',record=False)
+    g.box('literature_front_soffit',1,2.96,7.3,19.4,.10,.8,'#6a5a43',record=False)
+    for x in (-8.6,-3.4):g.tube('literature_wing_downpipe',(x,.12,10.62),(x,3.55,10.62),.046,'#525b56',n=8)
     return [0,7.2],[0,10]
 
 def outdoor(scene):
@@ -211,7 +222,10 @@ def outdoor(scene):
                 for j in range(int(length/9)):
                     t=(j+.5)*9/length;c=[a[k]+(b[k]-a[k])*t for k in (0,1)];u=[(b[k]-a[k])/length for k in (0,1)]
                     g.segment('road_center_mark',[c[k]-u[k]*1.6 for k in (0,1)],[c[k]+u[k]*1.6 for k in (0,1)],.12,.006,'#ded5a9',base=.061,record=False)
-    gallery_center=xy([126.711504,35.000721]);literature_center=xy([126.712917,34.9998292])
+    gallery_center=xy([126.711504,35.000721])
+    # Photo GPS lies near the northwest roof corner; align its centre to the
+    # visible satellite roof instead of treating a camera point as a centroid.
+    literature_center=[223.92,115.07]
     # OSM footprint shells provide the surrounding street's real structure.
     count=0
     for feature in data['features']:
@@ -241,6 +255,9 @@ def outdoor(scene):
             if y+.75<h:
                 for i in range(max(1,int(length/4))):
                     x=-length/2+(i+.5)*length/max(1,int(length/4));face.window('traced_context_window',x,y,.08,min(2.2,length*.7),1.3)
+    context_source=json.loads((ROOT/'knowledge/sources/literature-context-traces.json').read_text(encoding='utf-8'))
+    context_source['roofs']+=json.loads((ROOT/'knowledge/sources/literature-close-neighbours.json').read_text(encoding='utf-8'))['roofs']
+    context_footprints=build_context(g,context_source,xy);traced.extend(context_footprints)
     street=next(r for r in roads if r['id']=='way/130634137');shopcount=0
     for a,b in zip(street['points'],street['points'][1:]):
         length=math.dist(a,b);u=[(b[k]-a[k])/length for k in (0,1)];normal=[-u[1],u[0]]
@@ -261,9 +278,17 @@ def outdoor(scene):
                 shop.roof('shop_blue_roof',0,h+.15,0,10,9,1.1,['#668590','#768d82','#8c8980'][shopcount%3],tiles=False)
                 if h>5:shop.window('shop_upper_window',0,h-1.05,4.3,6.7,1.2)
                 g.solids+=shop.solids;g.signs+=shop.signs;shopcount+=1
-    portals=[];arrivals={};places=[]
+    portals=[];arrivals={};places=[];garden_data=None
     for kind,center,angle,title in [('history',gallery_center,-.67,'영산포 역사갤러리'),('literature',literature_center,.15,'타오르는 강 문학관')]:
         building=Geometry(scene,center,angle);entry,out=exterior(building,kind)
+        if kind=='literature':
+            garden=courtyard(building)
+            garden_route=[building.point(*p) for p in garden['route']]
+            lane=next(r for r in context_source['routes'] if r['id']=='museum_west_lane')
+            path=[[190.31,90.22]]+[xy(p) for p in lane['coordinates'][:4]]+[garden_route[0]]
+            garden_data=dict(center=center,angle=angle,boundary=[building.point(*p) for p in garden['boundary']],approach=path,walkRoute=garden_route)
+            arrival=building.point(*garden['gate']);arrivals['literature-garden']=dict(x=arrival[0],z=arrival[1],yaw=-angle)
+            places.append(place('literature-garden','타오르는 강 문학관 마당',*arrival,5,'자갈 화단과 디딤길을 지나 문학관으로 들어가 보세요.',arrival=arrival))
         g.solids+=building.solids;g.signs+=building.signs
         p=building.point(*entry);q=building.point(*out)
         portals.append(dict(id=kind+'-entry',position=p,radius=.83,target='yeongsanpo-'+kind,arrival='entry',label=title+' · 문 안으로 걸어가면 실내가 열립니다.'))
@@ -271,7 +296,7 @@ def outdoor(scene):
         places.append(place(kind,title,*p,7,'입구로 들어가면 상세 실내가 열립니다.',arrival=q))
         # A narrow entrance path connects the door to the street network.
         nearest=min([p for r in roads for p in r['points']],key=lambda p:math.dist(p,q))
-        path=[nearest,[198,132],[220,132],q] if kind=='literature' else [nearest,q]
+        path=path if kind=='literature' else [nearest,q]
         for a,b in zip(path,path[1:]):g.segment('path_'+kind+'_approach',a,b,2.6,.025,'#b6b3a0',base=.065)
     level=-6.4
     boats=[]
@@ -301,4 +326,4 @@ def outdoor(scene):
         g.box('vehicle_window',x,1.32,z,1.83,.65,2.2,'#698488',record=False)
     for obj in scene.objects:
         if 'hide_in_overview' in obj:del obj['hide_in_overview']
-    return g,world_data(g,'영산포 · 황포돛배 · 홍어거리',bounds,dict(x=-143,z=138.27,yaw=0),places,origin=dict(lon=ORIGIN[0],lat=ORIGIN[1]),verticalNavigation=True,requireFloor=True,portals=portals,arrivals=arrivals,roads=roads,boats=boats,navigationWater=dict(polygons=channel,obstacles=water_obstacles),mappedBuildings=count,tracedRoofs=len(traced),photoInformedShops=shopcount,dockHeight=level,dockStairRoute=stair_route,limitations=['Mapped road and river coordinates are OSM. Building heights and unrecorded shop facades are estimated, not individually surveyed storefronts.','Lighthouse height 8.65m follows archive data. Wharf level -6.4m, stairs, mooring placement and seasonal water level are estimated from photographs.','Wanggeonho length 29.9m and beam 9.9m follow construction reports. Najuho dimensions and both interior layouts are photo-proportioned estimates.','Museum exteriors use official map/photo positions; interiors are separate authored spaces linked at the doors.','Source imagery, original museum films and long copyrighted panels are not redistributed.'])
+    return g,world_data(g,'영산포 · 황포돛배 · 홍어거리',bounds,dict(x=-143,z=138.27,yaw=0),places,origin=dict(lon=ORIGIN[0],lat=ORIGIN[1]),verticalNavigation=True,requireFloor=True,portals=portals,arrivals=arrivals,roads=roads,boats=boats,literatureGarden=garden_data,southContextRoofs=len(context_footprints),navigationWater=dict(polygons=channel,obstacles=water_obstacles),mappedBuildings=count,tracedRoofs=len(traced),photoInformedShops=shopcount,dockHeight=level,dockStairRoute=stair_route,limitations=['Mapped road and river coordinates are OSM. Building heights and unrecorded shop facades are estimated, not individually surveyed storefronts.','Courtyard planting/paving follows JNFC photos; the southwest parcel and added context roofs are aligned to satellite imagery of unknown capture date. Dimensions, materials and building heights remain estimates.','Lighthouse height 8.65m follows archive data. Wharf level -6.4m, stairs, mooring placement and seasonal water level are estimated from photographs.','Wanggeonho length 29.9m and beam 9.9m follow construction reports. Najuho dimensions and both interior layouts are photo-proportioned estimates.','Museum exteriors use official map/photo positions; interiors are separate authored spaces linked at the doors.','Source imagery, original museum films and long copyrighted panels are not redistributed.'])

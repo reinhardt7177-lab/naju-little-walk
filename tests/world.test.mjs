@@ -186,7 +186,41 @@ test('three new Blender scenes have standalone buffers and exact compressed tran
 test('one outdoor walk connects the riverfront, Hong-eo street and both museum doorways',()=>{
   const w=yeongsanWorlds.yeongsanpo,h=w.arrivals['history-exit'],l=w.arrivals['literature-exit'];
   const hp=w.portals.find(p=>p.id==='history-entry').position,lp=w.portals.find(p=>p.id==='literature-entry').position;
-  walkRoute(w,[[w.spawn.x,w.spawn.z],[-50.189387567,105.687208],[-39.13,99.49],[-33.02,117.14],[83.828313937,35.076932],[h.x,h.z],hp,[h.x,h.z],[83.828313937,35.076932],[-33.02,117.14],[-26.57,135.69],[52.16,117.63],[190.31,90.22],[198,132],[220,132],[l.x,l.z],lp]);
+  walkRoute(w,[[w.spawn.x,w.spawn.z],[-50.189387567,105.687208],[-39.13,99.49],[-33.02,117.14],[83.828313937,35.076932],[h.x,h.z],hp,[h.x,h.z],[83.828313937,35.076932],[-33.02,117.14],[-26.57,135.69],[52.16,117.63],...w.literatureGarden.approach,...w.literatureGarden.walkRoute.slice(1),[l.x,l.z],lp]);
+});
+
+test('courtyard entry follows the west lane and returns past the planted beds',()=>{
+  const w=yeongsanWorlds.yeongsanpo,route=[...w.literatureGarden.approach,...w.literatureGarden.walkRoute.slice(1)];
+  walkRoute(w,[...route,...route.slice(0,-1).reverse()]);
+  const arrival=sceneArrival(w,'?at=literature-garden');
+  assert.equal(arrival.entered,true);assert.ok(canTravelTo([arrival.x,arrival.z],w));
+  assert.equal(portalAt(w,arrival.x,arrival.z),undefined);
+  const obstacles=worldObstacles(w.solids);
+  for(const rock of w.solids.filter(s=>s.name==='garden_boulder_collision')){
+    const p=rock.footprint.reduce((a,p)=>[a[0]+p[0]/4,a[1]+p[1]/4],[0,0]);
+    assert.ok(blocksWalking(...p,0,obstacles),'Garden rocks must not be walk-through decorations');
+  }
+});
+
+test('traced context walls preserve the observed footprints and are included on the map',()=>{
+  const w=yeongsanWorlds.yeongsanpo;
+  const refs=['literature-context-traces','literature-close-neighbours'].flatMap(id=>JSON.parse(fs.readFileSync(new URL('../knowledge/sources/'+id+'.json',import.meta.url),'utf8')).roofs).filter(r=>!r.reviewFlags?.length);
+  assert.equal(w.southContextRoofs,refs.length);
+  for(const roof of refs){
+    const wall=w.solids.find(s=>s.name==='photo-building_south_'+roof.id);
+    assert.ok(wall?.collision&&mapSolids(w).includes(wall));
+    for(const p of wall.footprint)assert.ok(hitsPolygon(...p,roof.worldFootprint,0),roof.id+' wall inside eaves');
+  }
+});
+
+test('the bend in the garden paving has a continuous visible outer corner',()=>{
+  const w=yeongsanWorlds.yeongsanpo,{scene}=readModel(new URL('../public/models/yeongsanpo.glb',import.meta.url));
+  const paths=[];scene.traverse(o=>{if(o.name.startsWith('path_literature_garden'))paths.push(o);});
+  const {center,angle}=w.literatureGarden;
+  for(const [x,z] of [[0,30],[.96,30.23],[.88,30.36],[-.8,29.4]]){
+    const px=center[0]+x*Math.cos(angle)-z*Math.sin(angle),pz=center[1]+x*Math.sin(angle)+z*Math.cos(angle);
+    assert.ok(new THREE.Raycaster(new THREE.Vector3(px,1,pz),new THREE.Vector3(0,-1,0),.01,2).intersectObjects(paths,true).length,`Paving gap at ${x},${z}`);
+  }
 });
 
 test('museum bridge bends have walkable outer corners and continuous edge guards',()=>{

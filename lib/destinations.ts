@@ -1,7 +1,7 @@
 export const destinations = {
   yeongsanpo: {
     coordinates:{lat:35.00025,lon:126.71075},
-    name:'영산포 · 홍어거리',area:'영산포 강변과 홍어거리',worldUrl:'/yeongsanpo-world.json?v=detail-2',modelUrl:'/models/yeongsanpo.glb.gz?v=detail-2',
+    name:'영산포 · 홍어거리',area:'영산포 강변과 홍어거리',worldUrl:'/yeongsanpo-world.json?v=courtyard-1',modelUrl:'/models/yeongsanpo.glb.gz?v=courtyard-1',
     heading:['강을 따라서,','영산포 한 바퀴.'],
     introduction:['두 황포돛배에 올라 강 위를 직접 운전해 보세요.','홍어거리의 역사갤러리와 문학관은 입구로 들어갈 수 있어요.'],
     sourceUrl:'https://www.naju.go.kr/tour',sourceLabel:'나주시 관광 사진',
