@@ -6,6 +6,7 @@ from literature_courtyard import courtyard,paved_outline
 from literature_context import build_context
 from literature_boundary import add_boundary_detail
 from yeongsanpo_street_detail import wharf_detail,roof_form,facade_detail,streets,samhwa
+from yeongsanpo_riverfront import frontage,courtyard as frontage_courtyard,finishes as frontage_finishes,paving as frontage_paving
 
 ROOT=Path(__file__).resolve().parents[1]
 ORIGIN=[126.7105,35.0008]
@@ -226,6 +227,8 @@ def outdoor(scene):
                     t=(j+.5)*9/length;c=[a[k]+(b[k]-a[k])*t for k in (0,1)];u=[(b[k]-a[k])/length for k in (0,1)]
                     g.segment('road_center_mark',[c[k]-u[k]*1.6 for k in (0,1)],[c[k]+u[k]*1.6 for k in (0,1)],.12,.006,'#ded5a9',base=.061,record=False)
     street_details=streets(g,roads)
+    frontage_paving_source=json.loads((ROOT/'knowledge/sources/yeongsanpo-riverfront-paving.json').read_text(encoding='utf-8'))
+    frontage_apron=frontage_paving(g,frontage_paving_source,roads)
     gallery_center=xy([126.711504,35.000721])
     # Photo GPS lies near the northwest roof corner; align its centre to the
     # visible satellite roof instead of treating a camera point as a centroid.
@@ -240,17 +243,33 @@ def outdoor(scene):
         h=float(feature['properties'].get('building:levels',2))*3.1
         if h>20:h=9
         color=rng.choice(['#c7bda7','#c5c7ba','#b9bcae','#b6a88e'])
+        if feature['id']=='way/1120464648':
+            # Partial OSM/satellite duplication, not a second 6.2m building.
+            # Retain its non-overlapping ground area as the same low annex.
+            r=next(r for r in json.loads((ROOT/'knowledge/sources/yeongsanpo-traced-roofs.json').read_text(encoding='utf-8'))['roofs'] if r['id']=='street_west_09')
+            for j,piece in enumerate(subtract(pts,[xy(p) for p in r['footprint']])):
+                g.polygon('osm-building_way_1120464648_trim_'+str(j),piece,0,4.5,'#d0cab9',True)
+                g.polygon('context_roof_4648_annex_'+str(j),piece,4.5,.15,'#9baa9b')
+            count+=1
+            continue
         if feature['id']=='way/1000416564':h=7.3;color='#d8d9d0';samhwa_arrival=samhwa(g,pts)
         g.polygon('osm-building_'+feature['id'].replace('/','_'),pts,0,h,color,True);g.polygon('context_roof_'+str(count),pts,h,.16,rng.choice(['#6d8d91','#718779','#86857a']))
         count+=1
     # Photo-informed low-rise shop rhythm along the mapped Hong-eo street.
-    traced=[]
+    traced=[];frontage_details=[]
+    frontage_source=json.loads((ROOT/'knowledge/sources/yeongsanpo-riverfront-detail.json').read_text(encoding='utf-8'))
+    frontage_configs={b['id']:b for b in frontage_source['buildings']}
+    frontage_finishes(g)
     roof_source=json.loads((ROOT/'knowledge/sources/yeongsanpo-traced-roofs.json').read_text(encoding='utf-8'))
     for roof in roof_source['roofs']:
         pts=[xy(p) for p in roof['footprint']];pts=pts[:-1] if pts[0]==pts[-1] else pts
         cx=sum(p[0] for p in pts)/len(pts);cz=sum(p[1] for p in pts)/len(pts)
         if not(-405<cx<390 and -300<cz<290):continue
         h=roof['height'];traced.append(pts)
+        if roof['id'] in frontage_configs:
+            frontage_details.append(frontage(g,pts,frontage_configs[roof['id']]))
+            if roof['id']=='street_west_04':frontage_courtyard(g,pts)
+            continue
         g.polygon('photo-building_roof_trace_'+str(roof['id']),pts,0,h,roof['wallColor'],True)
         g.polygon('traced_roof_'+str(roof['id']),pts,h,.16,roof['roofColor'])
         facade_detail(g,pts,h,roads,len(traced))
@@ -302,6 +321,8 @@ def outdoor(scene):
                     shop.window('shop_upper_window',0,h-1.05,4.3,6.7,1.2)
                 g.solids+=shop.solids;g.signs+=shop.signs;shopcount+=1
     portals=[];arrivals={};places=[];garden_data=None
+    arrivals['riverfront-shops']=dict(x=-143,z=143.8,yaw=math.pi)
+    places.append(place('riverfront-shops','강변 맞은편 상가와 창고',-143,143.8,5,'상가의 처마와 간판, 뒤편의 푸른 창고 지붕을 둘러보세요.'))
     if samhwa_arrival:
         arrivals['jukjeon-alley']=dict(x=samhwa_arrival[0],z=samhwa_arrival[1],yaw=-1.3)
         places.append(place('jukjeon-alley','죽전골목 · 삼화홍어 외관',*samhwa_arrival,5,'작은 등대 장식과 적벽돌 모서리가 있는 골목 입구입니다.'))
@@ -350,6 +371,7 @@ def outdoor(scene):
     places.extend([place('landing','황포돛배 선착장',*dock.point(5,-16),15,'계류된 목선과 강변 데크를 둘러보세요.',arrivalHeight=level),place('lighthouse','영산포 등대',*dock.point(4,-4),6,'강변 아래 데크에 남아 있는 흰 등대입니다.',arrivalHeight=level),place('dock-stairs','선착장 내려가는 계단',*stair_route[0],4,'계단을 내려가면 낮은 강변 데크로 이어집니다.'),place('hongeo','영산포 홍어거리',*xy([126.71078,35.0001]),28,'영산3길을 따라 역사갤러리로 이어집니다.'),place('river-view','강변 산책길',-143,138.27,20,'계단을 내려가면 선착장과 등대를 가까이 볼 수 있어요.')])
     # Riverside street furniture, trees and utility poles at estimated spacing.
     for x,z in [(-220,183),(-175,168),(-67,127),(6,60),(51,19),(143,-37),(232,-68),(309,148)]:
+        if any(in_poly([x,z],b['footprint']) for b in frontage_details):continue
         g.tree('street_tree',x,z,1.05,int(x+500));g.box('street_bench',x+3,.43,z,2.2,.15,.65,'#827351',True)
         g.tube('street_lamp_pole',(x-3,0,z),(x-3,6,z),.055,'#69726c');g.box('street_lamp_head',x-2.5,6,z,1,.12,.35,'#d6d0ae',record=False)
     for i in range(12):
@@ -360,4 +382,4 @@ def outdoor(scene):
         g.box('vehicle_window',x,1.32,z,1.83,.65,2.2,'#698488',record=False)
     for obj in scene.objects:
         if 'hide_in_overview' in obj:del obj['hide_in_overview']
-    return g,world_data(g,'영산포 · 황포돛배 · 홍어거리',bounds,dict(x=-143,z=138.27,yaw=0),places,origin=dict(lon=ORIGIN[0],lat=ORIGIN[1]),verticalNavigation=True,requireFloor=True,portals=portals,arrivals=arrivals,roads=roads,boats=boats,literatureGarden=garden_data,southContextRoofs=len(context_footprints),additionalSatelliteRoofs=len(extra_footprints),streetDetails=street_details,additionalLanes=extra_lanes,detailRevision='streets-1',navigationWater=dict(polygons=channel,obstacles=water_obstacles),mappedBuildings=count,tracedRoofs=len(traced),photoInformedShops=shopcount,dockHeight=level,dockStairRoute=stair_route,limitations=['Mapped road and river coordinates are OSM. Building heights and unrecorded shop facades are estimated, not individually surveyed storefronts.','Courtyard planting/paving follows JNFC photos; the southwest parcel and added context roofs are aligned to satellite imagery of unknown capture date. Dimensions, materials and building heights remain estimates.','Lighthouse height 8.65m follows archive data. Wharf level -6.4m, stairs, mooring placement and seasonal water level are estimated from photographs.','Wanggeonho length 29.9m and beam 9.9m follow construction reports. Najuho dimensions and both interior layouts are photo-proportioned estimates.','Museum exteriors use official map/photo positions; interiors are separate authored spaces linked at the doors.','Source imagery, original museum films and long copyrighted panels are not redistributed.'])
+    return g,world_data(g,'영산포 · 황포돛배 · 홍어거리',bounds,dict(x=-143,z=138.27,yaw=0),places,origin=dict(lon=ORIGIN[0],lat=ORIGIN[1]),verticalNavigation=True,requireFloor=True,portals=portals,arrivals=arrivals,roads=roads,boats=boats,literatureGarden=garden_data,southContextRoofs=len(context_footprints),additionalSatelliteRoofs=len(extra_footprints),streetDetails=street_details,additionalLanes=extra_lanes,detailRevision='streets-1',riverfrontDetails=dict(revision='riverfront-1',buildings=frontage_details,paving=frontage_apron),navigationWater=dict(polygons=channel,obstacles=water_obstacles),mappedBuildings=count,tracedRoofs=len(traced),photoInformedShops=shopcount,dockHeight=level,dockStairRoute=stair_route,limitations=['Mapped road and river coordinates are OSM. Building heights and unrecorded shop facades are estimated, not individually surveyed storefronts.','Courtyard planting/paving follows JNFC photos; the southwest parcel and added context roofs are aligned to satellite imagery of unknown capture date. Dimensions, materials and building heights remain estimates.','Lighthouse height 8.65m follows archive data. Wharf level -6.4m, stairs, mooring placement and seasonal water level are estimated from photographs.','Wanggeonho length 29.9m and beam 9.9m follow construction reports. Najuho dimensions and both interior layouts are photo-proportioned estimates.','Museum exteriors use official map/photo positions; interiors are separate authored spaces linked at the doors.','Source imagery, original museum films and long copyrighted panels are not redistributed.'])
