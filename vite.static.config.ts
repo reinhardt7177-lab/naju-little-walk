@@ -8,6 +8,9 @@ import { fileURLToPath } from 'node:url';
 export default defineConfig({
   plugins: [react()],
   resolve: { alias: { '@': fileURLToPath(new URL('.', import.meta.url)) } },
+  // The workspace also stores Blender tools and archived previews. Only scan
+  // this site's entry, not unrelated HTML under work/, for dev dependencies.
+  optimizeDeps: { entries: ['index.html'] },
   css: { postcss: { plugins: [tailwindcss()] } },
   build: { outDir: 'dist/client', emptyOutDir: true, minify: false },
 });

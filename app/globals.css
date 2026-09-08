@@ -1,6 +1,9 @@
-@import 'tailwindcss';
+@import 'tailwindcss' source(none);
 @import 'tw-animate-css';
 @import 'shadcn/tailwind.css';
+@source './';
+@source '../components';
+@source '../browser-entry.tsx';
 @custom-variant dark (&:is(.dark *));
 @theme inline { --color-background:var(--background); --color-foreground:var(--foreground); --font-sans:'Malgun Gothic','Apple SD Gothic Neo',sans-serif; --color-primary:var(--primary); --color-primary-foreground:var(--primary-foreground); --color-border:var(--border); --color-ring:var(--ring); }
 :root { --background:#dae5e3; --foreground:#193b37; --primary:#224f43; --primary-foreground:#fff; --border:#c9d6cd; --ring:#cd723f; --card:#f8faf7; --card-foreground:#193b37; --muted:#e8eeea; --muted-foreground:#536b61; --radius:.8rem; }

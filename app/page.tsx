@@ -51,7 +51,7 @@ export default function Home() {
       canvas.tabIndex = 0;
       mount.appendChild(canvas);
       scene.background = new THREE.Color('#bbd9e6');
-      scene.fog = new THREE.Fog('#bbd9e6', 260, 690);
+      scene.fog = new THREE.Fog('#bbd9e6', selectedId === 'dasi' ? 650 : 260, selectedId === 'dasi' ? 1350 : 690);
       scene.add(new THREE.HemisphereLight('#e1f3ff', '#918673', 2.8));
       const sun = new THREE.DirectionalLight('#fff0d1', 3.1);
       sun.position.set(-80, 145, 65); sun.castShadow = true;
@@ -70,7 +70,7 @@ export default function Home() {
       gltf.scene.traverse(o => { if (o instanceof THREE.Mesh) { o.castShadow = !o.name.startsWith('ground'); o.receiveShadow = true; } });
       if (selectedId === 'dasi') batchStaticScene(gltf.scene);
       scene.add(gltf.scene);
-      const camera = new THREE.PerspectiveCamera(60, 1, 0.12, 1000);
+      const camera = new THREE.PerspectiveCamera(60, 1, 0.12, selectedId === 'dasi' ? 1800 : 1000);
       const colliders = data.solids.filter(s => s.collision).map(solidCollider);
       const floors = worldFloors(data.solids);
       let px = data.spawn.x, pz = data.spawn.z, yaw = data.spawn.yaw, pitch = 0;
@@ -150,7 +150,7 @@ export default function Home() {
         if (bird) { orbit -= dx * 0.005; orbitElevation = THREE.MathUtils.clamp(orbitElevation + dy * 0.003, 0.3, 1.3); }
         else if (playing) { yaw -= dx * 0.0028; pitch = THREE.MathUtils.clamp(pitch - dy * 0.0028, -1.15, 1.15); }
       }) as EventListener);
-      listen(canvas, 'wheel', ((e: WheelEvent) => { if (bird) { e.preventDefault(); orbitRadius = THREE.MathUtils.clamp(orbitRadius + e.deltaY * 0.1, 85, 330); } }) as EventListener, { passive: false });
+      listen(canvas, 'wheel', ((e: WheelEvent) => { if (bird) { e.preventDefault(); orbitRadius = THREE.MathUtils.clamp(orbitRadius + e.deltaY * 0.1, 85, selectedId === 'dasi' ? 800 : 330); } }) as EventListener, { passive: false });
       listen(canvas, 'webglcontextlost', ((e: Event) => { e.preventDefault(); pause(); setError('3D 화면 연결이 끊겼습니다. 새로고침해 다시 열어주세요.'); }) as EventListener);
       setReady(true);
       let last = performance.now(), lastHud = 0;
@@ -209,9 +209,11 @@ export default function Home() {
         <div className="map-heading"><span>동네 지도</span><span>N ↑</span></div>
         <svg viewBox={`${world.bounds[0]} ${world.bounds[2]} ${world.bounds[1] - world.bounds[0]} ${world.bounds[3] - world.bounds[2]}`} role="img" aria-label={`현재 위치: ${view.place}`}>
           <rect x={world.bounds[0]} y={world.bounds[2]} width={world.bounds[1] - world.bounds[0]} height={world.bounds[3] - world.bounds[2]} fill="#e5e8df" />
-          {world.solids.filter(s => s.name.startsWith('osm-building') || s.name.startsWith('photo-building') || s.name.startsWith('ground_floor') || s.name.startsWith('road') || s.name.startsWith('hall-wall')).map((s, i) => <polygon key={i} points={solidCollider(s).map(p => p.join(',')).join(' ')} fill={s.name.includes('lawn') ? '#adc489' : s.name.includes('grove') ? '#779660' : s.name.includes('parking') ? '#929e97' : s.name.includes('court') ? '#c98c73' : s.name.startsWith('road') ? '#fafaf6' : s.name.startsWith('hall') ? '#407064' : '#b5c1b8'} stroke={s.kind === 'building' ? '#9aada2' : 'none'} strokeWidth="0.7" />)}
-          <circle cx={view.x} cy={view.z} r="6" fill="#fff" /><circle cx={view.x} cy={view.z} r="3.5" fill="#c96734" />
-          <path d="M 0,-11 L -3,-6 L 3,-6 Z" fill="#c96734" transform={`translate(${view.x} ${view.z}) rotate(${-view.yaw * 180 / Math.PI})`} />
+          {world.solids.filter(s => /^(osm-building|photo-building|ground_floor|road_|road-edge|hall-wall|rail-ballast|walk-floor_platform)/.test(s.name)).map((s, i) => <polygon key={i} points={solidCollider(s).map(p => p.join(',')).join(' ')} fill={s.name.includes('lawn') ? '#adc489' : s.name.includes('grove') ? '#779660' : s.name.includes('parking') ? '#929e97' : s.name.includes('court') ? '#c98c73' : s.name.startsWith('rail') ? '#897f70' : s.name.startsWith('road') ? '#fafaf6' : s.name.startsWith('hall') ? '#407064' : '#b5c1b8'} stroke={s.kind === 'building' ? '#9aada2' : 'none'} strokeWidth="0.7" />)}
+          <g transform={`translate(${view.x} ${view.z}) scale(${(world.bounds[1]-world.bounds[0])/245})`}>
+            <circle r="6" fill="#fff" /><circle r="3.5" fill="#c96734" />
+            <path d="M 0,-11 L -3,-6 L 3,-6 Z" fill="#c96734" transform={`rotate(${-view.yaw * 180 / Math.PI})`} />
+          </g>
         </svg><div className="map-legend"><span className="you-dot" />내 위치<span>약 {Math.round((world.bounds[1] - world.bounds[0]) / 10) * 10}m 구역</span></div>
       </aside>}
       {!active && <section className="welcome" aria-label="산책 시작">

@@ -4,6 +4,17 @@
 
 ## 다시초등학교 추가
 
+현재 학교 체험은 **다시초 주변 약 570×440m**까지 확장했습니다. 위성영상의 지붕·농지·주차 공간과 지도 건물·도로를 대조했고, 다시역 외관·호남선 두 선로·승강장을 추가했습니다. 아래 기존 학교 파일들은 보존했습니다.
+
+- 새 Blender: `outputs/dasi-neighborhood.blend`
+- 전체 조감도: `outputs/dasi-neighborhood-overview.png`
+- 웹 모형·충돌: `public/models/dasi-neighborhood.glb`, `public/dasi-neighborhood-world.json`
+- 주변 제작: `scripts/dasi_neighborhood.py`
+- 실제 자료와 추정 범위: `knowledge/sources/DASI_NEIGHBORHOOD_REFERENCES.md`
+- 주변 포함 생성: 기존 Blender 명령의 마지막에 `-- --neighborhood --render`를 전달합니다.
+
+2022년 영상과 일부 과거 사진을 기준으로 제작했으며, 현재 모습과 완전히 일치하는 실측 복원은 아닙니다. 주변 건물의 높이·창문·지붕 세부와 평면 지형은 추정입니다.
+
 - 화면 왼쪽의 **다시초등학교**를 누르거나 `/?place=dasi`로 열면 학교 탐험으로 이동합니다. 기본 주소의 금성관 체험은 유지합니다.
 - 나주시 다시로 203의 실제 학교 부지와 건물 2개 윤곽을 사용했습니다.
 - 공식 학교앨범 사진을 참고해 2층 벽돌 외관, 흰 창틀, 원형 표식, 분홍색 계단실, 둥근 붉은 지붕, 돌 문기둥을 표현했습니다.

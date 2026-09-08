@@ -6,6 +6,80 @@ import { destinationFromSearch, destinations } from '../lib/destinations.ts';
 import * as THREE from 'three';
 import { batchStaticScene } from '../lib/static-scene.ts';
 
+const neighborhood = JSON.parse(fs.readFileSync(new URL('../public/dasi-neighborhood-world.json', import.meta.url), 'utf8'));
+const neighborhoodColliders = neighborhood.solids.filter(s => s.collision).map(solidCollider);
+
+test('neighborhood preserves school coordinates, mapped station and source attribution', () => {
+  assert.deepEqual(neighborhood.bounds,[-285,285,-245,195]);
+  assert.equal(neighborhood.campus_osm_id,'963585633');
+  assert.match(neighborhood.source,/OpenStreetMap.*ODbL/);
+  assert.ok(neighborhood.buildings.length > 55);
+  const station = neighborhood.buildings.find(b=>b.osm_id==='605798599');
+  assert.ok(station && station.footprint.length===4);
+  for (const building of neighborhood.buildings) {
+    assert.ok(building.osm_id || building.trace_id,'Every building needs source coordinates');
+    assert.ok(building.height_source,'Estimated heights must have provenance');
+  }
+  for (const [id,count] of [['963585625',10],['963585637',5],['963585641',4]]) {
+    const b=neighborhood.buildings.find(b=>b.osm_id===id);
+    assert.equal(b.floors,count);assert.match(b.floors_source,/^https:/);
+  }
+  for (const id of ['W03','W16','W27']) assert.ok(!neighborhood.buildings.some(b=>b.trace_id===id),'Mapped silhouettes must not be duplicated');
+  assert.equal(neighborhoodColliders.some(c=>hitsPolygon(neighborhood.spawn.x,neighborhood.spawn.z,c)),false);
+});
+
+test('walk from school grounds along Dasi-ro to the station and back',()=>{
+  const gate=neighborhood.neighborhood.school_gate.center;
+  const route=[[3,7],[-35,7],[-42,5],[-40,14],[-44,35],gate,[-36.44,49.72],[80,73],[100,78]];
+  let p={x:route[0][0],z:route[0][1]};
+  for(const [x,z] of [...route.slice(1),...route.slice(0,-1).reverse()]){
+    p=movePlayer(p.x,p.z,x-p.x,z-p.z,neighborhoodColliders,neighborhood.bounds);
+    assert.ok(Math.hypot(p.x-x,p.z-z)<.03,`Blocked station route ${x},${z}: ${JSON.stringify(p)}`);
+  }
+  const station=neighborhood.buildings.find(b=>b.osm_id==='605798599');
+  const center=station.footprint.reduce((p,q)=>[p[0]+q[0]/4,p[1]+q[1]/4],[0,0]);
+  assert.ok(neighborhoodColliders.some(c=>hitsPolygon(...center,c)),'Station exterior must block entry');
+});
+
+test('railway uses paired 1435 mm rails and platforms raise the walking floor',()=>{
+  const floors=worldFloors(neighborhood.solids);
+  const platforms=neighborhood.solids.filter(s=>s.name.startsWith('walk-floor_platform_'));
+  assert.equal(platforms.length,2);
+  for(const platform of platforms){
+    const pts=platform.footprint; const p=pts.reduce((a,b)=>[a[0]+b[0]/pts.length,a[1]+b[1]/pts.length],[0,0]);
+    assert.ok(floorHeight(...p,floors)>.4);
+  }
+  for(const r of neighborhood.neighborhood.railways)assert.equal(r.gauge,1.435);
+  const left=neighborhood.solids.find(s=>s.name.startsWith('rail_')&&s.name.endsWith('_-1'));
+  const right=neighborhood.solids.find(s=>s.name===left.name.replace(/_-1$/,'_1'));
+  assert.ok(Math.abs(Math.hypot(left.position[0]-right.position[0],left.position[2]-right.position[2])-1.435)<1e-6);
+  const covers=neighborhood.solids.filter(s=>s.name.startsWith('crop-cover'));
+  assert.ok(covers.length>=4);assert.ok(covers.every(s=>!s.collision&&s.size[1]<.1));
+});
+
+test('neighborhood GLB contains the station and outward-facing roof surfaces',()=>{
+  const buffer=fs.readFileSync(new URL('../public/models/dasi-neighborhood.glb',import.meta.url));
+  assert.equal(buffer.readUInt32LE(8),buffer.length);
+  const gltf=JSON.parse(buffer.toString('utf8',20,20+buffer.readUInt32LE(12)));
+  assert.match(gltf.asset.generator,/Blender/);
+  assert.ok(gltf.nodes.some(n=>n.name==='station_blue_nameboard'));
+  assert.ok(gltf.nodes.some(n=>n.name==='school_name_readable'));
+  assert.ok(gltf.buffers.every(b=>!b.uri));assert.ok(!gltf.images?.some(i=>i.uri));
+  const sign=neighborhood.signs.find(s=>s.text==='다시역');
+  assert.ok(Math.cos(sign.rotation)<-.95,'Station sign must face its north approach');
+  // Inspect exported normals rather than just reproducing the roof implementation.
+  const roofNode=gltf.nodes.find(n=>n.name==='neighborhood_roof_605798599');
+  const normalAccessor=gltf.accessors[gltf.meshes[roofNode.mesh].primitives[0].attributes.NORMAL];
+  const view=gltf.bufferViews[normalAccessor.bufferView];
+  const binOffset=20+buffer.readUInt32LE(12)+8;
+  let upward=0;
+  for(let i=0;i<normalAccessor.count;i++){
+    const offset=binOffset+(view.byteOffset??0)+(normalAccessor.byteOffset??0)+i*(view.byteStride??12);
+    if(buffer.readFloatLE(offset+4)>.2)upward++;
+  }
+  assert.ok(upward>0,'Roof must have upward-facing exterior normals');
+});
+
 const world = JSON.parse(fs.readFileSync(new URL('../public/city-world.json', import.meta.url), 'utf8'));
 const colliders = world.solids.filter(s => s.collision).map(solidCollider);
 

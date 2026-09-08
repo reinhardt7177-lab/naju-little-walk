@@ -8,12 +8,12 @@ export const destinations = {
     overview: { center: [0, -12], radius: 165, elevation: .62, angle: .25 },
   },
   dasi: {
-    name: '다시초등학교', area: '다시초등학교', worldUrl: '/dasi-world.json', modelUrl: '/models/dasi-elementary.glb',
+    name: '다시초등학교', area: '다시초 주변', worldUrl: '/dasi-neighborhood-world.json', modelUrl: '/models/dasi-neighborhood.glb',
     heading: ['학교 앞에서,', '다시 한 걸음.'],
-    introduction: ['운동장을 지나 열린 본관 문으로 들어가 보세요.', '1층 복도와 교실, 작은 도서실이 이어집니다.'],
+    introduction: ['운동장과 교실, 학교 앞 골목을 걸어보세요.', '다시역과 철길, 동쪽 들판까지 이어집니다.'],
     sourceUrl: 'https://najudasi.es.jne.kr/', sourceLabel: '다시초등학교',
-    limitation: '배치·치수 추정 · 실내는 체험용',
-    overview: { center: [-2, -14], radius: 188, elevation: .67, angle: -.15 },
+    limitation: '2022년 항공영상 기준 · 높이·세부·실내 추정',
+    overview: { center: [0, -25], radius: 410, elevation: .82, angle: -.15 },
   },
 } as const;
 

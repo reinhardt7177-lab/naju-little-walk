@@ -13,7 +13,10 @@ from pathlib import Path
 from mathutils import Vector
 
 ROOT = Path(__file__).resolve().parents[1]
-OUTPUT = ROOT / 'outputs' / 'dasi-elementary-detailed.blend'
+NEIGHBORHOOD = '--neighborhood' in sys.argv
+OUTPUT = ROOT / 'outputs' / ('dasi-neighborhood.blend' if NEIGHBORHOOD else 'dasi-elementary-detailed.blend')
+WORLD_NAME = 'dasi-neighborhood' if NEIGHBORHOOD else 'dasi'
+MODEL_NAME = 'dasi-neighborhood' if NEIGHBORHOOD else 'dasi-elementary'
 if OUTPUT.exists() and '--replace' not in sys.argv:
     raise RuntimeError('Output exists. Save your edits separately before using -- --replace.')
 OUTPUT.parent.mkdir(exist_ok=True)
@@ -22,18 +25,18 @@ scene = bpy.data.scenes.new('Naju_Dasi_Elementary')
 bpy.context.window.scene = scene
 scene.unit_settings.system = 'METRIC'
 groups = {}
-for name in ('01_Mapped_Ground', '02_Photo_Exterior', '03_Estimated_Details', '04_Presentation', '05_Illustrative_Interior'):
+for name in ('01_Mapped_Ground', '02_Photo_Exterior', '03_Estimated_Details', '04_Presentation', '05_Illustrative_Interior', '06_Neighborhood_Mapped', '07_Neighborhood_Image_Trace', '08_Railway'):
     collection = bpy.data.collections.new(name)
     scene.collection.children.link(collection)
     groups[name] = collection
 LAT, LON = 35.017517, 126.6400205
-bounds = [-120, 125, -100, 82]
-SOURCE_URL = 'https://api.openstreetmap.org/api/0.6/map?bbox=126.63865,35.0167,126.6415,35.0186'
+bounds = [-285, 285, -245, 195] if NEIGHBORHOOD else [-120, 125, -100, 82]
+SOURCE_URL = 'https://api.openstreetmap.org/api/0.6/map?bbox=' + ('126.6369,35.0157,126.6432,35.0196' if NEIGHBORHOOD else '126.63865,35.0167,126.6415,35.0186')
 def project(lon, lat):
     return [(float(lon)-LON)*111320*math.cos(math.radians(LAT)), -(float(lat)-LAT)*111320]
 def bp(x, y, z):
     return (x, -z, y)
-xml = ET.parse(ROOT / 'knowledge/sources/dasi-school.osm').getroot()
+xml = ET.parse(ROOT / 'knowledge/sources' / ('dasi-neighborhood.osm' if NEIGHBORHOOD else 'dasi-school.osm')).getroot()
 nodes = {n.attrib['id']: project(n.attrib['lon'], n.attrib['lat']) for n in xml.findall('node')}
 ways = {}
 for w in xml.findall('way'):
@@ -142,12 +145,15 @@ def tree(x,z,size=1,index=0):
         o.data.materials.append(mat(('#628358','#769356','#4f7551')[j]))
 
 # Mapped ground and roads; widths are estimates.
-box('ground_base',2.5,-1,-9,245,2,182,'#c4d1b6',group='04_Presentation')
+box('ground_base',(bounds[0]+bounds[1])/2,-1,(bounds[2]+bounds[3])/2,bounds[1]-bounds[0]+(24 if NEIGHBORHOOD else 0),2,bounds[3]-bounds[2]+(24 if NEIGHBORHOOD else 0),'#c4d1b6',group='04_Presentation')
+if NEIGHBORHOOD:
+    exec((ROOT/'scripts/dasi_neighborhood.py').read_text(encoding='utf-8'))
+    build_neighborhood_ground()
 campus=ways['963585633']['points']
 polygon('ground_floor_campus',campus,.065,'#d5d6c9')
 for wid,w in ways.items():
     if not w['tags'].get('highway'):continue
-    width=2.2 if w['tags']['highway'] in ('footway','path','steps') else 6.5
+    width=road_width(w) if NEIGHBORHOOD else (2.2 if w['tags']['highway'] in ('footway','path','steps') else 6.5)
     for i,(a,b) in enumerate(zip(w['points'],w['points'][1:])):
         clipped=clip(a,b)
         if not clipped:continue
@@ -336,6 +342,9 @@ for ax,az,bx,bz in [(45,-7,67,-7),(67,-7,67,11),(67,11,45,11),(45,11,45,-7),(56,
 # Site boundary follows OSM; fence height, openings and landscaping are estimates.
 for i,(a,b) in enumerate(zip(campus,campus[1:])):
     if i in (3,4,5,6):continue  # Unverified south/east OSM boundary is not a physical barrier.
+    if NEIGHBORHOOD and i==2:
+        neighborhood_gate_opening(a,b)
+        continue
     segment(f'boundary_wall_{i}',a,b,.35,.45,'#b9b9a8',True)
     segment(f'boundary_rail_{i}',a,b,.09,.065,'#566c61',base=1.2)
     n=max(1,int(math.dist(a,b)/2.2))
@@ -382,14 +391,23 @@ limitations=[
     'The court and blue-roof structure are photo-informed without surveyed footprints. Matching the barrel roof to the west OSM building is an inference.',
     'Flat terrain. The first-floor corridor, classroom, reading room and furniture are illustrative, not the real school interior. Upper floors remain exterior-only.',
 ]
+neighborhood_data = build_neighborhood() if NEIGHBORHOOD else None
+if NEIGHBORHOOD:
+    places.extend(neighborhood_data['places'])
+    limitations.extend(neighborhood_data['limitations'])
 world=dict(title='나주 산책',subtitle='다시초등학교 · 실제 지도와 사진 참고',source='© OpenStreetMap contributors, ODbL 1.0',source_url=SOURCE_URL,origin=dict(lat=LAT,lon=LON),bounds=bounds,spawn=spawn,solids=solids,signs=signs,places=places,buildings=buildings,limitations=limitations,campus_osm_id='963585633',interior=interior_data,lights=interior_data['lights'])
-(ROOT/'public/dasi-world.json').write_text(json.dumps(world,ensure_ascii=False,separators=(',',':')),encoding='utf-8')
-(ROOT/'knowledge/sources/dasi-model-provenance.json').write_text(json.dumps({k:world[k] for k in ('source','source_url','origin','campus_osm_id','buildings','limitations')},ensure_ascii=False,indent=2),encoding='utf-8')
+if neighborhood_data: world['neighborhood'] = neighborhood_data
+(ROOT/'public'/f'{WORLD_NAME}-world.json').write_text(json.dumps(world,ensure_ascii=False,separators=(',',':')),encoding='utf-8')
+(ROOT/'knowledge/sources'/f'{WORLD_NAME}-model-provenance.json').write_text(json.dumps({k:world[k] for k in ('source','source_url','origin','campus_osm_id','buildings','limitations')},ensure_ascii=False,indent=2),encoding='utf-8')
 
 bpy.ops.object.camera_add(location=(50,-145,125))
 camera=bpy.context.object; camera.name='School_overview_camera'
 camera.rotation_euler=(Vector((-5,15,0))-camera.location).to_track_quat('-Z','Y').to_euler()
 camera.data.type='ORTHO'; camera.data.ortho_scale=200; scene.camera=camera
+if NEIGHBORHOOD:
+    camera.name='Dasi_neighborhood_overview'; camera.location=bp(165,440,350)
+    camera.rotation_euler=(Vector(bp(-5,0,-25))-camera.location).to_track_quat('-Z','Y').to_euler()
+    camera.data.ortho_scale=640; camera.data.clip_end=2000
 bpy.ops.object.light_add(type='SUN',location=(-70,-80,130))
 sun=bpy.context.object; sun.rotation_euler=(.6,-.4,-.4); sun.data.energy=2.3; sun.data.angle=.14
 scene.world=bpy.data.worlds.new('School_daylight'); scene.world.use_nodes=True
@@ -399,12 +417,24 @@ scene.render.engine='BLENDER_EEVEE_NEXT'
 scene.render.resolution_x=1440; scene.render.resolution_y=1000; scene.render.resolution_percentage=100
 scene.render.image_settings.file_format='PNG'
 scene.render.filepath=str(ROOT/'outputs/dasi-overview.png')
+if NEIGHBORHOOD:
+    scene.render.resolution_x=1920; scene.render.resolution_y=1440
+    scene.render.filepath=str(ROOT/'outputs/dasi-neighborhood-overview.png')
 scene.view_settings.view_transform='AgX'
 bpy.ops.file.pack_all()
 bpy.ops.wm.save_as_mainfile(filepath=str(OUTPUT))
-bpy.ops.export_scene.gltf(filepath=str(ROOT/'public/models/dasi-elementary.glb'),export_format='GLB',use_active_scene=True,export_cameras=False,export_lights=False,export_extras=True,export_apply=True)
+bpy.ops.export_scene.gltf(filepath=str(ROOT/'public/models'/f'{MODEL_NAME}.glb'),export_format='GLB',use_active_scene=True,export_cameras=False,export_lights=False,export_extras=True,export_apply=True)
 print(json.dumps(dict(blend=str(OUTPUT),buildings=len(buildings),objects=len(scene.objects),spawn=spawn),ensure_ascii=False))
 if '--render' in sys.argv:bpy.ops.render.render(write_still=True)
+if NEIGHBORHOOD and '--render' in sys.argv:
+    camera.data.type='PERSP'; camera.data.lens=32
+    scene.render.resolution_x=1600; scene.render.resolution_y=1000
+    for name,eye,target in [('dasi-station-detail',(98,7,67),(100,3.8,94)),('dasi-neighborhood-school',(-7,65,105),(-25,0,-30))]:
+        camera.data.lens=24 if name=='dasi-station-detail' else 32
+        camera.location=bp(*eye)
+        camera.rotation_euler=(Vector(bp(*target))-camera.location).to_track_quat('-Z','Y').to_euler()
+        scene.render.filepath=str(ROOT/'outputs'/f'{name}.png')
+        bpy.ops.render.render(write_still=True)
 if '--render-details' in sys.argv:
     camera.data.type='PERSP'; camera.data.lens=30; camera.data.clip_start=.1
     scene.render.resolution_x=1440; scene.render.resolution_y=960
