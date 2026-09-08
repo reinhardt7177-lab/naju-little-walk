@@ -2,6 +2,7 @@
 import bpy, math, random
 from yeongsanpo_interiors import literature as basic_literature
 from yeongsanpo_geometry import Geometry
+from yeongsanpo_literature_ground import ground_exhibition
 
 def remove_generated(g,prefixes):
     for obj in list(g.scene.objects):
@@ -239,6 +240,7 @@ def literature(scene):
     for z in (-8.94,3.10):g.box('attic_wall_end',-5.88,top+1.22,z,6.10,2.44,.20,'#e3dfd2',True,group='05_Cutaway_Roof')
     g.box('attic_white_ceiling',-5.88,top+2.43,-2.9,6.12,.18,12.12,'#dddace',group='05_Cutaway_Roof')
     attic_details(g,top);ground_details(g)
+    world['groundExhibition']=ground_exhibition(g)
     for color in ('#30281f','#38291f','#504333','#796344','#b38957','#735133','#5c3d27','#755032','#352d24','#423727','#48382b'):texture(g,color,'wood')
     for color in ('#aeb080','#a5a778','#b4b486','#a7a775','#b1af80','#a4a16d'):texture(g,color,'tatami')
     for color in ('#e3dfd2','#dddace','#e5dfcb'):texture(g,color,'plaster')
@@ -256,7 +258,9 @@ def literature(scene):
     for light in g.lights:
         if light['position'][1]>3.36:light['intensity']=16
     world['arrivals']['reading']=dict(x=-7.50,z=1.95,height=top,yaw=0)
-    world['detailRevision']='literature-interior-1'
+    world['arrivals']['exhibit']=dict(x=5.8,z=3.8,height=0,yaw=.25)
+    world['arrivals']['veranda']=dict(x=-5.7,z=7.25,height=0,yaw=-math.pi/2)
+    world['detailRevision']='literature-ground-1'
     world['limitations']+=['Attic walls and floor seams are sealed. Furniture counts, room dimensions and shelf heights are photo-proportioned estimates. White attic cubbies are left mostly empty as in reference 149482; dense book collections are downstairs.']
     world['solids']=g.solids
     return g,world

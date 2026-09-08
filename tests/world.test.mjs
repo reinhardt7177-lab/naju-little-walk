@@ -50,6 +50,38 @@ test('gallery has seven staggered lightboxes, black mesh ceiling and enclosed fo
   assert.equal(gltf.nodes.filter(n=>/^timeline_lightbox_\d+$/.test(n.name)).length,7);
   for(const prefix of ['cutaway_ceiling_mesh','vitrine_glass_lid','onggi_straw_bundle','ceiling_projector'])assert.ok(gltf.nodes.some(n=>n.name.startsWith(prefix)),prefix);
 });
+test('ground-floor veranda closes the wall bands and frames a finite garden view',()=>{
+  const {scene}=readModel(new URL('../public/models/yeongsanpo-literature.glb',import.meta.url));
+  const surfaces=[];
+  scene.traverse(o=>{if(/^(veranda_window_head_wall|veranda_transom_infill|window_garden_boundary_wall)/.test(o.name))surfaces.push(o);});
+  for(const [origin,far] of [[[-6,2.95,7.2],1.9],[[6,2.82,4.8],1.2],[[-5.7,1.72,7.2],18.5]]){
+    assert.ok(new THREE.Raycaster(new THREE.Vector3(...origin),new THREE.Vector3(0,0,1),.01,far).intersectObjects(surfaces,true).length,`Unfinished veranda view at ${origin}`);
+  }
+});
+test('ground-floor display cases and sliding leaves block bodies but preserve three passages',()=>{
+  const w=yeongsanWorlds['yeongsanpo-literature'],obstacles=worldObstacles(w.solids),floors=worldFloors(w.solids);
+  for(const x of [-6,0,6])walkRoute(w,[[x,7.2],[x,5],[x,7.2]]);
+  for(const x of [-7.5,-3,3,7.5]){
+    const hit=moveOnFloors(x,7.2,0,0,-3,obstacles,floors,w.bounds,true);
+    assert.ok(hit.z>6,`Walking through a sliding leaf at ${x}`);
+  }
+  for(const x of [2.7,4.8,6.9]){
+    assert.ok(blocksWalking(x,-8.27,0,obstacles),'Book case must block the visitor');
+    assert.equal(canTravelTo([x,-8.27],w),false,'Map must not place a visitor inside a case');
+  }
+  const hit=moveOnFloors(-5.7,7.2,0,0,5,obstacles,floors,w.bounds,true);
+  assert.ok(hit.z<8.8,'Garden-facing glazing must stop a visitor');
+  assert.equal(canTravelTo([0,12],w),false,'Window garden is outside this interior map');
+});
+test('ground exhibition and veranda arrivals connect to the original exit',()=>{
+  const w=yeongsanWorlds['yeongsanpo-literature'];
+  for(const id of ['exhibit','veranda']){
+    const a=sceneArrival(w,'?at='+id);assert.ok(a.entered&&a.height===0&&canTravelTo([a.x,a.z],w));
+  }
+  const a=w.arrivals.exhibit;
+  const route=[[a.x,a.z],[6,7.2],[-5.7,7.2],[-6,5],[-6,7.2],[0,7.2],[0,9.65]];
+  const end=walkRoute(w,route);assert.equal(portalAt(w,end.x,end.z,end.height)?.target,'yeongsanpo');
+});
 const testBoat={id:'test',name:'Test',home:{x:0,z:0,yaw:0},length:12,beam:4,hull:[[-2,-6],[2,-6],[2,6],[-2,6]],shore:[3,0],shoreHeight:0};
 const openWater={polygons:[[[-50,-80],[50,-80],[50,80],[-50,80]]],obstacles:[]};
 test('boat local coordinates and boarding remain correct after rotation and translation',()=>{
