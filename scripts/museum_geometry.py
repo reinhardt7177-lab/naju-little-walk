@@ -86,6 +86,15 @@ class MuseumGeometry:
 
     def vessel(self,name,x,y,z,scale=1,color='#656056',profile=None,rotation=0,horizontal=False):
         profile=profile or [(0,.12),(.08,.35),(.3,.5),(.65,.46),(.84,.26),(.92,.23),(1,.30),(1.05,.30),(1.05,.23),(.93,.18),(.75,.20),(.12,.22)]
+        if horizontal:
+            # Fine coil ridges and lip transitions remain actual editable geometry.
+            refined=[]
+            for (a,r),(b,s) in zip(profile,profile[1:]):
+                count=max(1,math.ceil(abs(b-a)/.045))
+                for j in range(count):
+                    t=j/count;yy=a+(b-a)*t
+                    refined.append((yy,r+(s-r)*t+.0035*math.sin(yy*155)))
+            profile=refined+[profile[-1]]
         n=32;verts=[]
         for yy,rr in profile:
             for i in range(n):
@@ -105,7 +114,7 @@ class MuseumGeometry:
             for dx,dz in [(-.5,-.32),(-.32,-.5),(.32,-.5),(.5,-.32),(.5,.32),(.32,.5),(-.32,.5),(-.5,.32)]:
                 verts.append((x+dx*w*inset*rng.uniform(.87,1.12),y+yy+rng.uniform(-h*.09,h*.09),z+dz*d*inset*rng.uniform(.87,1.12)))
         faces=[tuple(range(8)),tuple(range(24,32))]+[(j*8+i,j*8+(i+1)%8,j*8+(i+1)%8+8,j*8+i+8) for j in range(3) for i in range(8)]
-        return self.mesh(name,verts,faces,color,'03_Report_Burials',True)
+        return self.mesh(name,verts,faces,color,'03_Report_Burials',False)
 
     def railing(self,name,a,b,height,width=.045,glass=True,start_post=True,end_post=True):
         length=math.dist(a,b);n=max(1,math.ceil(length/1.35))

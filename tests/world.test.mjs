@@ -492,6 +492,33 @@ test('museum GLB includes the observed interior, 41 traced facilities, 22 jar bu
   assert.ok(gltf.images.every(i=>!i.uri));
 });
 
+test('museum high roof junction blocks sky while the entrance and bridge remain accessible',()=>{
+  const {scene}=readModel(new URL('../public/models/bogam-museum.glb',import.meta.url));
+  const f=JSON.parse(fs.readFileSync(new URL('../knowledge/sources/bogam-museum-hall-frame.json',import.meta.url),'utf8')).hallFrame;
+  const c=Math.cos(f.worldXZangle),s=Math.sin(f.worldXZangle);
+  const point=(x,y,z)=>new THREE.Vector3(f.center[0]+x*c-z*s,y,f.center[1]+x*s+z*c);
+  const closure=[];scene.traverse(o=>{if(o.name==='cutaway_south_closure')closure.push(o);});
+  for(const x of [-20,-8,5,20]){
+    const hits=new THREE.Raycaster(point(x,8.5,21),new THREE.Vector3(-s,0,c),.01,4).intersectObjects(closure,true);
+    assert.ok(hits.length,`Open south roof seam at ${x}`);
+  }
+  for(const p of museum.places){
+    assert.ok(canTravelTo(mapArrival(p,museum),museum,p.arrivalHeight??0),`New exhibit blocks arrival ${p.id}`);
+  }
+});
+
+test('museum fitted chamber paving has geometry under the displayed vessels',()=>{
+  const {scene}=readModel(new URL('../public/models/bogam-museum.glb',import.meta.url));
+  const f=JSON.parse(fs.readFileSync(new URL('../knowledge/sources/bogam-museum-hall-frame.json',import.meta.url),'utf8')).hallFrame;
+  const c=Math.cos(f.worldXZangle),s=Math.sin(f.worldXZangle),b=museum.burials.find(b=>b.id==='S12');
+  const [x,z]=b.model_center, floors=[];
+  scene.traverse(o=>{if(o.name.startsWith('S12_fitted_flagstone')||o.name==='S12_joint_bed')floors.push(o);});
+  for(const [dx,dz] of [[0,0],[-.3,.3],[.3,-.3]]){
+    const ray=new THREE.Raycaster(new THREE.Vector3(f.center[0]+(x+dx)*c-(z+dz)*s,b.replica_floor+.35,f.center[1]+(x+dx)*s+(z+dz)*c),new THREE.Vector3(0,-1,0),.01,.4);
+    assert.ok(ray.intersectObjects(floors,true).length,`Missing fitted chamber floor ${dx},${dz}`);
+  }
+});
+
 test('Bogam preserves four individually shaped mounds, source scale and numbering',()=>{
   assert.equal(bogam.site_osm_id,'471352010');
   assert.match(bogam.source,/OpenStreetMap.*ODbL/);
