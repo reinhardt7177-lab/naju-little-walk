@@ -31,3 +31,5 @@
 Blender 모델과 같은 생성 과정에서 `public/city-world.json`에 담장, 주변 건물, 차량, 수면의 충돌 정보를 기록합니다. 서쪽 주차장 입구→망화루 중앙 통로→중삼문→정청을 왕복할 수 있도록 보행대를 연결합니다. 지도 이동도 담장·주변 건물 내부를 거부합니다.
 
 렌더에서 입구 거리, 입구 항공 구도, 주차장, 주변 전체 구도를 확인합니다. 이동·충돌 검사는 `node --experimental-strip-types --test tests/world.test.mjs`를 사용합니다.
+
+웹 전송은 `geumseonggwan.glb.gz`의 무손실 gzip을 사용합니다. 브라우저에서 원래 Blender GLB 바이트로 풀어 Three.js에 전달하며, 건물·형상·재질 데이터는 줄이지 않습니다. 원본 GLB는 `public/models/geumseonggwan.glb`에 보존하고 배포 폴더에서만 중복된 비압축 사본을 제외합니다.

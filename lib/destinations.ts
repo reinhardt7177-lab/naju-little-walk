@@ -1,7 +1,7 @@
 export const destinations = {
   geumseonggwan: {
     coordinates: { lat: 35.0327357, lon: 126.7167886 },
-    name: '금성관', area: '금성관 주변', worldUrl: '/city-world.json?v=surroundings-3', modelUrl: '/models/geumseonggwan.glb?v=surroundings-3',
+    name: '금성관', area: '금성관 주변', worldUrl: '/city-world.json?v=surroundings-3', modelUrl: '/models/geumseonggwan.glb.gz?v=surroundings-3',
     heading: ['골목 안으로,', '나주 한 걸음.'],
     introduction: ['망화루 앞 거리와 담장, 골목까지 걸어보세요.', '박석길을 따라 정청의 마루와 단청 천장으로 이어집니다.'],
     sourceUrl: 'https://encykorea.aks.ac.kr/Article/E0011462', sourceLabel: '금성관 사진 참고',

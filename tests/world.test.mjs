@@ -5,6 +5,7 @@ import { hitsPolygon, movePlayer, moveOnFloors, reachableFloor, blocksWalking, w
 import { destinationFromSearch, destinations } from '../lib/destinations.ts';
 import * as THREE from 'three';
 import { batchStaticScene } from '../lib/static-scene.ts';
+import { unpackModel } from '../lib/model-transport.ts';
 import { canTravelTo, mapArrival, mapSolids, regionalPoint, regionalSize } from '../lib/map-navigation.ts';
 
 const bogam=JSON.parse(fs.readFileSync(new URL('../public/bogam-world.json',import.meta.url),'utf8'));
@@ -334,6 +335,14 @@ test('Blender GLB is complete, self-contained, and contains the hall', () => {
   assert.equal(gltf.nodes.some(n=>n.name==='interior_panel'),false,'The fictional gallery must not remain in the photographed open hall');
   assert.ok(gltf.buffers.every(b => !b.uri));
   assert.ok(!gltf.images?.some(i => i.uri));
+});
+
+test('compressed model transport restores the exact Blender bytes below the hosting file limit',async()=>{
+  const original=fs.readFileSync(new URL('../public/models/geumseonggwan.glb',import.meta.url));
+  const packed=fs.readFileSync(new URL('../public/models/geumseonggwan.glb.gz',import.meta.url));
+  assert.ok(packed.length<25*1024*1024);
+  assert.deepEqual(Buffer.from(await unpackModel(packed.buffer.slice(packed.byteOffset,packed.byteOffset+packed.byteLength))),original);
+  assert.deepEqual(Buffer.from(await unpackModel(original.buffer.slice(original.byteOffset,original.byteOffset+original.byteLength))),original);
 });
 
 test('stone stairs and elevated hall floors raise the walking eye level', () => {

@@ -7,6 +7,7 @@ import { GLTFLoader } from 'three/addons/loaders/GLTFLoader.js';
 import { movePlayer, moveOnFloors, reachableFloor, worldObstacles, solidCollider, worldFloors, floorHeight, currentPlace, type World } from '@/lib/world';
 import { destinations, destinationFromSearch, type DestinationId } from '@/lib/destinations';
 import { batchStaticScene } from '@/lib/static-scene';
+import { unpackModel } from '@/lib/model-transport';
 import { canTravelTo, mapSolids, mapColor } from '@/lib/map-navigation';
 import type { Point } from '@/lib/world';
 import MapTravel from './map-travel';
@@ -69,7 +70,13 @@ export default function Home() {
         light.position.set(...fixture.position);
         scene.add(light);
       }
-      const gltf = await new GLTFLoader().loadAsync(selected.modelUrl);
+      const loader=new GLTFLoader();
+      const gltf = await (async()=>{
+        if(!selected.modelUrl.split('?')[0].endsWith('.gz'))return loader.loadAsync(selected.modelUrl);
+        const response=await fetch(selected.modelUrl);
+        if(!response.ok)throw new Error('도시 모델을 불러오지 못했습니다.');
+        return loader.parseAsync(await unpackModel(await response.arrayBuffer()),'');
+      })();
       if (disposed) { gltf.scene.traverse(disposeObject); return; }
       gltf.scene.traverse(o => { if (o instanceof THREE.Mesh) { o.castShadow = !o.name.startsWith('ground'); o.receiveShadow = true; } });
       batchStaticScene(gltf.scene);

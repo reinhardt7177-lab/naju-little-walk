@@ -5,6 +5,7 @@ overwrite the deliverable unless --replace is explicitly supplied after --.
 """
 import bpy
 import json
+import gzip
 import math
 import sys
 import xml.etree.ElementTree as ET
@@ -244,6 +245,7 @@ scene.view_settings.view_transform='AgX'
 bpy.ops.file.pack_all()
 bpy.ops.wm.save_as_mainfile(filepath=str(OUTPUT))
 bpy.ops.export_scene.gltf(filepath=str(ROOT/'public'/'models'/'geumseonggwan.glb'),export_format='GLB',use_active_scene=True,export_cameras=False,export_lights=False,export_extras=True,export_apply=True)
+(ROOT/'public'/'models'/'geumseonggwan.glb.gz').write_bytes(gzip.compress((ROOT/'public'/'models'/'geumseonggwan.glb').read_bytes(),compresslevel=9,mtime=0))
 print(json.dumps({'blend':str(OUTPUT),'buildings':len(buildings),'objects':len(scene.objects),'spawn':spawn,'hall_entry':hall_entry},ensure_ascii=False))
 if '--render' in sys.argv:
     bpy.ops.render.render(write_still=True)
