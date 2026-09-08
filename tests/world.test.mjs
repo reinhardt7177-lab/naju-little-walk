@@ -5,7 +5,7 @@ import { hitsPolygon, movePlayer, moveOnFloors, reachableFloor, blocksWalking, w
 import { destinationFromSearch, destinations } from '../lib/destinations.ts';
 import * as THREE from 'three';
 import { batchStaticScene } from '../lib/static-scene.ts';
-import { canTravelTo, mapArrival, regionalPoint, regionalSize } from '../lib/map-navigation.ts';
+import { canTravelTo, mapArrival, mapSolids, regionalPoint, regionalSize } from '../lib/map-navigation.ts';
 
 const bogam=JSON.parse(fs.readFileSync(new URL('../public/bogam-world.json',import.meta.url),'utf8'));
 const bogamColliders=bogam.solids.filter(s=>s.collision).map(solidCollider);
@@ -274,6 +274,34 @@ test('both mapped historic gates retain a clear passage into the hall courtyard'
   for(const [x,z] of route.slice(1)){
     p=movePlayer(p.x,p.z,x-p.x,z-p.z,colliders,world.bounds);
     assert.ok(Math.hypot(p.x-x,p.z-z)<.04,`Blocked gate route: ${JSON.stringify(p)}`);
+  }
+});
+
+test('the mapped western parking entrance connects to Manghwaru and the hall',()=>{
+  assert.equal(world.surroundings.parkingOsmId,'478611741');
+  for(const car of world.solids.filter(s=>s.name==='parked_vehicle_body')){
+    for(const [x,z] of solidCollider(car))assert.ok(hitsPolygon(x,z,world.surroundings.parkingOutline,0),'Parked car must remain inside the mapped car park');
+  }
+  const route=[...world.surroundings.entranceRoute,...world.walkRoute];
+  let p={x:route[0][0],z:route[0][1]};
+  for(const [x,z] of [...route.slice(1),...route.slice(0,-1).reverse()]){
+    p=movePlayer(p.x,p.z,x-p.x,z-p.z,colliders,world.bounds);
+    assert.ok(Math.hypot(p.x-x,p.z-z)<.045,`Entrance or parking route blocked at ${x},${z}: ${JSON.stringify(p)}`);
+  }
+  for(const s of world.solids.filter(s=>s.name.startsWith('hall-wall_boundary_'))){
+    const fp=solidCollider(s),cx=fp.reduce((v,p)=>v+p[0],0)/fp.length,cz=fp.reduce((v,p)=>v+p[1],0)/fp.length;
+    assert.equal(canTravelTo([cx,cz],world),false,'Map relocation cannot place a walker inside the new perimeter wall');
+  }
+});
+
+test('imagery context buildings stay outside the historic precinct and remain collision solid',()=>{
+  const observations=world.surroundings.roofObservations;
+  assert.equal(observations.length,37);
+  assert.equal(mapSolids(world).filter(s=>/^context_.*_wall$/.test(s.name)).length,37,'Surrounding buildings must also appear on the travel map');
+  for(const b of observations){
+    const x=b.footprint.reduce((s,p)=>s+p[0],0)/b.footprint.length,z=b.footprint.reduce((s,p)=>s+p[1],0)/b.footprint.length;
+    assert.equal(hitsPolygon(x,z,world.surroundings.precinctBoundary,0),false,`${b.id} must remain outside the monument grounds`);
+    assert.equal(canTravelTo([x,z],world),false,`${b.id} must block map placement and walking`);
   }
 });
 

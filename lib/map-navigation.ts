@@ -32,9 +32,9 @@ export function mapArrival(place: Place, world: World): Point | null {
 }
 
 export function mapSolids(world: World) {
-  return world.solids.filter(s=>/^(osm-building|photo-building|ground_floor|road_|road-edge|hall-wall|rail-ballast|walk-floor_platform|mound_|path_|replica_outline|exhibit-case|museum-wall|walk-floor_bridge|walk-floor_cafe)/.test(s.name));
+  return world.solids.filter(s=>/^(osm-building|photo-building|context_.*_wall|mapped_reservoir_water|ground_floor|road_|road-edge|hall-wall|rail-ballast|walk-floor_platform|mound_|path_|replica_outline|exhibit-case|museum-wall|walk-floor_bridge|walk-floor_cafe)/.test(s.name));
 }
 
 export function mapColor(name: string): string {
-  return name.startsWith('replica') ? '#c59665' : name.startsWith('walk-floor') ? '#d3bd94' : name.startsWith('mound_') ? '#6d9152' : name.includes('lawn') ? '#bfce9a' : name.includes('grove') ? '#829d63' : name.includes('parking') ? '#abb2a8' : name.includes('court') ? '#c98c73' : name.startsWith('rail') ? '#897f70' : /^(road|path)/.test(name) ? '#f8f5e9' : name.startsWith('hall') ? '#407064' : '#bdc7b9';
+  return name.startsWith('mapped_reservoir') ? '#759b9a' : name.startsWith('context_') ? '#a9afa3' : name.startsWith('replica') ? '#c59665' : name.startsWith('walk-floor') ? '#d3bd94' : name.startsWith('mound_') ? '#6d9152' : name.includes('lawn') ? '#bfce9a' : name.includes('grove') ? '#829d63' : name.includes('parking') ? '#abb2a8' : name.includes('court') ? '#c98c73' : name.startsWith('rail') ? '#897f70' : /^(road|path)/.test(name) ? '#f8f5e9' : name.startsWith('hall') ? '#407064' : '#bdc7b9';
 }

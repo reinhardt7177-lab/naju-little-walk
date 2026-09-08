@@ -2,11 +2,25 @@
 
 금성관 주변의 실제 OpenStreetMap 건물 윤곽과 도로 좌표를 **Blender 4.5 LTS**에서 입체로 제작하고, Blender에서 내보낸 GLB를 **Three.js**로 불러와 탐험합니다.
 
+## 금성관 입구와 주변 거리 보완
+
+망화루 앞 박석 보행대, 안내판, 자연석 기와담장, 낮은 원목 울타리와 관목 화단, 양쪽 잔디마당을 사진에 맞춰 보완했습니다. OSM의 서측 주차장 윤곽과 통로를 반영했으며, 위성영상에서 해석한 **주변 지붕 37개**를 별도 출처로 추가했습니다. 주변 건물 높이·창문, 주차 차량과 시설물 배치는 추정입니다.
+
+- 최신 편집본: `outputs/geumseonggwan-surroundings.blend` (이전 두 Blender 파일 보존)
+- 추가 제작: `scripts/geumseonggwan_surroundings.py`
+- 확인 근거: `knowledge/sources/GEUMSEONGGWAN_SURROUNDINGS.md`
+- 주변 지붕 관찰: `knowledge/sources/geumseonggwan-surrounding-roofs.json`
+- 렌더: `outputs/geumseonggwan-surroundings-overview.png`, `outputs/geumseonggwan-entrance-street.png`, `outputs/geumseonggwan-entrance-aerial.png`
+
+```powershell
+& '.\work\tools\blender-4.5.13-windows-x64\blender.exe' --background --python scripts/build_city.py -- --output-blend outputs/geumseonggwan-surroundings.blend --render --render-surroundings
+```
+
 ## 금성관 사진·영상 상세본
 
 2009년 공식 정면 사진, **2020-02-18 촬영된 국가유산포털 내부 원본**, 나주시·광주MBC 영상의 실제 확인 프레임, 2015년 공개 실측도 썸네일을 대조했습니다. 다섯 칸의 서로 다른 폭과 개별 격자문·고창, 세 팔작지붕의 합각·겹처마·기와, **8개 내진 고주와 우물마루·단청 천장**, 월대·계단, 2층 망화루와 중삼문, 잔디·내삼문터·담장·비석군·우물을 보완했습니다.
 
-- 최신 편집본: `outputs/geumseonggwan-detailed.blend` (최초 `outputs/geumseonggwan.blend` 보존)
+- 건축 상세본: `outputs/geumseonggwan-detailed.blend` (최초 `outputs/geumseonggwan.blend` 보존)
 - 제작: `scripts/build_city.py`, `scripts/geumseonggwan_detail.py`
 - 사진·영상 시각·추정 치수: `knowledge/sources/GEUMSEONGGWAN_PHOTO_VIDEO.md`
 - 렌더: `outputs/geumseonggwan-front-detailed.png`, `outputs/geumseonggwan-interior-detailed.png`, `outputs/geumseonggwan-ceiling-detailed.png`

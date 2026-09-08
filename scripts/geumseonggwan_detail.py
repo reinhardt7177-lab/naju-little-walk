@@ -352,8 +352,7 @@ def photo_gate(w):
 
 def detailed_grounds():
     f=hall_detail_frame;info=hall_detail_info;c=info['center'];front=info['front']
-    # Lawn in the southern precinct, sandy courtyard north of the middle gate.
-    for x,w in [(6,22),(44,29)]:f.box('ground_floor_south_lawn',x,.048,-86,w,.025,31,'#81975b')
+    # Entrance lawns and the mapped perimeter are authored in the surroundings pass.
     # Stone platform and bases mark the photographed vanished inner gate; placement
     # follows aerial proportions, not a surveyed archaeological site plan.
     f.box('ground_floor_inner_gate_site',c,.08,-17.8,31,.09,13.4,'#9b9c72')
@@ -403,14 +402,6 @@ def detailed_grounds():
     for p in o.data.polygons:p.material_index=rng.randrange(4)
     for offset in (-3.35,-1.08,1.08,3.35):
         for (za,xa),(zb,xb) in zip(approach,approach[1:]):f.tube('stone_walkway_division',(xa+offset,.09,za),(xb+offset,.09,zb),.045,'#b7b19b',6)
-    # Long west/east tiled boundary walls are visible in official aerial photographs.
-    for side,x in [('west',-8),('east',72)]:
-        f.box('hall-wall_precinct_'+side,x,.82,-36,.42,1.60,128,'#c4bba0',True)
-        for j in range(64):
-            z=-99+j*2
-            f.box('precinct_wall_stone_joint',x+(-.22 if side=='west' else .22),.50,z,.02,.75,.018,'#9b9685')
-            f.box('precinct_wall_tile_cap',x,1.68,z,.78,.16,2.04,'#575b50')
-            f.tube('precinct_wall_ridge',(x,1.84,z-1),(x,1.84,z+1),.10,'#65675a',10)
     # The photographed stele row lies along the west boundary in the front precinct.
     for j in range(11):
         x=-3.5;z=-91+j*2.10;h=1.1+(j%4)*.18
@@ -428,5 +419,5 @@ def detailed_grounds():
         f.box('old_well_timber_rim',wx+side*.94,.78,wz,.14,.15,2.0,'#8c7250')
         f.box('old_well_timber_rim',wx,.78,wz+side*.94,2.0,.15,.14,'#8c7250')
     # Mature trunks and asymmetric foliage preserve the photographed rear tree belt.
-    for x,z,h,r in [(-4,6,14,4),(4,23,16,5),(26,28,18,6),(47,24,16,5),(69,10,13,4),(-2,-88,10,3),(68,-81,12,4)]:
+    for x,z,h,r in [(-4,6,14,4),(4,23,16,5),(26,28,18,6),(47,24,16,5),(69,10,13,4)]:
         wx,wz=f.point(x,z);photo_tree(wx,wz,h,r,x<0)

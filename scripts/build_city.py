@@ -46,8 +46,8 @@ for w in xml.findall('way'):
     points = [nodes[n.attrib['ref']] for n in w.findall('nd') if n.attrib['ref'] in nodes]
     ways.append({'id': w.attrib['id'], 'tags': tags, 'points': points})
 
-low = project(126.7152, 35.0318)
-high = project(126.7183, 35.0341)
+low = project(126.71505, 35.0316)
+high = project(126.71845, 35.03425)
 bounds = [low[0], high[0], high[1], low[1]]
 solids, signs, places, buildings = [], [], [], []
 materials = {}
@@ -146,7 +146,7 @@ def clip_segment(a,b):
     if t0>t1:return None
     return ([a[0]+t0*dx,a[1]+t0*dz],[a[0]+t1*dx,a[1]+t1*dz])
 
-# Unknown parcels stay a neutral base; no invented surrounding buildings.
+# Map base; the separate surroundings pass adds explicitly attributed roof observations.
 box('ground_base',(bounds[0]+bounds[1])/2,-1.5,(bounds[2]+bounds[3])/2,bounds[1]-bounds[0],3,bounds[3]-bounds[2],'#adbcb0',group='04_Presentation')
 for w in ways:
     tags=w['tags']; pts=w['points']
@@ -164,6 +164,7 @@ for w in ways:
 
 exec((ROOT / 'scripts' / 'photo_architecture.py').read_text(encoding='utf-8'))
 exec((ROOT / 'scripts' / 'geumseonggwan_detail.py').read_text(encoding='utf-8'))
+exec((ROOT / 'scripts' / 'geumseonggwan_surroundings.py').read_text(encoding='utf-8'))
 hall_entry=None
 for w in ways:
     tags=w['tags']
@@ -171,6 +172,7 @@ for w in ways:
     pts=w['points'][:-1]; name=tags.get('name','건물')
     buildings.append({'osm_id':w['id'],'name':name,'footprint':pts,'height_source':'MVP estimate'})
     if w['id']=='832423358':
+        print('Building photo-referenced hall',flush=True)
         hall_entry=photo_hall(w)
         continue
     center=[sum(p[0] for p in pts)/len(pts),sum(p[1] for p in pts)/len(pts)]
@@ -208,21 +210,25 @@ for w in ways:
         segment('dancheong_beam',a,b,.5,.22,'#4b7967',False,height-.35)
     roof('roof_'+w['id'],pts,height)
 
+print('Building courtyard details',flush=True)
 detailed_grounds()
+print('Building entrance and neighboring blocks',flush=True)
+surroundings=build_surroundings()
+print('Writing collision data and Blender output',flush=True)
 # Spawn just outside the main hall. The rest of the real mapped area remains walkable.
 assert hall_entry is not None
 spawn_point=hall_detail_frame.point(hall_detail_info['center'],hall_detail_info['front']-28)
 spawn={'x':spawn_point[0],'z':spawn_point[1],'yaw':math.atan2(-hall_detail_frame.v[0],-hall_detail_frame.v[1])}
-world=dict(title='나주 산책',subtitle='금성관 · 수리 전 사진·영상 참고',source='© OpenStreetMap contributors, ODbL 1.0',bounds=bounds,spawn=spawn,solids=solids,signs=signs,places=places,buildings=buildings,origin={'lat':LAT,'lon':LON},architecture=hall_detail_info,limitations=['Only five building footprints are present in the source extract.','The 2009 AKS photos, 2020-02-18 official interior photos and public 2015 survey-plan thumbnails inform a pre-repair reference model; this is not a current-site scan.','OSM outlines are interpreted as roof coverage. Column grid, eave heights, joinery, painted motifs and landscape coordinates are photo-proportioned estimates, not measured dimensions. Published area figures differ.','The center door is opened for exploration. Gate upper-floor access and concealed room construction are not reconstructed.','Terrain is flat. Road centerlines are sourced; road widths are estimates.'],source_url='https://api.openstreetmap.org/api/0.6/map?bbox=126.7152,35.0318,126.7183,35.0341')
+world=dict(title='나주 산책',subtitle='금성관과 주변 거리 · 사진·영상 참고',source='© OpenStreetMap contributors, ODbL 1.0 · 주변 지붕 참고: Esri, Vantor, Earthstar Geographics, GIS User Community',bounds=bounds,spawn=spawn,solids=solids,signs=signs,places=places,buildings=buildings,origin={'lat':LAT,'lon':LON},architecture=hall_detail_info,surroundings=surroundings,limitations=['Five building outlines, roads, the precinct and parking boundary are from OSM; additional roof outlines are manually interpreted from Esri World Imagery, whose capture date is unknown.','The 2009 AKS photos, 2020-02-18 official interior photos and public 2015 survey-plan thumbnails inform a pre-repair reference model; this is not a current-site scan.','OSM outlines are interpreted as roof coverage. Column grid, eave heights, joinery, painted motifs and landscape coordinates are photo-proportioned estimates, not measured dimensions. Published area figures differ.','The center door is opened for exploration. Gate upper-floor access and concealed room construction are not reconstructed.','Terrain is flat. Road centerlines are sourced; road widths, surface finishes, furniture, parked cars and surrounding building heights/windows are estimates.'],source_url='https://api.openstreetmap.org/api/0.6/map?bbox=126.7152,35.0318,126.7183,35.0341')
 world['walkRoute']=[hall_detail_frame.point(hall_detail_info['center'],d) for d in (hall_detail_info['front']-28,-24.5,-11.1,hall_detail_info['front']-5.2,hall_detail_info['front'],hall_detail_info['front']+4.7)]
 (ROOT/'public'/'city-world.json').write_text(json.dumps(world,ensure_ascii=False,separators=(',',':')),encoding='utf-8')
-(ROOT/'knowledge'/'sources'/'model-provenance.json').write_text(json.dumps({k:world[k] for k in ('source','source_url','origin','buildings','architecture','limitations')},ensure_ascii=False,indent=2),encoding='utf-8')
+(ROOT/'knowledge'/'sources'/'model-provenance.json').write_text(json.dumps({k:world[k] for k in ('source','source_url','origin','buildings','architecture','surroundings','limitations')},ensure_ascii=False,indent=2),encoding='utf-8')
 
 # Keep a useful camera and light in the editable file, excluding both from GLB.
 bpy.ops.object.camera_add(location=(100,-150,135))
 camera=bpy.context.object; camera.name='Overview_camera'
 camera.rotation_euler=(Vector((0,15,0))-camera.location).to_track_quat('-Z','Y').to_euler()
-camera.data.type='ORTHO'; camera.data.ortho_scale=225; scene.camera=camera
+camera.data.type='ORTHO'; camera.data.ortho_scale=260; scene.camera=camera
 bpy.ops.object.light_add(type='SUN',location=(-70,-80,130))
 sun=bpy.context.object; sun.rotation_euler=(.6,-.4,-.4); sun.data.energy=2.3; sun.data.angle=.12
 scene.world=bpy.data.worlds.new('Naju_daylight'); scene.world.use_nodes=True
@@ -231,7 +237,7 @@ scene.world.node_tree.nodes['Background'].inputs[1].default_value=.65
 scene.render.engine='BLENDER_EEVEE_NEXT'
 scene.render.resolution_x=1400; scene.render.resolution_y=1000; scene.render.resolution_percentage=100
 scene.render.image_settings.file_format='PNG'
-scene.render.filepath=str(ROOT/'outputs'/'geumseonggwan-overview-detailed.png')
+scene.render.filepath=str(ROOT/'outputs'/'geumseonggwan-surroundings-overview.png')
 scene.view_settings.view_transform='AgX'
 
 # Only this generated scene is exported; existing user scene contents are untouched.
@@ -241,6 +247,10 @@ bpy.ops.export_scene.gltf(filepath=str(ROOT/'public'/'models'/'geumseonggwan.glb
 print(json.dumps({'blend':str(OUTPUT),'buildings':len(buildings),'objects':len(scene.objects),'spawn':spawn,'hall_entry':hall_entry},ensure_ascii=False))
 if '--render' in sys.argv:
     bpy.ops.render.render(write_still=True)
+if '--render-surroundings' in sys.argv:
+    camera.data.type='PERSP';camera.data.lens=27;camera.data.clip_start=.08
+    for name,eye,target in [('geumseonggwan-entrance-street',(3,3.0,-122),(25,3.5,-98)),('geumseonggwan-entrance-aerial',(40,50,-143),(27,0,-82)),('geumseonggwan-parking-street',(-24,6,-116),(-16,2,-39))]:
+        camera.location=hall_detail_frame.xyz(eye);camera.rotation_euler=(Vector(hall_detail_frame.xyz(target))-camera.location).to_track_quat('-Z','Y').to_euler();scene.render.filepath=str(ROOT/'outputs'/f'{name}.png');bpy.ops.render.render(write_still=True)
 if '--render-details' in sys.argv or '--render-front' in sys.argv:
     f=hall_detail_frame;c=hall_detail_info['center'];front=hall_detail_info['front']
     camera.data.type='PERSP';camera.data.lens=26;camera.data.clip_start=.08
