@@ -254,6 +254,48 @@ test('courtyard entry follows the west lane and returns past the planted beds',(
   }
 });
 
+test('museum boundary blocks crossing and map placement while the open entrance connects both ways',()=>{
+  const w=yeongsanWorlds.yeongsanpo,e=w.literatureGarden.enclosure;
+  const barriers=w.solids.filter(s=>s.name==='hall-wall_literature_boundary');
+  assert.equal(barriers.length,e.segments.length);
+  assert.equal(mapSolids(w).filter(s=>s.name==='hall-wall_literature_boundary').length,barriers.length);
+  for(const s of barriers){
+    const poly=solidCollider(s),p=poly.reduce((a,p)=>[a[0]+p[0]/poly.length,a[1]+p[1]/poly.length],[0,0]);
+    assert.equal(canTravelTo(p,w),false,'The map cannot jump into a fence');
+  }
+  const route=[...w.literatureGarden.approach,...w.literatureGarden.walkRoute.slice(1)];
+  walkRoute(w,[...route,...route.slice(0,-1).reverse()]);
+  const {center,angle}=w.literatureGarden;
+  const pt=(x,z)=>[center[0]+x*Math.cos(angle)-z*Math.sin(angle),center[1]+x*Math.sin(angle)+z*Math.cos(angle)];
+  const a=pt(-14,29),b=pt(-20,29);
+  const hit=moveOnFloors(...a,0,b[0]-a[0],b[1]-a[1],worldObstacles(w.solids),worldFloors(w.solids),w.bounds,true);
+  assert.ok(Math.hypot(hit.x-b[0],hit.z-b[1])>2,'Walking must stop at the timber boundary');
+});
+
+test('side return remains reachable without crossing the new annex or a column',()=>{
+  const w=yeongsanWorlds.yeongsanpo,route=w.literatureGarden.enclosure.sideRoute;
+  walkRoute(w,[...route,...route.slice(0,-1).reverse()]);
+  const arrival=sceneArrival(w,'?at=literature-side');assert.ok(arrival.entered&&canTravelTo([arrival.x,arrival.z],w));
+  const annex=w.solids.find(s=>s.name==='photo-building_literature_service_annex');
+  const p=solidCollider(annex).reduce((a,p)=>[a[0]+p[0]/4,a[1]+p[1]/4],[0,0]);
+  assert.equal(canTravelTo(p,w),false);
+  const deck=w.solids.find(s=>s.name==='exhibit-case_literature_wing_deck');
+  const deckCenter=solidCollider(deck).reduce((a,p)=>[a[0]+p[0]/4,a[1]+p[1]/4],[0,0]);
+  assert.ok(blocksWalking(...deckCenter,0,worldObstacles(w.solids)),'The solid low deck must not be walk-through');
+  assert.equal(canTravelTo(deckCenter,w),false);
+});
+
+test('exported museum gable and clerestory close the previously floating roof sides',()=>{
+  const w=yeongsanWorlds.yeongsanpo,{scene}=readModel(new URL('../public/models/yeongsanpo.glb',import.meta.url));
+  const {center,angle}=w.literatureGarden;
+  const point=([x,y,z])=>new THREE.Vector3(center[0]+x*Math.cos(angle)-z*Math.sin(angle),y,center[1]+x*Math.sin(angle)+z*Math.cos(angle));
+  const direction=([x,y,z])=>new THREE.Vector3(x*Math.cos(angle)-z*Math.sin(angle),y,x*Math.sin(angle)+z*Math.cos(angle));
+  const envelope=[];scene.traverse(o=>{if(/^literature_(sealed_upper_gable|closed_side_clerestory|clerestory_closed_wall)/.test(o.name))envelope.push(o);});
+  for(const [origin,dir] of [[[8,6,-.8],[1,0,0]],[[8,4.45,0],[1,0,0]],[[1,4.45,-5.8],[0,0,-1]]]){
+    assert.ok(new THREE.Raycaster(point(origin),direction(dir),.01,4).intersectObjects(envelope,true).length,`Unclosed roof side ${origin}`);
+  }
+});
+
 test('traced context walls preserve the observed footprints and are included on the map',()=>{
   const w=yeongsanWorlds.yeongsanpo;
   const refs=['literature-context-traces','literature-close-neighbours'].flatMap(id=>JSON.parse(fs.readFileSync(new URL('../knowledge/sources/'+id+'.json',import.meta.url),'utf8')).roofs).filter(r=>!r.reviewFlags?.length);

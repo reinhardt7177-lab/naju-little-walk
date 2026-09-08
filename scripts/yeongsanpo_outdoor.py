@@ -4,6 +4,7 @@ from pathlib import Path
 from yeongsanpo_geometry import Geometry,world_data,place
 from literature_courtyard import courtyard,paved_outline
 from literature_context import build_context
+from literature_boundary import add_boundary_detail
 from yeongsanpo_street_detail import wharf_detail,roof_form,facade_detail,streets,samhwa
 
 ROOT=Path(__file__).resolve().parents[1]
@@ -311,12 +312,15 @@ def outdoor(scene):
         building=Geometry(scene,center,angle);entry,out=exterior(building,kind)
         if kind=='literature':
             garden=courtyard(building)
+            boundary_detail=add_boundary_detail(building)
             garden_route=[building.point(*p) for p in garden['route']]
             lane=next(r for r in context_source['routes'] if r['id']=='museum_west_lane')
             path=[[190.31,90.22]]+[xy(p) for p in lane['coordinates'][:4]]+[garden_route[0]]
-            garden_data=dict(center=center,angle=angle,boundary=[building.point(*p) for p in garden['boundary']],approach=path,walkRoute=garden_route)
+            garden_data=dict(center=center,angle=angle,boundary=[building.point(*p) for p in garden['boundary']],approach=path,walkRoute=garden_route,enclosure=boundary_detail)
             arrival=building.point(*garden['gate']);arrivals['literature-garden']=dict(x=arrival[0],z=arrival[1],yaw=-angle)
             places.append(place('literature-garden','타오르는 강 문학관 마당',*arrival,5,'자갈 화단과 디딤길을 지나 문학관으로 들어가 보세요.',arrival=arrival))
+            side=building.point(10.05,3);arrivals['literature-side']=dict(x=side[0],z=side[1],yaw=math.pi/2-angle)
+            places.append(place('literature-side','문학관 측면 · 목재 울타리',*side,3,'격자창과 처마, 별채와 경계 울타리를 가까이 둘러보세요.',arrival=side))
         g.solids+=building.solids;g.signs+=building.signs
         p=building.point(*entry);q=building.point(*out)
         portals.append(dict(id=kind+'-entry',position=p,radius=.83,target='yeongsanpo-'+kind,arrival='entry',label=title+' · 문 안으로 걸어가면 실내가 열립니다.'))
