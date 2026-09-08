@@ -11,6 +11,7 @@ from yeongsanpo_interiors import history,literature
 from yeongsanpo_literature_detail import literature
 from yeongsanpo_gallery_detail import history
 from yeongsanpo_outdoor import outdoor
+from compact_glb import compact_glb
 
 for name,builder,views in [
     ('yeongsanpo',outdoor,[('overview',(410,380,480),(0,0,35)),('wharf',(-117,15,162),(-159,-2,117)),('lower-deck',(-149,-4.68,113),(-148,-2.5,129)),('gallery',(112,8,40),(92,2,8)),('literature',(238,11,148),(220,2,108))]),
@@ -36,6 +37,7 @@ for name,builder,views in [
         if o.hide_render and o.type=='MESH':bpy.data.objects.remove(o,do_unlink=True)
     model=ROOT/f'public/models/{name}.glb'
     bpy.ops.export_scene.gltf(filepath=str(model),export_format='GLB',use_active_scene=True,export_cameras=False,export_lights=False,export_extras=True,export_apply=True,export_animations=False)
+    if name=='yeongsanpo':print(compact_glb(model),flush=True)
     packed=gzip.compress(model.read_bytes(),compresslevel=9,mtime=0);compressed=model.with_suffix('.glb.gz')
     if not compressed.exists() or compressed.read_bytes()!=packed:
         staging=ROOT/'work'/f'{name}-compressed.tmp';staging.parent.mkdir(exist_ok=True)

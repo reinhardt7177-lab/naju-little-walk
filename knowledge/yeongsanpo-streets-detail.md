@@ -35,6 +35,8 @@
 
 ## 재생성·검증
 
+배포용 Git 저장소의 객체 한도는 32MiB다. `scripts/compact_glb.py`는 텍스처를 사용하지 않는 재질의 미사용 UV 좌표만 제거한다. 최종 GLB는 35,127,572바이트에서 27,733,240바이트로 줄었으며, 모든 정점·법선·삼각형·배치·재질·이미지 바이트가 원본과 같은지 비교했다. 모델의 형태나 사진 기반 디테일을 단순화하지 않는다. 편집용 `.blend`는 원래 좌표를 모두 보존한다.
+
 ```powershell
 & 'work/tools/blender-4.5.13-windows-x64/blender.exe' --background --factory-startup --python scripts/build_yeongsanpo.py -- --only yeongsanpo --output-blend outputs/yeongsanpo-streets.blend
 node --experimental-strip-types --test tests/world.test.mjs
