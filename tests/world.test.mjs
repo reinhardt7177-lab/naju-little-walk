@@ -233,6 +233,42 @@ test('traced context walls preserve the observed footprints and are included on 
   }
 });
 
+test('additional satellite roofs remain inside observed eaves and block walking',()=>{
+  const w=yeongsanWorlds.yeongsanpo;
+  const refs=JSON.parse(fs.readFileSync(new URL('../knowledge/sources/yeongsanpo-round2-roofs.json',import.meta.url),'utf8')).roofs.filter(r=>!r.reviewFlags?.length);
+  assert.equal(w.additionalSatelliteRoofs,refs.length);
+  const obstacles=worldObstacles(w.solids);
+  for(const roof of refs){
+    const wall=w.solids.find(s=>s.name==='photo-building_round2_'+roof.id);
+    assert.ok(wall?.collision&&mapSolids(w).includes(wall));
+    for(const p of wall.footprint)assert.ok(hitsPolygon(...p,roof.worldFootprint,0),roof.id+' wall outside traced eaves');
+    const p=wall.footprint[0],q=wall.footprint[1],mid=[(p[0]+q[0])/2,(p[1]+q[1])/2];
+    assert.ok(blocksWalking(...mid,0,obstacles),roof.id+' walk-through facade');
+  }
+});
+
+test('street paving exports visible surfaces at the collision floor elevation',()=>{
+  const w=yeongsanWorlds.yeongsanpo,{scene}=readModel(new URL('../public/models/yeongsanpo.glb',import.meta.url));
+  const paving=w.solids.filter(s=>s.name==='walk-floor_street_pavers');assert.ok(paving.length>100);
+  const meshes=[];scene.traverse(o=>{if(o.name.startsWith('walk-floor_street_pavers'))meshes.push(o);});
+  for(const s of paving.filter((_,i)=>i%29===0)){
+    const p=s.footprint.reduce((sum,p)=>[sum[0]+p[0]/4,sum[1]+p[1]/4],[0,0]);
+    const top=s.position[1]+s.size[1];
+    const hit=new THREE.Raycaster(new THREE.Vector3(p[0],1,p[1]),new THREE.Vector3(0,-1,0),.01,2).intersectObjects(meshes,true)[0];
+    assert.ok(hit&&Math.abs(hit.point.y-top)<.003,'Visual and navigable paving disagree');
+  }
+});
+
+test('satellite alley connections remain walkable past the added building walls',()=>{
+  const w=yeongsanWorlds.yeongsanpo;
+  assert.equal(w.additionalLanes.length,4);
+  for(const lane of w.additionalLanes)walkRoute(w,[...lane.points,...lane.points.slice(0,-1).reverse()]);
+  for(const name of ['west-lanes','jukjeon-alley']){
+    const a=sceneArrival(w,'?at='+name);assert.equal(a.entered,true);
+    assert.ok(canTravelTo([a.x,a.z],w),name+' arrival inside an obstacle');
+  }
+});
+
 test('the bend in the garden paving has a continuous visible outer corner',()=>{
   const w=yeongsanWorlds.yeongsanpo,{scene}=readModel(new URL('../public/models/yeongsanpo.glb',import.meta.url));
   const paths=[];scene.traverse(o=>{if(o.name.startsWith('path_literature_garden'))paths.push(o);});
