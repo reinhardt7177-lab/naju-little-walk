@@ -72,7 +72,7 @@ export default function Home() {
       const gltf = await new GLTFLoader().loadAsync(selected.modelUrl);
       if (disposed) { gltf.scene.traverse(disposeObject); return; }
       gltf.scene.traverse(o => { if (o instanceof THREE.Mesh) { o.castShadow = !o.name.startsWith('ground'); o.receiveShadow = true; } });
-      if (selectedId !== 'geumseonggwan') batchStaticScene(gltf.scene);
+      batchStaticScene(gltf.scene);
       const roofParts: THREE.Object3D[]=[];
       gltf.scene.traverse(o=>{if(o.userData.hide_in_overview)roofParts.push(o);});
       scene.add(gltf.scene);

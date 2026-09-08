@@ -2,6 +2,21 @@
 
 금성관 주변의 실제 OpenStreetMap 건물 윤곽과 도로 좌표를 **Blender 4.5 LTS**에서 입체로 제작하고, Blender에서 내보낸 GLB를 **Three.js**로 불러와 탐험합니다.
 
+## 금성관 사진·영상 상세본
+
+2009년 공식 정면 사진, **2020-02-18 촬영된 국가유산포털 내부 원본**, 나주시·광주MBC 영상의 실제 확인 프레임, 2015년 공개 실측도 썸네일을 대조했습니다. 다섯 칸의 서로 다른 폭과 개별 격자문·고창, 세 팔작지붕의 합각·겹처마·기와, **8개 내진 고주와 우물마루·단청 천장**, 월대·계단, 2층 망화루와 중삼문, 잔디·내삼문터·담장·비석군·우물을 보완했습니다.
+
+- 최신 편집본: `outputs/geumseonggwan-detailed.blend` (최초 `outputs/geumseonggwan.blend` 보존)
+- 제작: `scripts/build_city.py`, `scripts/geumseonggwan_detail.py`
+- 사진·영상 시각·추정 치수: `knowledge/sources/GEUMSEONGGWAN_PHOTO_VIDEO.md`
+- 렌더: `outputs/geumseonggwan-front-detailed.png`, `outputs/geumseonggwan-interior-detailed.png`, `outputs/geumseonggwan-ceiling-detailed.png`
+
+**수리 전 모습의 참고 모델**입니다. 원본 실측도의 치수를 확보하지 못해 기둥 간격·높이·단청 그림·경내시설 좌표는 추정입니다. 중앙 문은 탐험을 위해 열어 두었고, 망화루 상층 계단과 숨겨진 방 내부는 미재현입니다. 사진·영상 원본은 사이트에 배포하지 않습니다.
+
+```powershell
+& '.\work\tools\blender-4.5.13-windows-x64\blender.exe' --background --python scripts/build_city.py -- --output-blend outputs/geumseonggwan-detailed.blend --render --render-details
+```
+
 ## 복암리 고분군과 지도 이동
 
 **복암리고분전시관 내부도 추가했습니다.** 지도에서 전시관을 선택하면 황토색 3호분 절개 모형, 보고서에서 위치를 추적한 41개 매장시설, 유리 난간 관람교량, 토기 진열장, 38석 영상실, 체험 공간과 2층 북카페를 둘러볼 수 있습니다. 계단을 실제로 올라가며 같은 위치의 아래층·위층을 구분합니다.
@@ -80,10 +95,10 @@ node --experimental-strip-types --test tests/world.test.mjs
 
 - 금성관 주변 약 283 × 256m 구역
 - 지도에 등록된 건물 5채: 금성관, 외삼문, 중삼문, 나주곰탕 하얀집, 나주목문화관(원본 지도 이름: 나주시목문화관)
-- 금성관 앞마당에서 출발, 출입구 통과, 가상 실내 전시 탐험
+- 금성관 앞마당에서 출발, 출입구 통과, 사진 참고 정청 마루·천장 탐험
 - 벽 충돌, 지도 경계, 전체 조망, 위치 지도, 터치 이동
 
-건물 윤곽과 도로 중심선은 실제 좌표입니다. 금성관의 지붕·창호·기둥·마루·박석길은 국가유산청과 한국학중앙연구원의 공식 사진을 참고했습니다. 높이·세부 치수·수목 위치·도로 폭·실내는 추정입니다. 지형은 평면이며 주변 미등록 건물은 표시하지 않습니다. 항공사진이나 실측 3D 복원물이 아닙니다. 참고 범위는 `knowledge/sources/PHOTO_REFERENCES.md`에 기록했습니다.
+지도 건물 윤곽과 도로 중심선은 실제 좌표입니다. 상세본의 지붕·창호·기둥·마루·박석길은 공식 사진과 영상 및 공개 도면의 비례를 참고했습니다. 높이·세부 치수·수목 위치·도로 폭은 추정입니다. 지형은 평면이며 주변 미등록 건물은 표시하지 않습니다. 실측 3D 복원물이 아닙니다. 최신 참고 범위는 `knowledge/sources/GEUMSEONGGWAN_PHOTO_VIDEO.md`에 기록했습니다.
 
 ## 조작
 

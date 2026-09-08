@@ -1,11 +1,11 @@
 export const destinations = {
   geumseonggwan: {
     coordinates: { lat: 35.0327357, lon: 126.7167886 },
-    name: '금성관', area: '금성관 주변', worldUrl: '/city-world.json', modelUrl: '/models/geumseonggwan.glb',
+    name: '금성관', area: '금성관 주변', worldUrl: '/city-world.json?v=photo-video-2', modelUrl: '/models/geumseonggwan.glb?v=photo-video-2',
     heading: ['골목 안으로,', '나주 한 걸음.'],
-    introduction: ['지도 위의 건물과 길을 입체로 옮겼어요.', '마당을 지나 금성관 안까지 걸어가 보세요.'],
+    introduction: ['망화루와 박석길을 따라 금성관을 둘러보세요.', '정청 안에서는 우물마루와 단청 천장을 만나보세요.'],
     sourceUrl: 'https://encykorea.aks.ac.kr/Article/E0011462', sourceLabel: '금성관 사진 참고',
-    limitation: '높이·실내는 추정한 체험 모형',
+    limitation: '수리 전 사진·영상·도면 참고 · 세부 치수 추정',
     overview: { center: [0, -12], radius: 165, elevation: .62, angle: .25 },
   },
   dasi: {

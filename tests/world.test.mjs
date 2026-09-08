@@ -249,12 +249,32 @@ test('mapped city has the five source buildings and an unblocked spawn', () => {
 
 test('walk from spawn through the actual hall doorway, reach interior, and return', () => {
   let p = { x: world.spawn.x, z: world.spawn.z };
-  for (let i = 0; i < 150; i++) p = movePlayer(p.x, p.z, 0, -.2, colliders, world.bounds);
+  for(const [x,z] of world.walkRoute.slice(1)){
+    p=movePlayer(p.x,p.z,x-p.x,z-p.z,colliders,world.bounds);
+    assert.ok(Math.hypot(p.x-x,p.z-z)<.04,`Blocked hall approach ${x},${z}: ${JSON.stringify(p)}`);
+  }
   const interior = world.places.find(p => p.id === 'interior');
   assert.ok(Math.hypot(p.x-interior.position[0],p.z-interior.position[1]) < interior.radius);
   assert.ok(p.z < world.spawn.z - 28);
-  for (let i = 0; i < 150; i++) p = movePlayer(p.x, p.z, 0, .2, colliders, world.bounds);
+  for(const [x,z] of world.walkRoute.slice(0,-1).reverse())p=movePlayer(p.x,p.z,x-p.x,z-p.z,colliders,world.bounds);
   assert.ok(Math.abs(p.z-world.spawn.z) < .01);
+});
+
+test('both mapped historic gates retain a clear passage into the hall courtyard',()=>{
+  const route=[];
+  for(const id of ['832423356','832423357']){
+    const fp=world.buildings.find(b=>b.osm_id===id).footprint;
+    const a=fp[1],b=fp[2],length=Math.hypot(b[0]-a[0],b[1]-a[1]);
+    const inward=[(b[1]-a[1])/length,-(b[0]-a[0])/length];
+    const center=world.places.find(p=>p.id===id).position;const d=Math.hypot(fp[0][0]-a[0],fp[0][1]-a[1])/2+2;
+    route.push([center[0]-inward[0]*d,center[1]-inward[1]*d],center,[center[0]+inward[0]*d,center[1]+inward[1]*d]);
+  }
+  route.push(...world.walkRoute);
+  let p={x:route[0][0],z:route[0][1]};
+  for(const [x,z] of route.slice(1)){
+    p=movePlayer(p.x,p.z,x-p.x,z-p.z,colliders,world.bounds);
+    assert.ok(Math.hypot(p.x-x,p.z-z)<.04,`Blocked gate route: ${JSON.stringify(p)}`);
+  }
 });
 
 test('high-speed movement cannot tunnel through a thin wall', () => {
@@ -280,7 +300,10 @@ test('Blender GLB is complete, self-contained, and contains the hall', () => {
   const gltf=JSON.parse(buffer.toString('utf8',20,20+jsonLength));
   assert.match(gltf.asset.generator,/Blender/);
   assert.ok(gltf.nodes.some(n => n.name === 'roof_832423358'));
-  assert.ok(gltf.nodes.some(n => n.name === 'interior_panel'));
+  for(const name of ['hall_coffer_panel','hall_inner_tall_column','hall_door_front_2_0_paper','manghwaru_upper_floor','old_well_rubble','memorial_stele_body'])assert.ok(gltf.nodes.some(n=>n.name===name),name);
+  assert.equal(gltf.nodes.filter(n=>/^hall_inner_tall_column(?:\.\d+)?$/.test(n.name)).length,8,'The public plan shows eight inner tall columns');
+  assert.ok(world.signs.some(s=>s.text==='樓 華 望'),'Manghwaru plaque must use the correct Hanja');
+  assert.equal(gltf.nodes.some(n=>n.name==='interior_panel'),false,'The fictional gallery must not remain in the photographed open hall');
   assert.ok(gltf.buffers.every(b => !b.uri));
   assert.ok(!gltf.images?.some(i => i.uri));
 });
@@ -292,7 +315,10 @@ test('stone stairs and elevated hall floors raise the walking eye level', () => 
   assert.equal(floorHeight(world.spawn.x,world.spawn.z,floors),0);
   const steps=world.solids.filter(s => s.name.startsWith('walk-floor_step'));
   assert.equal(steps.length,5);
-  for(const step of steps) assert.ok(floorHeight(step.position[0],step.position[2],floors) >= step.size[1]-.001);
+  for(const step of steps){
+    const polygon=solidCollider(step);const x=polygon.reduce((sum,p)=>sum+p[0],0)/polygon.length,z=polygon.reduce((sum,p)=>sum+p[1],0)/polygon.length;
+    assert.ok(floorHeight(x,z,floors)>=step.size[1]-.001);
+  }
 });
 
 const school = JSON.parse(fs.readFileSync(new URL('../public/dasi-world.json', import.meta.url), 'utf8'));

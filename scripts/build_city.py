@@ -13,6 +13,8 @@ from mathutils import Vector
 
 ROOT = Path(__file__).resolve().parents[1]
 OUTPUT = ROOT / 'outputs' / 'geumseonggwan.blend'
+if '--output-blend' in sys.argv:
+    OUTPUT=ROOT/Path(sys.argv[sys.argv.index('--output-blend')+1])
 if OUTPUT.exists() and '--replace' not in sys.argv:
     raise RuntimeError('Output exists. Use -- --replace to rebuild the generated deliverable.')
 OUTPUT.parent.mkdir(exist_ok=True)
@@ -161,6 +163,7 @@ for w in ways:
             segment('road_'+w['id']+'_'+str(i),a,b,width,.052,'#7d8c89',group='01_Actual_Map')
 
 exec((ROOT / 'scripts' / 'photo_architecture.py').read_text(encoding='utf-8'))
+exec((ROOT / 'scripts' / 'geumseonggwan_detail.py').read_text(encoding='utf-8'))
 hall_entry=None
 for w in ways:
     tags=w['tags']
@@ -172,6 +175,9 @@ for w in ways:
         continue
     center=[sum(p[0] for p in pts)/len(pts),sum(p[1] for p in pts)/len(pts)]
     special=w['id'] in ('832423356','832423357')
+    if special:
+        photo_gate(w)
+        continue
     height=3.5
     if not special:
         polygon('osm-building_'+w['id'],pts,height,'#d8d0b8',True)
@@ -202,12 +208,15 @@ for w in ways:
         segment('dancheong_beam',a,b,.5,.22,'#4b7967',False,height-.35)
     roof('roof_'+w['id'],pts,height)
 
+detailed_grounds()
 # Spawn just outside the main hall. The rest of the real mapped area remains walkable.
 assert hall_entry is not None
-spawn={'x':hall_entry[0],'z':hall_entry[1]+24,'yaw':0}
-world=dict(title='나주 산책',subtitle='금성관 주변 · 실제 지도 기반',source='© OpenStreetMap contributors, ODbL 1.0',bounds=bounds,spawn=spawn,solids=solids,signs=signs,places=places,buildings=buildings,origin={'lat':LAT,'lon':LON},limitations=['Only five building footprints are present in the source extract.','Terrain is flat. Heights, roof forms, materials and interior are illustrative.','Road centerlines are sourced; road widths are estimates.'],source_url='https://api.openstreetmap.org/api/0.6/map?bbox=126.7152,35.0318,126.7183,35.0341')
+spawn_point=hall_detail_frame.point(hall_detail_info['center'],hall_detail_info['front']-28)
+spawn={'x':spawn_point[0],'z':spawn_point[1],'yaw':math.atan2(-hall_detail_frame.v[0],-hall_detail_frame.v[1])}
+world=dict(title='나주 산책',subtitle='금성관 · 수리 전 사진·영상 참고',source='© OpenStreetMap contributors, ODbL 1.0',bounds=bounds,spawn=spawn,solids=solids,signs=signs,places=places,buildings=buildings,origin={'lat':LAT,'lon':LON},architecture=hall_detail_info,limitations=['Only five building footprints are present in the source extract.','The 2009 AKS photos, 2020-02-18 official interior photos and public 2015 survey-plan thumbnails inform a pre-repair reference model; this is not a current-site scan.','OSM outlines are interpreted as roof coverage. Column grid, eave heights, joinery, painted motifs and landscape coordinates are photo-proportioned estimates, not measured dimensions. Published area figures differ.','The center door is opened for exploration. Gate upper-floor access and concealed room construction are not reconstructed.','Terrain is flat. Road centerlines are sourced; road widths are estimates.'],source_url='https://api.openstreetmap.org/api/0.6/map?bbox=126.7152,35.0318,126.7183,35.0341')
+world['walkRoute']=[hall_detail_frame.point(hall_detail_info['center'],d) for d in (hall_detail_info['front']-28,-24.5,-11.1,hall_detail_info['front']-5.2,hall_detail_info['front'],hall_detail_info['front']+4.7)]
 (ROOT/'public'/'city-world.json').write_text(json.dumps(world,ensure_ascii=False,separators=(',',':')),encoding='utf-8')
-(ROOT/'knowledge'/'sources'/'model-provenance.json').write_text(json.dumps({k:world[k] for k in ('source','source_url','origin','buildings','limitations')},ensure_ascii=False,indent=2),encoding='utf-8')
+(ROOT/'knowledge'/'sources'/'model-provenance.json').write_text(json.dumps({k:world[k] for k in ('source','source_url','origin','buildings','architecture','limitations')},ensure_ascii=False,indent=2),encoding='utf-8')
 
 # Keep a useful camera and light in the editable file, excluding both from GLB.
 bpy.ops.object.camera_add(location=(100,-150,135))
@@ -222,7 +231,7 @@ scene.world.node_tree.nodes['Background'].inputs[1].default_value=.65
 scene.render.engine='BLENDER_EEVEE_NEXT'
 scene.render.resolution_x=1400; scene.render.resolution_y=1000; scene.render.resolution_percentage=100
 scene.render.image_settings.file_format='PNG'
-scene.render.filepath=str(ROOT/'outputs'/'city-overview.png')
+scene.render.filepath=str(ROOT/'outputs'/'geumseonggwan-overview-detailed.png')
 scene.view_settings.view_transform='AgX'
 
 # Only this generated scene is exported; existing user scene contents are untouched.
@@ -232,3 +241,9 @@ bpy.ops.export_scene.gltf(filepath=str(ROOT/'public'/'models'/'geumseonggwan.glb
 print(json.dumps({'blend':str(OUTPUT),'buildings':len(buildings),'objects':len(scene.objects),'spawn':spawn,'hall_entry':hall_entry},ensure_ascii=False))
 if '--render' in sys.argv:
     bpy.ops.render.render(write_still=True)
+if '--render-details' in sys.argv or '--render-front' in sys.argv:
+    f=hall_detail_frame;c=hall_detail_info['center'];front=hall_detail_info['front']
+    camera.data.type='PERSP';camera.data.lens=26;camera.data.clip_start=.08
+    for name,eye,target in [('geumseonggwan-front-detailed',(c,7,-37),(c,4,8)),('geumseonggwan-interior-detailed',(c,2.65,front+3.5),(c,5.8,front+13)),('geumseonggwan-ceiling-detailed',(c,2.5,10),(c+.1,7.7,10.2)),('geumseonggwan-manghwaru-detailed',(22,5,-126),(22,4,-98)),('geumseonggwan-side-detailed',(73,7,-10),(36,4,9))]:
+        if '--render-front' in sys.argv and '--render-details' not in sys.argv and name!='geumseonggwan-front-detailed':continue
+        camera.location=f.xyz(eye);camera.rotation_euler=(Vector(f.xyz(target))-camera.location).to_track_quat('-Z','Y').to_euler();scene.render.filepath=str(ROOT/'outputs'/f'{name}.png');bpy.ops.render.render(write_still=True)

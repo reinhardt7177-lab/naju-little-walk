@@ -158,9 +158,34 @@
       "height_source": "MVP estimate"
     }
   ],
+  "architecture": {
+    "center": 25.984280181308065,
+    "front": 2.5,
+    "back": 18.95,
+    "lo": 16.234280181308065,
+    "hi": 35.734280181308065,
+    "columnGrid": [
+      19.5,
+      16.45
+    ],
+    "roofOutline": [
+      24.242870595339838,
+      21.48
+    ],
+    "columns": [
+      16.234280181308065,
+      19.256780181308066,
+      23.741780181308066,
+      28.226780181308065,
+      32.711780181308065,
+      35.734280181308065
+    ]
+  },
   "limitations": [
     "Only five building footprints are present in the source extract.",
-    "Terrain is flat. Heights, roof forms, materials and interior are illustrative.",
-    "Road centerlines are sourced; road widths are estimates."
+    "The 2009 AKS photos, 2020-02-18 official interior photos and public 2015 survey-plan thumbnails inform a pre-repair reference model; this is not a current-site scan.",
+    "OSM outlines are interpreted as roof coverage. Column grid, eave heights, joinery, painted motifs and landscape coordinates are photo-proportioned estimates, not measured dimensions. Published area figures differ.",
+    "The center door is opened for exploration. Gate upper-floor access and concealed room construction are not reconstructed.",
+    "Terrain is flat. Road centerlines are sourced; road widths are estimates."
   ]
 }
