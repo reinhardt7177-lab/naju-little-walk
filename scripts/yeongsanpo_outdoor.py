@@ -2,8 +2,9 @@
 import json, math, random
 from pathlib import Path
 from yeongsanpo_geometry import Geometry,world_data,place
-from literature_courtyard import courtyard
+from literature_courtyard import courtyard,paved_outline
 from literature_context import build_context
+from yeongsanpo_street_detail import wharf_detail,roof_form,facade_detail,streets,samhwa
 
 ROOT=Path(__file__).resolve().parents[1]
 ORIGIN=[126.7105,35.0008]
@@ -108,6 +109,7 @@ def wharf(scene,g):
         dock.mesh('wharf_mural_boat',[(x-3,-4,-.285),(x+3,-4,-.285),(x+2,-4.65,-.285),(x-2,-4.65,-.285)],[(0,1,2,3)],'#715848')
         dock.box('wharf_mural_mast',x,-2.85,-.29,.07,2.3,.025,'#685943',record=False)
         dock.box('wharf_mural_sail',x-1,-2.7,-.295,1.7,1.8,.025,'#c4a267',record=False)
+    wharf_detail(dock)
     g.solids+=dock.solids;g.signs+=dock.signs
     return dock,route
 
@@ -222,12 +224,13 @@ def outdoor(scene):
                 for j in range(int(length/9)):
                     t=(j+.5)*9/length;c=[a[k]+(b[k]-a[k])*t for k in (0,1)];u=[(b[k]-a[k])/length for k in (0,1)]
                     g.segment('road_center_mark',[c[k]-u[k]*1.6 for k in (0,1)],[c[k]+u[k]*1.6 for k in (0,1)],.12,.006,'#ded5a9',base=.061,record=False)
+    street_details=streets(g,roads)
     gallery_center=xy([126.711504,35.000721])
     # Photo GPS lies near the northwest roof corner; align its centre to the
     # visible satellite roof instead of treating a camera point as a centroid.
     literature_center=[223.92,115.07]
     # OSM footprint shells provide the surrounding street's real structure.
-    count=0
+    count=0;samhwa_arrival=None
     for feature in data['features']:
         if not feature['properties'].get('building') or feature['geometry']['type']!='Polygon':continue
         pts=[xy(p) for p in feature['geometry']['coordinates'][0][:-1]]
@@ -236,6 +239,7 @@ def outdoor(scene):
         h=float(feature['properties'].get('building:levels',2))*3.1
         if h>20:h=9
         color=rng.choice(['#c7bda7','#c5c7ba','#b9bcae','#b6a88e'])
+        if feature['id']=='way/1000416564':h=7.3;color='#d8d9d0';samhwa_arrival=samhwa(g,pts)
         g.polygon('osm-building_'+feature['id'].replace('/','_'),pts,0,h,color,True);g.polygon('context_roof_'+str(count),pts,h,.16,rng.choice(['#6d8d91','#718779','#86857a']))
         count+=1
     # Photo-informed low-rise shop rhythm along the mapped Hong-eo street.
@@ -248,16 +252,25 @@ def outdoor(scene):
         h=roof['height'];traced.append(pts)
         g.polygon('photo-building_roof_trace_'+str(roof['id']),pts,0,h,roof['wallColor'],True)
         g.polygon('traced_roof_'+str(roof['id']),pts,h,.16,roof['roofColor'])
-        a,b=max(zip(pts,pts[1:]+pts[:1]),key=lambda e:math.dist(*e));length=math.dist(a,b)
-        area=sum(p[0]*q[1]-q[0]*p[1] for p,q in zip(pts,pts[1:]+pts[:1]))
-        face=Geometry(scene,[(a[0]+b[0])/2,(a[1]+b[1])/2],math.atan2(b[1]-a[1],b[0]-a[0])+(math.pi if area>0 else 0))
-        for y in (1.65,4.5):
-            if y+.75<h:
-                for i in range(max(1,int(length/4))):
-                    x=-length/2+(i+.5)*length/max(1,int(length/4));face.window('traced_context_window',x,y,.08,min(2.2,length*.7),1.3)
+        facade_detail(g,pts,h,roads,len(traced))
     context_source=json.loads((ROOT/'knowledge/sources/literature-context-traces.json').read_text(encoding='utf-8'))
     context_source['roofs']+=json.loads((ROOT/'knowledge/sources/literature-close-neighbours.json').read_text(encoding='utf-8'))['roofs']
     context_footprints=build_context(g,context_source,xy);traced.extend(context_footprints)
+    extra_roofs=json.loads((ROOT/'knowledge/sources/yeongsanpo-round2-roofs.json').read_text(encoding='utf-8'))
+    extra_footprints=[]
+    for i,roof in enumerate(extra_roofs['roofs']):
+        if roof.get('reviewFlags'):continue
+        pts=[xy(p) for p in roof['footprint']];pts=pts[:-1] if pts[0]==pts[-1] else pts
+        walls=roof_form(g,roof,pts);extra_footprints.append(walls)
+        facade_detail(g,walls,roof['height'],roads,100+i)
+    traced.extend(extra_footprints)
+    lane_source=json.loads((ROOT/'knowledge/sources/yeongsanpo-round2-lanes.json').read_text(encoding='utf-8'))
+    extra_lanes=[]
+    for lane in lane_source['lanes']:
+        if lane.get('reviewFlags'):continue
+        points=[xy(p) for p in lane['coordinates']]
+        g.polygon('walk-floor_'+lane['id'],paved_outline(points,lane['width']),.014,.033,'#a9aa98')
+        extra_lanes.append(dict(id=lane['id'],points=points,width=lane['width']))
     street=next(r for r in roads if r['id']=='way/130634137');shopcount=0
     for a,b in zip(street['points'],street['points'][1:]):
         length=math.dist(a,b);u=[(b[k]-a[k])/length for k in (0,1)];normal=[-u[1],u[0]]
@@ -271,14 +284,29 @@ def outdoor(scene):
                 if any(any(in_poly(p,pts) for p in corners+[center]) or any(in_poly(p,corners) for p in pts) for pts in traced):continue
                 shop=Geometry(scene,center,math.atan2(u[1],u[0])+(math.pi if side==1 else 0))
                 h=4.2+(shopcount%3)*1.5;shop.box('photo-building_hongeo_shop_'+str(shopcount),0,h/2,0,9.4,h,8.5,rng.choice(['#d6c6ad','#cdc8b2','#c1b6a4']),True)
+                shop.box('hongeo_recessed_storefront',0,1.5,4.26,8.4,2.45,.018,'#334a48',record=False)
                 shop.window('hongeo_shopfront',0,1.5,4.3,8.4,2.45)
+                for x in (-2.8,-1.4,1.4,2.8):shop.box('hongeo_sliding_mullion',x,1.5,4.34,.042,2.43,.06,'#9ca9a4',record=False)
+                for x in (-.35,.35):shop.tube('hongeo_door_pull',(x,1.15,4.41),(x,1.55,4.41),.021,'#c0c7bc',n=7)
+                for x in (-4.5,4.5):shop.tube('hongeo_downpipe',(x,.08,4.36),(x,h-.1,4.36),.049,'#778881',n=8)
+                shop.box('hongeo_storefront_plinth',0,.13,4.33,9.3,.25,.15,'#898d82',record=False)
+                shop.box('hongeo_air_conditioner',3.8,2.38,4.61,.75,.5,.5,'#c7cdc2',record=False)
+                for i in range(6):shop.box('hongeo_compressor_grille',3.5+i*.12,2.38,4.87,.024,.34,.02,'#71847b',record=False)
                 shop.box('hongeo_signboard',0,3.18,4.4,9.3,.75,.12,rng.choice(['#6a7352','#91664c','#44625a','#93694d']),record=False)
                 shop.label(['홍어 · 삼합','영산포 홍어','홍어 이야기','남도 밥상'][shopcount%4],0,3.18,4.49,8.3,.47,color='#fff1da')
                 for x in (-3,0,3):shop.box('shop_awning',x,2.8,4.9,2.8,.1,1.1,'#a49776',record=False)
                 shop.roof('shop_blue_roof',0,h+.15,0,10,9,1.1,['#668590','#768d82','#8c8980'][shopcount%3],tiles=False)
-                if h>5:shop.window('shop_upper_window',0,h-1.05,4.3,6.7,1.2)
+                if h>5:
+                    shop.box('hongeo_upper_recess',0,h-1.05,4.26,6.7,1.2,.018,'#627976',record=False)
+                    shop.window('shop_upper_window',0,h-1.05,4.3,6.7,1.2)
                 g.solids+=shop.solids;g.signs+=shop.signs;shopcount+=1
     portals=[];arrivals={};places=[];garden_data=None
+    if samhwa_arrival:
+        arrivals['jukjeon-alley']=dict(x=samhwa_arrival[0],z=samhwa_arrival[1],yaw=-1.3)
+        places.append(place('jukjeon-alley','죽전골목 · 삼화홍어 외관',*samhwa_arrival,5,'작은 등대 장식과 적벽돌 모서리가 있는 골목 입구입니다.'))
+    lane_arrival=extra_lanes[0]['points'][1]
+    arrivals['west-lanes']=dict(x=lane_arrival[0],z=lane_arrival[1],yaw=math.pi)
+    places.append(place('west-lanes','등대길 뒤편 골목',*lane_arrival,5,'위성사진에서 이어지는 지붕과 골목을 따라 걸어보세요.'))
     for kind,center,angle,title in [('history',gallery_center,-.67,'영산포 역사갤러리'),('literature',literature_center,.15,'타오르는 강 문학관')]:
         building=Geometry(scene,center,angle);entry,out=exterior(building,kind)
         if kind=='literature':
@@ -322,8 +350,10 @@ def outdoor(scene):
         g.tube('street_lamp_pole',(x-3,0,z),(x-3,6,z),.055,'#69726c');g.box('street_lamp_head',x-2.5,6,z,1,.12,.35,'#d6d0ae',record=False)
     for i in range(12):
         x=-280+i*12;z=230+i%3*5
+        # Earlier estimated parking must yield to newly traced real alleys.
+        if any(line_distance((x,z),a,b)<lane['width']/2+3 for lane in extra_lanes for a,b in zip(lane['points'],lane['points'][1:])):continue
         g.box('parked_vehicle',x,.65,z,2.1,1.3,4.4,['#deded3','#949f9b','#5e747d'][i%3],True)
         g.box('vehicle_window',x,1.32,z,1.83,.65,2.2,'#698488',record=False)
     for obj in scene.objects:
         if 'hide_in_overview' in obj:del obj['hide_in_overview']
-    return g,world_data(g,'영산포 · 황포돛배 · 홍어거리',bounds,dict(x=-143,z=138.27,yaw=0),places,origin=dict(lon=ORIGIN[0],lat=ORIGIN[1]),verticalNavigation=True,requireFloor=True,portals=portals,arrivals=arrivals,roads=roads,boats=boats,literatureGarden=garden_data,southContextRoofs=len(context_footprints),navigationWater=dict(polygons=channel,obstacles=water_obstacles),mappedBuildings=count,tracedRoofs=len(traced),photoInformedShops=shopcount,dockHeight=level,dockStairRoute=stair_route,limitations=['Mapped road and river coordinates are OSM. Building heights and unrecorded shop facades are estimated, not individually surveyed storefronts.','Courtyard planting/paving follows JNFC photos; the southwest parcel and added context roofs are aligned to satellite imagery of unknown capture date. Dimensions, materials and building heights remain estimates.','Lighthouse height 8.65m follows archive data. Wharf level -6.4m, stairs, mooring placement and seasonal water level are estimated from photographs.','Wanggeonho length 29.9m and beam 9.9m follow construction reports. Najuho dimensions and both interior layouts are photo-proportioned estimates.','Museum exteriors use official map/photo positions; interiors are separate authored spaces linked at the doors.','Source imagery, original museum films and long copyrighted panels are not redistributed.'])
+    return g,world_data(g,'영산포 · 황포돛배 · 홍어거리',bounds,dict(x=-143,z=138.27,yaw=0),places,origin=dict(lon=ORIGIN[0],lat=ORIGIN[1]),verticalNavigation=True,requireFloor=True,portals=portals,arrivals=arrivals,roads=roads,boats=boats,literatureGarden=garden_data,southContextRoofs=len(context_footprints),additionalSatelliteRoofs=len(extra_footprints),streetDetails=street_details,additionalLanes=extra_lanes,detailRevision='streets-1',navigationWater=dict(polygons=channel,obstacles=water_obstacles),mappedBuildings=count,tracedRoofs=len(traced),photoInformedShops=shopcount,dockHeight=level,dockStairRoute=stair_route,limitations=['Mapped road and river coordinates are OSM. Building heights and unrecorded shop facades are estimated, not individually surveyed storefronts.','Courtyard planting/paving follows JNFC photos; the southwest parcel and added context roofs are aligned to satellite imagery of unknown capture date. Dimensions, materials and building heights remain estimates.','Lighthouse height 8.65m follows archive data. Wharf level -6.4m, stairs, mooring placement and seasonal water level are estimated from photographs.','Wanggeonho length 29.9m and beam 9.9m follow construction reports. Najuho dimensions and both interior layouts are photo-proportioned estimates.','Museum exteriors use official map/photo positions; interiors are separate authored spaces linked at the doors.','Source imagery, original museum films and long copyrighted panels are not redistributed.'])

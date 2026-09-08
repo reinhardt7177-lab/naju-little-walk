@@ -4,9 +4,11 @@
 
 ## 영산포 강변 · 홍어거리 · 두 전시관
 
+영산포 전체는 위성사진에서 누락 지붕 **30개**와 연결 골목 **4개**를 추가하고, 보도블록·배수로·차양·등대 받침·난간을 보강했습니다. 사진의 204 건물번호와 OSM 윤곽을 연결한 **삼화홍어·죽전골목 입구** 외관도 반영했습니다. 최신 외부 편집본은 `outputs/yeongsanpo-streets.blend`입니다. [자료·추정 범위·재생성 기록](knowledge/yeongsanpo-streets-detail.md)을 확인하세요.
+
 문학관 실내도 사진에 맞춰 곡선 대들보, 높은 창, X자 좌식의자, 낮은 원목 탁자, 다다미, 흰 칸서가와 1층 책장을 보완했습니다. `/?place=yeongsanpo-literature&at=reading`에서 2층부터 걸을 수 있습니다. 최신 실내 편집본은 `outputs/yeongsanpo-literature-interior.blend`이며 [확인한 사진과 추정 범위](knowledge/literature-interior-detail.md)를 기록했습니다.
 
-문학관 마당은 공식 사진의 흰 자갈 화단·검은 경계석·자연석·디딤길·나무 지지대·화분·조명을 반영했습니다. 위성에서 관찰한 **주변 지붕 35개**와 주차장·골목을 추가했으며, `/?place=yeongsanpo&at=literature-garden`에서 마당부터 걸을 수 있습니다. 최신 외부 편집본은 `outputs/yeongsanpo-courtyard.blend`입니다. [마당 출처·추정 범위·재생성](knowledge/literature-courtyard.md)을 확인하세요.
+문학관 마당은 공식 사진의 흰 자갈 화단·검은 경계석·자연석·디딤길·나무 지지대·화분·조명을 반영했습니다. 위성에서 관찰한 **주변 지붕 35개**와 주차장·골목을 추가했으며, `/?place=yeongsanpo&at=literature-garden`에서 마당부터 걸을 수 있습니다. 마당 보강 당시 편집본은 `outputs/yeongsanpo-courtyard.blend`로 보존합니다. [마당 출처·추정 범위·재생성](knowledge/literature-courtyard.md)을 확인하세요.
 
 황포돛배 **나주호·왕건호**에 각각 승선해 갑판과 객실을 걸어보고 직접 조종할 수 있습니다. 배 이름의 선착장 버튼 → **승선 / F** → **운전석으로 / F** 순서로 시작하세요. 조종은 **W/S 전진·후진, A/D 방향, Space 제동**이며, `갑판 둘러보기`와 `선착장으로 복귀`를 제공합니다. 정박한 뒤 내릴 수 있습니다.
 
