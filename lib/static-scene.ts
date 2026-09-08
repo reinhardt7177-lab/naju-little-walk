@@ -12,7 +12,7 @@ export function batchStaticScene(root: THREE.Object3D): { before: number; after:
     before++;
     if (object instanceof THREE.SkinnedMesh || object instanceof THREE.InstancedMesh || Array.isArray(object.material) || object.material.transparent || object.morphTargetInfluences?.length) return;
     const attributes=(Object.entries(object.geometry.attributes) as [string,THREE.BufferAttribute | THREE.InterleavedBufferAttribute][]).map(([name,a])=>`${name}:${a.itemSize}:${a.normalized}:${(a instanceof THREE.BufferAttribute ? a.array : a.data.array).constructor.name}`).sort().join('|');
-    const key=`${object.material.uuid}:${object.castShadow}:${object.receiveShadow}:${!!object.geometry.index}:${attributes}`;
+    const key=`${object.material.uuid}:${object.castShadow}:${object.receiveShadow}:${!!object.geometry.index}:${!!object.userData.hide_in_overview}:${attributes}`;
     const group=groups.get(key) ?? [];
     group.push(object); groups.set(key,group);
   });
@@ -27,6 +27,7 @@ export function batchStaticScene(root: THREE.Object3D): { before: number; after:
     merged.computeBoundingSphere();
     const batch=new THREE.Mesh(merged,meshes[0].material);
     batch.name='static_detail_batch';
+    batch.userData.hide_in_overview=!!meshes[0].userData.hide_in_overview;
     batch.castShadow=meshes[0].castShadow; batch.receiveShadow=meshes[0].receiveShadow;
     for(const mesh of meshes) { mesh.removeFromParent(); retired.add(mesh.geometry); }
     root.add(batch); after-=meshes.length-1;

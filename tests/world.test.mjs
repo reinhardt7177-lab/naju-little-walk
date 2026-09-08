@@ -1,10 +1,149 @@
 import test from 'node:test';
 import assert from 'node:assert/strict';
 import fs from 'node:fs';
-import { hitsPolygon, movePlayer, solidCollider, worldFloors, floorHeight, currentPlace } from '../lib/world.ts';
+import { hitsPolygon, movePlayer, moveOnFloors, reachableFloor, blocksWalking, worldObstacles, solidCollider, worldFloors, floorHeight, currentPlace } from '../lib/world.ts';
 import { destinationFromSearch, destinations } from '../lib/destinations.ts';
 import * as THREE from 'three';
 import { batchStaticScene } from '../lib/static-scene.ts';
+import { canTravelTo, mapArrival, regionalPoint, regionalSize } from '../lib/map-navigation.ts';
+
+const bogam=JSON.parse(fs.readFileSync(new URL('../public/bogam-world.json',import.meta.url),'utf8'));
+const bogamColliders=bogam.solids.filter(s=>s.collision).map(solidCollider);
+const museum=JSON.parse(fs.readFileSync(new URL('../public/bogam-museum-world.json',import.meta.url),'utf8'));
+const museumFloors=worldFloors(museum.solids), museumObstacles=worldObstacles(museum.solids);
+
+test('museum lower lobby does not snap to the cafe above, and the stairs reach the full bridge circuit',()=>{
+  let p={x:museum.spawn.x,z:museum.spawn.z,height:.12};
+  assert.equal(reachableFloor(p.x,p.z,0,museumFloors),.12);
+  assert.ok(floorHeight(p.x,p.z,museumFloors)>3,'This spot actually has an upper cafe floor');
+  for(const [x,z] of museum.walkRoute.slice(1)){
+    p=moveOnFloors(p.x,p.z,p.height,x-p.x,z-p.z,museumObstacles,museumFloors,museum.bounds);
+    assert.ok(Math.hypot(p.x-x,p.z-z)<.05,`Blocked museum route ${x},${z}: ${JSON.stringify(p)}`);
+  }
+  assert.ok(Math.abs(p.height-museum.bridgeHeight)<.001,'Stairs must physically raise the visitor to the bridge');
+  for(const [x,z] of museum.walkRoute.slice(0,-1).reverse()){
+    p=moveOnFloors(p.x,p.z,p.height,x-p.x,z-p.z,museumObstacles,museumFloors,museum.bounds);
+    assert.ok(Math.hypot(p.x-x,p.z-z)<.05,`Blocked return from museum bridge ${x},${z}: ${JSON.stringify(p)}`);
+  }
+  assert.ok(Math.abs(p.height-.12)<.001);
+});
+
+test('upper floors reject large drops and museum map jumps use the selected viewing level',()=>{
+  const bridge=museum.places.find(p=>p.id==='bridge');
+  const p=mapArrival(bridge,museum);
+  assert.ok(canTravelTo(p,museum,bridge.arrivalHeight));
+  assert.equal(canTravelTo(p,museum,0),false,'Ground inside the replica cannot be used as a shortcut');
+  assert.equal(blocksWalking(...p,bridge.arrivalHeight,museumObstacles),false);
+  const platform={polygon:[[-2,-2],[2,-2],[2,2],[-2,2]],height:3.5};
+  const stopped=moveOnFloors(0,0,3.5,8,0,[],[platform],[-20,20,-20,20]);
+  assert.ok(stopped.x<=2,'Upper-floor edge cannot cause an instant fall');
+});
+
+test('cafe staircase connects the lower lobby to the reading area and returns beneath the same floor',()=>{
+  const frame=JSON.parse(fs.readFileSync(new URL('../knowledge/sources/bogam-museum-hall-frame.json',import.meta.url),'utf8')).hallFrame;
+  const local=(x,z)=>[frame.center[0]+frame.u[0]*x+frame.v[0]*z,frame.center[1]+frame.u[1]*x+frame.v[1]*z];
+  const route=[[-16,52],[-24.2,52],[-30,56.35],[-34,56.35],...museum.stairs.cafe.map(p=>[p[0],p[1]]),[-34,48.3],[-31.5,48.3],[-15,47.5]].map(p=>local(...p));
+  let p={x:route[0][0],z:route[0][1],height:.12};
+  for(const [x,z] of route.slice(1)){
+    p=moveOnFloors(p.x,p.z,p.height,x-p.x,z-p.z,museumObstacles,museumFloors,museum.bounds);
+    assert.ok(Math.hypot(p.x-x,p.z-z)<.05,`Blocked cafe route ${x},${z}: ${JSON.stringify(p)}`);
+  }
+  assert.ok(Math.abs(p.height-museum.bridgeHeight)<.001);
+  assert.equal(currentPlace(p.x,p.z,museum.places,p.height)?.id,'cafe');
+  for(const [x,z] of route.slice(0,-1).reverse()){
+    p=moveOnFloors(p.x,p.z,p.height,x-p.x,z-p.z,museumObstacles,museumFloors,museum.bounds);
+    assert.ok(Math.hypot(p.x-x,p.z-z)<.05);
+  }
+  assert.ok(Math.abs(p.height-.12)<.001);
+});
+
+test('museum GLB includes the observed interior, 41 traced facilities, 22 jar burials and 38 theatre seats',()=>{
+  assert.equal(destinationFromSearch('?place=bogam-museum'),'bogam-museum');
+  assert.equal(museum.burials.length,41);
+  assert.equal(museum.burials.filter(b=>b.category==='jar_coffin').length,22);
+  assert.equal(museum.burials.filter(b=>b.category==='stone_burial').length,18);
+  const buffer=fs.readFileSync(new URL('../public/models/bogam-museum.glb',import.meta.url));
+  assert.equal(buffer.readUInt32LE(8),buffer.length);
+  const gltf=JSON.parse(buffer.toString('utf8',20,20+buffer.readUInt32LE(12)));
+  assert.match(gltf.asset.generator,/Blender/);
+  for(const name of ['replica_excavation_surface','pottery_case_glass','walk-floor_bridge_0','cutaway_main_roof','cutaway_visitor_roof','theatre_screen'])assert.ok(gltf.nodes.some(n=>n.name===name),name);
+  for(let i=1;i<=22;i++)assert.ok(gltf.nodes.some(n=>n.name===`burial_J${i}`),`Jar burial ${i}`);
+  assert.equal(gltf.nodes.filter(n=>/^theatre_seat_\d+_\d+$/.test(n.name)).length,38);
+  assert.equal(gltf.nodes.filter(n=>/^S96_internal_jar_\d$/.test(n.name)).length,4);
+  assert.ok(gltf.nodes.some(n=>n.extras?.hide_in_overview));
+  assert.ok(gltf.images.every(i=>!i.uri));
+});
+
+test('Bogam preserves four individually shaped mounds, source scale and numbering',()=>{
+  assert.equal(bogam.site_osm_id,'471352010');
+  assert.match(bogam.source,/OpenStreetMap.*ODbL/);
+  assert.equal(bogam.mounds.length,4);
+  const [one,two,three,four]=bogam.mounds;
+  assert.ok(one.center[1]<two.center[1] && two.center[1]<three.center[1]);
+  assert.ok(four.center[0]<three.center[0]);
+  assert.deepEqual([one.width,one.height],[18,4.5]);
+  assert.deepEqual([three.width,three.depth,three.height],[38,42,6]);
+  assert.deepEqual([four.width,four.depth,four.height],[23,31.5,3.15]);
+  assert.match(two.dimensions_source,/estimate.*NOT a recorded/);
+  for(const m of bogam.mounds)assert.ok(bogamColliders.some(c=>hitsPolygon(...m.center,c)));
+});
+
+test('walk a complete Bogam circuit to all four mounds and back without crossing a mound',()=>{
+  let p={x:bogam.spawn.x,z:bogam.spawn.z};
+  assert.ok(canTravelTo([p.x,p.z],bogam));
+  for(const [x,z] of bogam.walkRoute.slice(1)){
+    p=movePlayer(p.x,p.z,x-p.x,z-p.z,bogamColliders,bogam.bounds);
+    assert.ok(Math.hypot(p.x-x,p.z-z)<.03,`Blocked mound circuit ${x},${z}: ${JSON.stringify(p)}`);
+  }
+  assert.ok(Math.hypot(p.x-bogam.spawn.x,p.z-bogam.spawn.z)<.03);
+  const from=[55,35],through=[-5,35];
+  const hit=movePlayer(...from,through[0]-from[0],0,bogamColliders,bogam.bounds);
+  assert.ok(hit.x>40,'Walking cannot pass through the large mound');
+});
+
+test('map relocation rejects obstacles, nonfinite coordinates and out-of-bounds destinations',()=>{
+  assert.equal(destinationFromSearch('?place=bogam'),'bogam');
+  for(const d of Object.values(destinations)){
+    const w=JSON.parse(fs.readFileSync(new URL('../public'+d.worldUrl,import.meta.url),'utf8'));
+    assert.ok(canTravelTo([w.spawn.x,w.spawn.z],w));
+    for(const p of w.places){
+      const target=mapArrival(p,w);
+      assert.ok(target,`No accessible arrival for ${d.name} / ${p.name}`);
+      assert.ok(canTravelTo(target,w,p.arrivalHeight??0));
+    }
+    for(const point of [[NaN,0],[0,Infinity],[w.bounds[0]-.1,0],[0,w.bounds[3]+1]])assert.equal(canTravelTo(point,w),false);
+    const pin=regionalPoint(d.coordinates.lon,d.coordinates.lat);
+    assert.ok(pin[0]>0&&pin[0]<regionalSize[0]&&pin[1]>0&&pin[1]<regionalSize[1]);
+  }
+  for(const m of bogam.mounds)assert.equal(canTravelTo(m.center,bogam),false);
+  for(const p of bogam.places)assert.deepEqual(mapArrival(p,bogam),p.arrival);
+});
+
+test('Bogam exported GLB has four solid mound surfaces with upward normals and embedded original grass',()=>{
+  const buffer=fs.readFileSync(new URL('../public/models/bogam-tumuli.glb',import.meta.url));
+  assert.equal(buffer.toString('utf8',0,4),'glTF');
+  assert.equal(buffer.readUInt32LE(8),buffer.length);
+  const jsonLength=buffer.readUInt32LE(12);
+  const gltf=JSON.parse(buffer.toString('utf8',20,20+jsonLength));
+  assert.match(gltf.asset.generator,/Blender/);
+  assert.ok(gltf.images.length>0&&gltf.images.every(i=>i.bufferView!==undefined&&!i.uri));
+  assert.ok(gltf.buffers.every(b=>!b.uri));
+  for(const m of bogam.mounds){
+    const node=gltf.nodes.find(n=>n.name===`mound_${m.id}`);
+    assert.ok(node,`Missing mound ${m.id}`);
+    const primitive=gltf.meshes[node.mesh].primitives[0];
+    const position=gltf.accessors[primitive.attributes.POSITION];
+    assert.ok(Math.abs(position.max[1]-position.min[1]-m.height)<.001);
+    const normals=gltf.accessors[primitive.attributes.NORMAL];
+    const view=gltf.bufferViews[normals.bufferView];
+    let up=0;
+    for(let i=0;i<normals.count;i++){
+      const offset=20+jsonLength+8+(view.byteOffset??0)+(normals.byteOffset??0)+i*(view.byteStride??12);
+      if(buffer.readFloatLE(offset+4)>.5)up++;
+    }
+    assert.ok(up>normals.count*.3,'Most visible slopes and plateau should face upward');
+  }
+});
 
 const neighborhood = JSON.parse(fs.readFileSync(new URL('../public/dasi-neighborhood-world.json', import.meta.url), 'utf8'));
 const neighborhoodColliders = neighborhood.solids.filter(s => s.collision).map(solidCollider);

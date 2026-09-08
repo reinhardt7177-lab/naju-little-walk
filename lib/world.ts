@@ -11,7 +11,7 @@ export type Solid = {
   collision?: boolean;
 };
 export type Sign = { text: string; position: Vec3; width: number; rotation?: number; color?: string };
-export type Place = { id: string; name: string; description: string; position: Point; radius: number; indoor?: boolean; footprint?: Point[] };
+export type Place = { id: string; name: string; description: string; position: Point; radius: number; indoor?: boolean; footprint?: Point[]; arrival?: Point; arrivalHeight?: number };
 export type World = {
   title: string;
   subtitle: string;
@@ -22,14 +22,49 @@ export type World = {
   signs: Sign[];
   places: Place[];
   lights?: { position: Vec3; color: string; intensity: number; distance: number }[];
+  verticalNavigation?: boolean;
 };
 
-export function currentPlace(x: number, z: number, places: Place[]): Place | undefined {
-  return places.find(p => p.footprint ? hitsPolygon(x,z,p.footprint,0) : Math.hypot(p.position[0]-x,p.position[1]-z)<p.radius);
+export function currentPlace(x: number, z: number, places: Place[], height?:number): Place | undefined {
+  return places.find(p => (height===undefined || p.arrivalHeight===undefined || Math.abs(p.arrivalHeight-height)<.7) && (p.footprint ? hitsPolygon(x,z,p.footprint,0) : Math.hypot(p.position[0]-x,p.position[1]-z)<p.radius));
 }
 
 export type Collider = Point[];
 export type Floor = { polygon: Collider; height: number };
+
+export type WalkObstacle = { polygon: Collider; minY: number; maxY: number; minX: number; maxX: number; minZ: number; maxZ: number };
+
+export function worldObstacles(solids: Solid[]): WalkObstacle[] {
+  return solids.filter(s=>s.collision).map(s=>{
+    const polygon=solidCollider(s), base=s.position[1]-(s.kind==='building'?0:s.size[1]/2);
+    return {polygon,minY:base,maxY:base+s.size[1],minX:Math.min(...polygon.map(p=>p[0])),maxX:Math.max(...polygon.map(p=>p[0])),minZ:Math.min(...polygon.map(p=>p[1])),maxZ:Math.max(...polygon.map(p=>p[1]))};
+  });
+}
+
+export function blocksWalking(x: number,z: number,height: number,obstacles: WalkObstacle[]) {
+  return obstacles.some(o=>o.maxY>height+.08 && o.minY<height+1.65 && x>=o.minX-.28 && x<=o.maxX+.28 && z>=o.minZ-.28 && z<=o.maxZ+.28 && hitsPolygon(x,z,o.polygon));
+}
+
+/** Choose a reachable floor, so a balcony above the lobby never lifts a visitor through its ceiling. */
+export function reachableFloor(x: number,z: number,height: number,floors: Floor[]): number | null {
+  let best: number|null = Math.abs(height)<=.36?0:null;
+  for(const floor of floors){
+    if(Math.abs(floor.height-height)>.36 || !hitsPolygon(x,z,floor.polygon,0))continue;
+    if(best===null || floor.height>best)best=floor.height;
+  }
+  return best;
+}
+
+export function moveOnFloors(x: number,z: number,height: number,dx: number,dz: number,obstacles: WalkObstacle[],floors: Floor[],bounds: World['bounds']) {
+  const count=Math.max(1,Math.ceil(Math.hypot(dx,dz)/.12));
+  const tryStep=(nx:number,nz:number)=>{
+    if(nx<bounds[0]+.3||nx>bounds[1]-.3||nz<bounds[2]+.3||nz>bounds[3]-.3)return;
+    const nextHeight=reachableFloor(nx,nz,height,floors);
+    if(nextHeight!==null&&!blocksWalking(nx,nz,nextHeight,obstacles)){x=nx;z=nz;height=nextHeight;}
+  };
+  for(let i=0;i<count;i++){tryStep(x+dx/count,z);tryStep(x,z+dz/count);}
+  return {x,z,height};
+}
 
 export function worldFloors(solids: Solid[]): Floor[] {
   return solids.filter(s => s.name.startsWith('ground_floor') || s.name.startsWith('walk-floor')).map(s => ({ polygon: solidCollider(s), height: s.position[1] + s.size[1] * (s.kind === 'building' ? 1 : .5) }));

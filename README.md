@@ -2,6 +2,35 @@
 
 금성관 주변의 실제 OpenStreetMap 건물 윤곽과 도로 좌표를 **Blender 4.5 LTS**에서 입체로 제작하고, Blender에서 내보낸 GLB를 **Three.js**로 불러와 탐험합니다.
 
+## 복암리 고분군과 지도 이동
+
+**복암리고분전시관 내부도 추가했습니다.** 지도에서 전시관을 선택하면 황토색 3호분 절개 모형, 보고서에서 위치를 추적한 41개 매장시설, 유리 난간 관람교량, 토기 진열장, 38석 영상실, 체험 공간과 2층 북카페를 둘러볼 수 있습니다. 계단을 실제로 올라가며 같은 위치의 아래층·위층을 구분합니다.
+
+- 전시관 Blender: `outputs/bogam-museum.blend`
+- 전시관 렌더: `outputs/bogam-museum-overview.png`, `outputs/bogam-museum-main.png`, `outputs/bogam-museum-bridge.png`
+- 제작: `scripts/build_bogam_museum.py`, `scripts/museum_geometry.py`
+- 검증 범위와 추정 사항: `knowledge/sources/BOGAM_MUSEUM_REFERENCES.md`
+
+공식 층별 안내는 정밀 평면도가 아닙니다. 현재 내부의 정확한 치수·교량 경로·가구 위치는 확인되지 않아 사진 참고 추정으로 표시했습니다. 화장실·직원 공간·3층 전망대 내부는 미포함입니다.
+
+공식 사진·영상 프레임, 2023년 위성영상, 발굴조사 기록을 대조해 **네 봉분과 주변 360×340m 구역**을 Blender로 제작했습니다. 원형·긴 네모형·넓은 평탄 정상·낮은 봉분의 차이를 반영하고 실제 지도상의 진입로와 농지 구획을 연결했습니다. 현재 실측 3D 모델은 아니며 기록 치수와 추정한 복원 외형을 구분했습니다.
+
+- 편집 가능한 Blender: `outputs/bogam-tumuli.blend`
+- 렌더: `outputs/bogam-overview.png`, `outputs/bogam-ground-view.png`, `outputs/bogam-mounds-detail.png`
+- 웹 모델·이동 정보: `public/models/bogam-tumuli.glb`, `public/bogam-world.json`
+- 제작 스크립트: `scripts/build_bogam.py`
+- 사진·영상 확인 범위 및 추정: `knowledge/sources/BOGAM_REFERENCES.md`
+
+**지도로 이동**을 누르면 나주 전체 지도에서 금성관·다시초·복암리 고분군을 선택할 수 있습니다. 현재 장소 탭에서는 열린 지면이나 번호를 눌러 바로 이동합니다. 봉분·건물과 지도 경계는 같은 충돌 정보로 검사합니다. 장소 사이 전체 도시가 연속 모델링된 것은 아닙니다.
+
+```powershell
+& '.\work\tools\blender-4.5.13-windows-x64\blender.exe' --background --python scripts/build_bogam.py -- --render
+node scripts/build_regional_map.mjs
+node --experimental-strip-types --test tests/world.test.mjs
+```
+
+기존 `bogam-tumuli.blend`가 있으면 생성 스크립트는 중단합니다. 직접 수정한 파일을 보관한 뒤 생성본만 다시 만들 때 `--replace`를 명시하세요. 다시초·금성관 파일은 열거나 덮어쓰지 않습니다.
+
 ## 다시초등학교 추가
 
 현재 학교 체험은 **다시초 주변 약 570×440m**까지 확장했습니다. 위성영상의 지붕·농지·주차 공간과 지도 건물·도로를 대조했고, 다시역 외관·호남선 두 선로·승강장을 추가했습니다. 아래 기존 학교 파일들은 보존했습니다.
@@ -66,6 +95,7 @@
 | Esc / 쉬기 | 일시정지 |
 | 전체 보기 | 드래그로 회전, 휠로 확대·축소 |
 | 처음 위치 | 출발점으로 돌아가기 |
+| 지도로 이동 | 나주 지도에서 장소 전환, 현재 장소 지도에서 지점 이동 |
 
 ## 파일 구조
 
