@@ -307,6 +307,64 @@ test('traced context walls preserve the observed footprints and are included on 
   }
 });
 
+test('riverfront frontage keeps satellite footprints and exposes glazing toward the river',()=>{
+  const w=yeongsanWorlds.yeongsanpo,{scene}=readModel(new URL('../public/models/yeongsanpo.glb',import.meta.url));
+  const refs=JSON.parse(fs.readFileSync(new URL('../knowledge/sources/yeongsanpo-traced-roofs.json',import.meta.url),'utf8')).roofs;
+  const xy=([lon,lat])=>[(lon-w.origin.lon)*111320*Math.cos(w.origin.lat*Math.PI/180),(w.origin.lat-lat)*111320];
+  assert.equal(w.riverfrontDetails.revision,'riverfront-1');
+  assert.equal(w.riverfrontDetails.buildings.length,20);
+  for(const b of w.riverfrontDetails.buildings){
+    const wall=w.solids.find(s=>s.name==='photo-building_riverfront_'+b.id);
+    assert.ok(wall?.collision&&mapSolids(w).includes(wall),b.id);
+    const original=refs.find(r=>r.id===b.id).footprint.map(xy);
+    assert.deepEqual(wall.footprint,original,'Detailed walls must not move the observed footprint');
+    if(b.facade!=='shop')continue;
+    const normal=new THREE.Vector3(b.normal[0]-b.front[0],0,b.normal[1]-b.front[1]);
+    assert.ok(normal.z<-.5,'Frontage must face the river, not its rear alley');
+    const windows=[];scene.traverse(o=>{if(o.name.startsWith('riverfront_'+b.id+'_shop_pane'))windows.push(o);});
+    assert.ok(windows.length,b.id+' has no visible window');
+    const center=new THREE.Box3().setFromObject(windows[0],true).getCenter(new THREE.Vector3());
+    const hit=new THREE.Raycaster(center.clone().addScaledVector(normal,2),normal.clone().negate(),.01,2.1).intersectObjects(windows,true)[0];
+    assert.ok(hit,b.id+' glazing faces inward or is absent from the GLB');
+  }
+});
+
+test('the restored frontage paving connects the river walk and rear lane in both directions',()=>{
+  const w=yeongsanWorlds.yeongsanpo;
+  const path=w.riverfrontDetails.paving.accessRoute;
+  walkRoute(w,[...path,...path.slice(0,-1).reverse()]);
+  const arrival=sceneArrival(w,'?at=riverfront-shops');
+  assert.ok(arrival.entered&&canTravelTo([arrival.x,arrival.z],w));
+  walkRoute(w,[[w.spawn.x,w.spawn.z],[arrival.x,arrival.z],path[3]]);
+  const surface=w.solids.find(s=>s.name==='walk-floor_riverfront_parking_apron');
+  assert.ok(surface&&mapSolids(w).includes(surface));
+  const {scene}=readModel(new URL('../public/models/yeongsanpo.glb',import.meta.url));
+  const mesh=scene.getObjectByName('walk-floor_riverfront_parking_apron');
+  for(const [x,z] of path){
+    assert.ok(hitsPolygon(x,z,solidCollider(surface),.001));
+    const hit=new THREE.Raycaster(new THREE.Vector3(x,1,z),new THREE.Vector3(0,-1,0),.01,2).intersectObject(mesh,true)[0];
+    assert.ok(hit&&Math.abs(hit.point.y-surface.position[1]-surface.size[1])<.002,'Frontage floor/GLB height differs');
+  }
+});
+
+test('riverfront roofs gain real pitch while domestic walls and parked cars block walking',()=>{
+  const w=yeongsanWorlds.yeongsanpo,{scene}=readModel(new URL('../public/models/yeongsanpo.glb',import.meta.url));
+  for(const b of w.riverfrontDetails.buildings.filter(b=>b.roofType!=='flat')){
+    const mesh=scene.getObjectByName('riverfront_pitched_roof_'+b.id);
+    assert.ok(mesh,b.id+' roof missing');
+    const box=new THREE.Box3().setFromObject(mesh,true);
+    assert.ok(box.min.y>=b.height+.14&&box.max.y>b.height+.7,b.id+' must have closed pitched geometry above the walls');
+  }
+  const obstacles=worldObstacles(w.solids);
+  for(const s of w.solids.filter(s=>s.name==='hall-wall_riverfront_house_front'||s.name==='riverfront_parked_car_body'||s.name.startsWith('exhibit-case_riverfront_external_stair'))){
+    const p=solidCollider(s).reduce((a,p)=>[a[0]+p[0]/4,a[1]+p[1]/4],[0,0]);
+    assert.ok(blocksWalking(...p,0,obstacles)&&!canTravelTo(p,w),'Wall or car is walk-through');
+  }
+  for(const s of w.solids.filter(s=>s.name.startsWith('osm-building_way_1120464648'))){
+    assert.ok(s.position[1]+s.size[1]<=4.5,'The duplicate OSM shell must not protrude through the low roof');
+  }
+});
+
 test('additional satellite roofs remain inside observed eaves and block walking',()=>{
   const w=yeongsanWorlds.yeongsanpo;
   const refs=JSON.parse(fs.readFileSync(new URL('../knowledge/sources/yeongsanpo-round2-roofs.json',import.meta.url),'utf8')).roofs.filter(r=>!r.reviewFlags?.length);

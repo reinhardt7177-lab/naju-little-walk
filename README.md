@@ -4,7 +4,9 @@
 
 ## 영산포 강변 · 홍어거리 · 두 전시관
 
-문학관 외부의 **목재 경계 울타리·열린 정원 입구·측면 격자창·작은 별채·실외기·홈통·처마기둥**을 보강하고, 박공과 지붕 단차의 빈 벽을 마감했습니다. `/?place=yeongsanpo&at=literature-garden`에서 입구, `&at=literature-side`에서 측면을 확인할 수 있습니다. 최신 외부 편집본은 `outputs/yeongsanpo-boundary.blend`이며 [사진과 경계 추정 범위](knowledge/literature-boundary-detail.md)를 기록했습니다.
+선착장 맞은편 **상가·주택·창고 20개**의 지붕과 정면·골목 측면을 보강했습니다. 주소점과 사진을 연결한 홍어세상·금성수산, 그 사이 담장 주택, 푸른 박공지붕 창고군을 구분하고 위성사진에서 확인한 **약 168m 주차·진입 포장**을 추가했습니다. `/?place=yeongsanpo&at=riverfront-shops`에서 확인할 수 있습니다. 최신 외부 편집본은 `outputs/yeongsanpo-riverfront.blend`이며 [관찰 근거·추정 범위](knowledge/yeongsanpo-riverfront-detail.md)를 기록했습니다.
+
+문학관 외부의 **목재 경계 울타리·열린 정원 입구·측면 격자창·작은 별채·실외기·홈통·처마기둥**을 보강하고, 박공과 지붕 단차의 빈 벽을 마감했습니다. `/?place=yeongsanpo&at=literature-garden`에서 입구, `&at=literature-side`에서 측면을 확인할 수 있습니다. 당시 외부 편집본 `outputs/yeongsanpo-boundary.blend`는 보존하며 [사진과 경계 추정 범위](knowledge/literature-boundary-detail.md)를 기록했습니다.
 
 영산포 전체는 위성사진에서 누락 지붕 **30개**와 연결 골목 **4개**를 추가하고, 보도블록·배수로·차양·등대 받침·난간을 보강했습니다. 사진의 204 건물번호와 OSM 윤곽을 연결한 **삼화홍어·죽전골목 입구** 외관도 반영했습니다. 거리 보강 당시 편집본 `outputs/yeongsanpo-streets.blend`는 보존합니다. [자료·추정 범위·재생성 기록](knowledge/yeongsanpo-streets-detail.md)을 확인하세요.
 

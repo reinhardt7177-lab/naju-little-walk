@@ -4,7 +4,7 @@ Only TEXCOORD attributes on materials with no texture slots are removed. Vertex
 positions, normals, indices, transforms, texture images and materials are kept.
 Buffer views are repacked losslessly; there is no mesh or texture decimation.
 """
-import json,struct
+import json,struct,hashlib
 from pathlib import Path
 
 def compact_glb(path):
@@ -57,22 +57,46 @@ def compact_glb(path):
             for key in ('indices','values'):views.add(a['sparse'][key]['bufferView'])
     for im in doc.get('images',[]):
         if 'bufferView' in im:views.add(im['bufferView'])
-    vmap={old:new for new,old in enumerate(sorted(views))};new_binary=bytearray();new_views=[]
+    vmap={};new_binary=bytearray();new_views=[];view_keys={};shared_views=0
     for i in sorted(views):
         view=dict(doc['bufferViews'][i]);start=view.get('byteOffset',0);size=view['byteLength']
+        payload=binary[start:start+size]
+        semantics={k:v for k,v in view.items() if k not in ('byteOffset','buffer')}
+        key=(json.dumps(semantics,sort_keys=True),hashlib.sha256(payload).digest())
+        if key in view_keys:
+            vmap[i]=view_keys[key];shared_views+=1;continue
+        vmap[i]=len(new_views);view_keys[key]=vmap[i]
         new_binary.extend(b'\0'*((-len(new_binary))%4));view['byteOffset']=len(new_binary)
-        new_binary.extend(binary[start:start+size]);new_views.append(view)
+        new_binary.extend(payload);new_views.append(view)
     for a in accessors:
         if 'bufferView' in a:a['bufferView']=vmap[a['bufferView']]
         if 'sparse' in a:
             for key in ('indices','values'):a['sparse'][key]['bufferView']=vmap[a['sparse'][key]['bufferView']]
     for im in doc.get('images',[]):
         if 'bufferView' in im:im['bufferView']=vmap[im['bufferView']]
-    doc['accessors']=accessors;doc['bufferViews']=new_views;doc['buffers'][0]['byteLength']=len(new_binary)
+    # Repeated boxes share byte-identical indices/normals. Reuse those streams
+    # and their complete accessor definitions without quantizing any values.
+    unique=[];accessor_keys={};amap={}
+    for i,a in enumerate(accessors):
+        key=json.dumps(a,sort_keys=True,separators=(',',':'))
+        if key not in accessor_keys:accessor_keys[key]=len(unique);unique.append(a)
+        amap[i]=accessor_keys[key]
+    for mesh in doc.get('meshes',[]):
+        for p in mesh['primitives']:
+            p['attributes']={k:amap[v] for k,v in p['attributes'].items()}
+            if 'indices' in p:p['indices']=amap[p['indices']]
+            for target in p.get('targets',[]):
+                for key in target:target[key]=amap[target[key]]
+    for skin in doc.get('skins',[]):
+        if 'inverseBindMatrices' in skin:skin['inverseBindMatrices']=amap[skin['inverseBindMatrices']]
+    for animation in doc.get('animations',[]):
+        for s in animation['samplers']:
+            for key in ('input','output'):s[key]=amap[s[key]]
+    doc['accessors']=unique;doc['bufferViews']=new_views;doc['buffers'][0]['byteLength']=len(new_binary)
     data=json.dumps(doc,ensure_ascii=False,separators=(',',':')).encode('utf-8');data+=b' '*((-len(data))%4);new_binary.extend(b'\0'*((-len(new_binary))%4))
     result=struct.pack('<4sII',b'glTF',2,28+len(data)+len(new_binary))+struct.pack('<II',len(data),0x4E4F534A)+data+struct.pack('<II',len(new_binary),0x004E4942)+new_binary
     path.write_bytes(result)
-    return dict(removedUnusedUvStreams=removed,before=len(raw),after=len(result))
+    return dict(removedUnusedUvStreams=removed,sharedIdenticalViews=shared_views,sharedIdenticalAccessors=len(accessors)-len(unique),before=len(raw),after=len(result))
 
 if __name__=='__main__':
     import sys
