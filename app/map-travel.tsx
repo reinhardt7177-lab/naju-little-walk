@@ -41,7 +41,7 @@ export default function MapTravel({destinationId,world,position,onClose,onTravel
       </div>
       {tab==='region'?<div id="region-panel" role="tabpanel" aria-labelledby="region-tab" className="travel-content">
         <div className="travel-map regional-map" style={{aspectRatio:`${regionalSize[0]} / ${regionalSize[1]}`}}>
-          <svg viewBox={`0 0 ${regionalSize[0]} ${regionalSize[1]}`} aria-label="금성관, 다시초등학교, 복암리 고분군과 전시관의 실제 위치 지도" role="img">
+          <svg viewBox={`0 0 ${regionalSize[0]} ${regionalSize[1]}`} aria-label="나주 산책 장소와 영산포의 실제 위치 지도" role="img">
             <rect width="1000" height="694" fill="#e7ebdd"/>
             <defs><pattern id="map-grid" width="50" height="50" patternUnits="userSpaceOnUse"><path d="M 50 0 H 0 V 50" fill="none" stroke="#566e5310" strokeWidth="1"/></pattern></defs>
             <rect width="1000" height="694" fill="url(#map-grid)"/>
@@ -52,7 +52,7 @@ export default function MapTravel({destinationId,world,position,onClose,onTravel
             <text x="28" y="38" className="map-north">N ↑</text>
             <path d="M 40 646 V 653 H 145 V 646" fill="none" stroke="#607565" strokeWidth="2"/><text x="40" y="678" className="map-village">약 1km</text>
           </svg>
-          {(Object.entries(destinations) as [DestinationId,typeof destinations[DestinationId]][]).map(([id,d])=>{const p=regionalPoint(d.coordinates.lon,d.coordinates.lat);return <a className={`region-pin ${id===destinationId?'is-current':''} ${id==='bogam-museum'?'museum-pin':''}`} key={id} href={`/?place=${id}`} aria-current={id===destinationId?'location':undefined} style={{left:`${p[0]/10}%`,top:`${p[1]/regionalSize[1]*100}%`}}><span><MapPin size={22}/></span><strong>{d.name}</strong>{id===destinationId&&<small>현재 장소</small>}</a>;})}
+          {(Object.entries(destinations) as [DestinationId,typeof destinations[DestinationId]][]).filter(([,d])=>!('parent' in d)).map(([id,d])=>{const p=regionalPoint(d.coordinates.lon,d.coordinates.lat);return <a className={`region-pin ${id===destinationId?'is-current':''} ${id==='bogam-museum'?'museum-pin':''}`} key={id} href={`/?place=${id}`} aria-current={id===destinationId?'location':undefined} style={{left:`${p[0]/10}%`,top:`${p[1]/regionalSize[1]*100}%`}}><span><MapPin size={22}/></span><strong>{d.name}</strong>{id===destinationId&&<small>현재 장소</small>}</a>;})}
         </div>
         <aside className="travel-list"><p>지도의 장소를 누르면 그곳의 3D 산책으로 이동해요.</p>{(Object.entries(destinations) as [DestinationId,typeof destinations[DestinationId]][]).map(([id,d],i)=><a key={id} href={`/?place=${id}`} className={id===destinationId?'selected-place':''}><span className="travel-index">0{i+1}</span><div><strong>{d.name}</strong><small>{id===destinationId?'지금 둘러보는 곳':'이곳에서 산책 시작'}</small></div><ArrowUpRight size={19}/></a>)}{mapError&&<p role="status">{mapError}</p>}<span className="travel-attribution">© OpenStreetMap 기여자 · ODbL 1.0<br/>주요 도로·하천을 표시한 간략 지도</span></aside>
       </div>:world&&<div id="local-panel" role="tabpanel" aria-labelledby="local-tab" className="travel-content">
@@ -63,9 +63,9 @@ export default function MapTravel({destinationId,world,position,onClose,onTravel
             <circle cx={position[0]} cy={position[1]} r={span[0]*.008} fill="#cc6c3a" stroke="#fff" strokeWidth={span[0]*.003}/>
           </svg>
           {arrivals.map(({place,point},i)=><button key={place.id} className="local-pin" style={{left:`${(point![0]-world.bounds[0])/span[0]*100}%`,top:`${(point![1]-world.bounds[2])/span[1]*100}%`}} onClick={()=>travel(point!,place.arrivalHeight)} aria-label={`${place.name}로 이동`} title={place.name}>{i+1}</button>)}
-          <span className="local-north">N ↑</span>
+          <span className="local-north">{'parent' in destinations[destinationId]?'출구 ↓':'N ↑'}</span>
         </div>
-        <aside className="travel-list"><p>열린 길이나 번호를 누르면 바로 이동해요. 전시관 상부 관람로는 번호나 목록에서 선택하세요.</p>{arrivals.map(({place,point},i)=><button key={place.id} onClick={()=>travel(point!,place.arrivalHeight)}><span className="travel-index">{i+1}</span><div><strong>{place.name}</strong><small>{place.arrivalHeight?'상부 관람 공간':place.indoor?'실내 체험':'이 지점으로 이동'}</small></div><Footprints size={17}/></button>)}{notice&&<p className="map-notice" role="status">{notice}</p>}</aside>
+        <aside className="travel-list"><p>열린 길이나 번호를 누르면 바로 이동해요. 전시관 입구 안으로 걸어가면 실내가 열립니다. 층이 다른 장소는 목록에서 선택하세요.</p>{arrivals.map(({place,point},i)=><button key={place.id} onClick={()=>travel(point!,place.arrivalHeight)}><span className="travel-index">{i+1}</span><div><strong>{place.name}</strong><small>{place.arrivalHeight?(place.arrivalHeight<0?'강변 아래 데크':'상부 관람 공간'):place.indoor?'실내 체험':'이 지점으로 이동'}</small></div><Footprints size={17}/></button>)}{notice&&<p className="map-notice" role="status">{notice}</p>}</aside>
       </div>}
     </div>
   </dialog>;

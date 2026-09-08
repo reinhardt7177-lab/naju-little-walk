@@ -11,6 +11,8 @@ export type Solid = {
   collision?: boolean;
 };
 export type Sign = { text: string; position: Vec3; width: number; rotation?: number; color?: string };
+export type Arrival = { x: number; z: number; yaw: number; height?: number };
+export type Portal = { id: string; position: Point; radius: number; target: string; arrival: string; label: string; height?: number };
 export type Place = { id: string; name: string; description: string; position: Point; radius: number; indoor?: boolean; footprint?: Point[]; arrival?: Point; arrivalHeight?: number };
 export type World = {
   title: string;
@@ -23,6 +25,9 @@ export type World = {
   places: Place[];
   lights?: { position: Vec3; color: string; intensity: number; distance: number }[];
   verticalNavigation?: boolean;
+  requireFloor?: boolean;
+  arrivals?: Record<string, Arrival>;
+  portals?: Portal[];
 };
 
 export function currentPlace(x: number, z: number, places: Place[], height?:number): Place | undefined {
@@ -46,8 +51,8 @@ export function blocksWalking(x: number,z: number,height: number,obstacles: Walk
 }
 
 /** Choose a reachable floor, so a balcony above the lobby never lifts a visitor through its ceiling. */
-export function reachableFloor(x: number,z: number,height: number,floors: Floor[]): number | null {
-  let best: number|null = Math.abs(height)<=.36?0:null;
+export function reachableFloor(x: number,z: number,height: number,floors: Floor[],requireFloor=false): number | null {
+  let best: number|null = !requireFloor && Math.abs(height)<=.36?0:null;
   for(const floor of floors){
     if(Math.abs(floor.height-height)>.36 || !hitsPolygon(x,z,floor.polygon,0))continue;
     if(best===null || floor.height>best)best=floor.height;
@@ -55,11 +60,11 @@ export function reachableFloor(x: number,z: number,height: number,floors: Floor[
   return best;
 }
 
-export function moveOnFloors(x: number,z: number,height: number,dx: number,dz: number,obstacles: WalkObstacle[],floors: Floor[],bounds: World['bounds']) {
+export function moveOnFloors(x: number,z: number,height: number,dx: number,dz: number,obstacles: WalkObstacle[],floors: Floor[],bounds: World['bounds'],requireFloor=false) {
   const count=Math.max(1,Math.ceil(Math.hypot(dx,dz)/.12));
   const tryStep=(nx:number,nz:number)=>{
     if(nx<bounds[0]+.3||nx>bounds[1]-.3||nz<bounds[2]+.3||nz>bounds[3]-.3)return;
-    const nextHeight=reachableFloor(nx,nz,height,floors);
+    const nextHeight=reachableFloor(nx,nz,height,floors,requireFloor);
     if(nextHeight!==null&&!blocksWalking(nx,nz,nextHeight,obstacles)){x=nx;z=nz;height=nextHeight;}
   };
   for(let i=0;i<count;i++){tryStep(x+dx/count,z);tryStep(x,z+dz/count);}

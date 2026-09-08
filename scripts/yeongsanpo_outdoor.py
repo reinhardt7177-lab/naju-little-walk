@@ -1,0 +1,281 @@
+"""One georeferenced Yeongsanpo riverfront, Hong-eo street and museum exteriors."""
+import json, math, random
+from pathlib import Path
+from yeongsanpo_geometry import Geometry,world_data,place
+
+ROOT=Path(__file__).resolve().parents[1]
+ORIGIN=[126.7105,35.0008]
+def xy(p):return [(p[0]-ORIGIN[0])*111320*math.cos(math.radians(ORIGIN[1])),(ORIGIN[1]-p[1])*111320]
+
+def clip(poly,axis,value,less=True):
+    result=[]
+    for a,b in zip(poly,poly[1:]+poly[:1]):
+        ia=(a[axis]<=value) if less else (a[axis]>=value);ib=(b[axis]<=value) if less else (b[axis]>=value)
+        if ia:result.append(a)
+        if ia!=ib:
+            t=(value-a[axis])/(b[axis]-a[axis]);result.append([a[0]+t*(b[0]-a[0]),a[1]+t*(b[1]-a[1])])
+    return result
+
+def clip_line(poly,a,b,inside=True):
+    def side(p):return (b[0]-a[0])*(p[1]-a[1])-(b[1]-a[1])*(p[0]-a[0])
+    out=[]
+    for p,q in zip(poly,poly[1:]+poly[:1]):
+        sp,sq=side(p),side(q);ip=sp>=0 if inside else sp<=0;iq=sq>=0 if inside else sq<=0
+        if ip:out.append(p)
+        if ip!=iq:
+            t=sp/(sp-sq);out.append([p[k]+(q[k]-p[k])*t for k in (0,1)])
+    return out
+
+def subtract(poly,cutter):
+    pieces=[];remaining=poly
+    for a,b in zip(cutter,cutter[1:]+cutter[:1]):
+        outside=clip_line(remaining,a,b,False)
+        if len(outside)>2:pieces.append(outside)
+        remaining=clip_line(remaining,a,b)
+        if not remaining:break
+    return pieces
+
+def clipped_segment(a,b,bounds):
+    t0,t1=0,1;dx,dz=b[0]-a[0],b[1]-a[1]
+    for p,q in [(-dx,a[0]-bounds[0]),(dx,bounds[1]-a[0]),(-dz,a[1]-bounds[2]),(dz,bounds[3]-a[1])]:
+        if abs(p)<1e-10:
+            if q<0:return None
+        else:
+            r=q/p
+            if p<0:t0=max(t0,r)
+            else:t1=min(t1,r)
+            if t0>t1:return None
+    return [[a[0]+t*dx,a[1]+t*dz] for t in (t0,t1)]
+
+def line_distance(p,a,b):
+    dx,dz=b[0]-a[0],b[1]-a[1];t=max(0,min(1,((p[0]-a[0])*dx+(p[1]-a[1])*dz)/(dx*dx+dz*dz or 1)))
+    return math.hypot(p[0]-a[0]-t*dx,p[1]-a[1]-t*dz)
+
+def in_poly(p,pts):
+    inside=False
+    for a,b in zip(pts,pts[1:]+pts[:1]):
+        if (a[1]>p[1])!=(b[1]>p[1]) and p[0]<(b[0]-a[0])*(p[1]-a[1])/(b[1]-a[1])+a[0]:inside=not inside
+    return inside
+
+def wharf(scene,g):
+    level=-6.4;dock=Geometry(scene,(-143,130),-.337)
+    dock.box('walk-floor_dock',0,level-.12,-16,85,.24,26,'#9a8060')
+    for i in range(169):dock.box('dock_plank_seam',-42.25+i*.5,level+.006,-16,.018,.008,25.9,'#665a49',record=False)
+    dock.box('retaining_wall',-6,-3.2,0,73,6.4,.4,'#a4a998',True)
+    route=[dock.point(36,1)]
+    for i in range(40):
+        z=-.175-i*.35;top=-(i+1)*.16
+        dock.box('walk-floor_dock_stair_'+str(i),36,top-.09,z,11,.18,.37,'#b8b8a7');route.append(dock.point(36,z))
+    for x in (30,42):
+        dock.tube('dock_stair_handrail',(x,1.0,0),(x,-5.4,-14),.055,'#e2ddc9')
+        for i in range(12):dock.tube('dock_stair_post',(x,-i/11*6.4,-i/11*14),(x,1-i/11*6.4,-i/11*14),.035,'#dedac8')
+    # The tourism coordinate is a representative marker; photo alignment places
+    # the lighthouse immediately against the lower retaining wall.
+    lx,lz=0,-2.3
+    dock.vessel('yeongsanpo_lighthouse',lx,level,lz,1,'#e2e3d6',profile=[(0,1),(5.4,1),(6.65,1.95),(6.75,1.95),(6.8,1.6),(8.2,1.6),(8.4,1.82),(8.65,1.82)])
+    dock.box('lighthouse_lantern_window',lx,level+7.6,lz-1.61,.48,.75,.04,'#719a9d',record=False)
+    for i in range(24):
+        a=i*math.tau/24;b=(i+1)*math.tau/24
+        dock.tube('lighthouse_guard_post',(lx+math.cos(a)*1.98,level+6.7,lz+math.sin(a)*1.98),(lx+math.cos(a)*1.98,level+7.55,lz+math.sin(a)*1.98),.024,'#b6c1b9')
+        dock.tube('lighthouse_round_guard',(lx+math.cos(a)*1.98,level+7.55,lz+math.sin(a)*1.98),(lx+math.cos(b)*1.98,level+7.55,lz+math.sin(b)*1.98),.032,'#b6c1b9')
+    dock.collider('lighthouse_collision',[[lx-1.1,lz-1.1],[lx+1.1,lz-1.1],[lx+1.1,lz+1.1],[lx-1.1,lz+1.1]],level,8.65)
+    dock.label('영산포 등대',lx,level+1.1,lz-1.12,1.75,.25,rotation=math.pi,color='#727464')
+    # Two observed passenger-boat styles, moored with sails stowed.
+    for i,(x,z) in enumerate([(-12,-32),(24,-32)]):
+        boat=Geometry(scene,dock.point(x,z),dock.angle+math.pi/2);boat.boat('moored_naju_boat' if i==0 else 'moored_passenger_boat',0,0,1 if i==0 else 1.15,False,base=-7,flat=i==1)
+        g.solids+=boat.solids;g.signs+=boat.signs
+        for j in (-5,3):dock.tube('mooring_rope',(x+j,-6,z),(x+j,level+.2,-28),.027,'#d3c096')
+    dock.box('ticket_house',-33,level+1.5,-9,10,3,4,'#343c3b',True)
+    dock.window('ticket_counter',-33,level+1.7,-6.9,7,1.5)
+    dock.label('황포돛배 매표소',-33,level+2.75,-6.8,8,.34,color='#ece6d8')
+    for x in range(-39,40,5):dock.tube('dock_bollard',(x,level,-28.3),(x,level+.45,-28.3),.16,'#dddcd0')
+    dock.box('landing_information_board',-16,1.4,2,10,1.2,.14,'#566858',record=False)
+    dock.label('황포돛배 선착장',-16,1.4,2.1,8.9,.55,color='#e5dfc8')
+    for x in (-20,-12):dock.box('landing_information_post',x,.8,2,.12,1.6,.12,'#5e6754',record=False)
+    dock.railing('promenade_guard',(-42,0),(29,0),0,glass=False)
+    # Original diagram, not a copy of the copyrighted mural.
+    dock.box('wharf_original_mural',-7,-3.2,-.24,70,5.5,.035,'#7aa4ac',record=False)
+    for y,color in [(-2.3,'#c6a365'),(-4.6,'#6c9390')]:dock.box('wharf_mural_band',-7,y,-.265,70,.85,.02,color,record=False)
+    for x in (-29,-6,17):
+        dock.mesh('wharf_mural_boat',[(x-3,-4,-.285),(x+3,-4,-.285),(x+2,-4.65,-.285),(x-2,-4.65,-.285)],[(0,1,2,3)],'#715848')
+        dock.box('wharf_mural_mast',x,-2.85,-.29,.07,2.3,.025,'#685943',record=False)
+        dock.box('wharf_mural_sail',x-1,-2.7,-.295,1.7,1.8,.025,'#c4a267',record=False)
+    g.solids+=dock.solids;g.signs+=dock.signs
+    return dock,route
+
+def exterior(g,kind):
+    if kind=='history':
+        # White render/timber frame, balcony rings and glass conservatory.
+        for x,w in [(-5.05,1.9),(2.05,7.9)]:g.box('photo-building_history_front',x,1.7,6,w,3.4,.2,'#eee8d7',True)
+        for x in (-6,6):g.box('photo-building_history_side',x,3.4,0,.22,6.8,12,'#ddd7c6',True)
+        g.box('photo-building_history_back',0,3.4,-6,12,6.8,.2,'#e7ddc8',True)
+        g.box('history_door_header',-3,2.95,6,2.2,.9,.2,'#e8e1cf')
+        g.box('history_recess_dark',0,1.6,-1,11.8,3.2,.1,'#393c35',record=False)
+        for x in (-5.8,-4.1,-1.9,1,5.8):g.box('history_exposed_timber',x,1.7,6.13,.14,3.4,.13,'#947b56',record=False)
+        for y in (.18,3.28):g.box('history_timber_band',0,y,6.13,12,.18,.16,'#987f5a',record=False)
+        g.window('history_front_window',2.8,1.95,6.15,4.4,1.7)
+        for x in (-4.04,-1.96):g.box('history_door_frame',x,1.25,6.1,.065,2.5,.1,'#897966',record=False)
+        # Leave an open doorway to the interior portal instead of an invisible glass wall.
+        g.glass('history_open_door',-4.05,1.2,5.25,1.55,2.3,rotation=math.pi/2)
+        g.box('history_signboard',0,3.69,6.13,7.3,.58,.16,'#69503b',record=False)
+        g.label('영산포 역사갤러리',0,3.69,6.23,6.7,.36,color='#fff4dd')
+        g.box('history_brass_plate',-5,1.98,6.17,1.5,.82,.06,'#9f9560',record=False)
+        g.label('영산포\n역사갤러리',-5,1.98,6.22,1.35,.21,color='#302e29')
+        g.box('history_balcony',0,3.45,1.5,12,.2,9,'#aaa393',record=False)
+        g.box('history_upper_wall',-2,5.2,-1,8,3.4,.16,'#e4decd',record=False)
+        for x in (-4,-1):g.window('history_upper_window',x,5.3,-.85,2.2,1.5)
+        for x in (-5.8,5.8):g.box('balcony_guard',x,4.13,3,.04,1.2,5.9,'#3d403c',record=False)
+        for y in (3.62,4.62):g.box('balcony_guard',0,y,5.9,11.7,.05,.05,'#3d403c',record=False)
+        for i in range(43):
+            x=-5.75+i*.27;g.box('balcony_vertical',x,4.12,5.9,.018,1,.018,'#3d403c',record=False)
+            if i%2==0:
+                pts=[(x+.11*math.cos(j*math.tau/12),4.12+.11*math.sin(j*math.tau/12),5.9) for j in range(13)]
+                for a,b in zip(pts,pts[1:]):g.tube('balcony_ornamental_ring',a,b,.012,'#3d403c',n=5)
+        for x in (1,3,5):g.window('history_conservatory',x,5.35,3.4,1.95,2.9)
+        g.box('history_conservatory_roof',3,6.85,1.2,6,.025,4.5,'#97b6be',record=False)
+        g.roof('history_upper_roof',-2,6.95,-2.5,8.8,7.4,.6,'#647c72',tiles=False)
+        for x in (-5.6,4.6,5.3):g.vessel('entry_planter',x,0,6.65,.46,'#9b9b84')
+        return [-3,6.0],[-3,9]
+    # Literature house: blue-grey tile roofs, projecting gable wing and garden.
+    for x in (-9,9):g.box('photo-building_literature_side',x,1.65,0,.18,3.3,13,'#e5dfce',True)
+    g.box('photo-building_literature_back',0,1.65,-6.5,18,3.3,.18,'#dfdac8',True)
+    for a,b in [(-9,-1),(1,9)]:g.box('photo-building_literature_front',(a+b)/2,.5,6.5,b-a,1,.15,'#4e453a',True)
+    for x in (-8,-6,-4,2,4,6,8):g.window('literature_timber_windows',x,1.93,6.54,1.9,1.75)
+    g.box('literature_entry_header',0,2.95,6.5,2,.7,.20,'#5d4c39')
+    for x in (-1.1,1.1):g.box('entry_brick_pier',x,1.4,7.4,.28,2.8,.28,'#855e48',True)
+    g.box('entry_name_board',0,2.55,7.56,2.15,.4,.08,'#3c3930',record=False)
+    g.label('타오르는 강 문학관',0,2.55,7.62,1.94,.20,color='#eee7d3')
+    g.roof('literature_main_tile_roof',1,4.8,-.8,18.7,13.5,2.4,'#53616b')
+    g.roof('literature_low_eaves',1,3.0,1,19.8,14.3,1.4,'#53616b')
+    g.roof('literature_entry_gable',0,3.0,7.5,3.6,3.4,1,'#53616b')
+    g.box('photo-building_literature_gable_wing',-6,1.8,7.5,5.5,3.6,6,'#dedbc9',True)
+    g.mesh('literature_front_gable',[(-8.75,3.6,10.51),(-3.25,3.6,10.51),(-6,6.2,10.51)],[(0,1,2)],'#958b73')
+    for side in (-1,1):g.mesh('literature_gabled_roof',[(-6,6.3,3.5),(-6,6.3,11),(-6+side*3.1,3.6,11),(-6+side*3.1,3.6,3.5)],[(0,1,2,3)],'#52606a','05_Cutaway_Roof')
+    g.box('literature_brick_plinth',-6,.45,10.54,5.5,.9,.12,'#7b5947',record=False)
+    for row in range(8):
+        for i in range(20):g.box('brick_mortar',-8.7+i*.28+(row%2)*.14,.05+row*.105,10.615,.265,.012,.015,'#b9ae97',record=False)
+    g.window('gable_wing_door',-6,1.35,10.64,1.7,2.6,lattice=True)
+    for i in range(13):g.box('gable_vent',-6.45+i*.075,4.55,10.54,.025,.6,.04,'#4b4940',record=False)
+    g.label('타오르는 강',-6,3.3,10.66,4.6,.38,color='#645347')
+    rng=random.Random(21)
+    g.box('ground_floor_literature_garden',1,-.008,15,24,.016,11,'#9ca873')
+    for i in range(16):
+        z=8+i*.6;x=math.sin(i*.16)*1.9;g.rock('garden_stepping_stone',x,.025,z,.85,.09,.58,'#a2a394',rng)
+    for x,z in [(-8,14),(-4,16),(7,12),(9,17)]:
+        g.tree('garden_pruned_tree',x,z,.6,seed=int(z+x));g.rock('garden_natural_rock',x+1,.35,z,1.4,.85,1.05,'#7f8070',rng)
+    for i in range(80):
+        a=i*math.tau/80;x=5+math.cos(a)*3.2;z=15+math.sin(a)*2
+        g.rock('garden_white_gravel',x,.04,z,.28,.1,.22,'#d6d5c7',rng)
+    return [0,7.2],[0,10]
+
+def outdoor(scene):
+    ref=json.loads((ROOT/'knowledge/sources/yeongsanpo-map-reference.json').read_text(encoding='utf-8'))
+    data=json.loads((ROOT/'knowledge/sources/yeongsanpo-osm.geojson').read_text(encoding='utf-8'))
+    g=Geometry(scene);rng=random.Random(76);bounds=[-410,395,-315,300]
+    river=[xy(p) for p in ref['river']['geometry']['coordinates'][0][:-1]]
+    g.polygon('mapped_river_water',river,-7.55,.08,'#527f7c')
+    g.mat('#527f7c').node_tree.nodes['Principled BSDF'].inputs['Roughness'].default_value=.23
+    # Land follows the mapped south bank. Dock is cut out so stairs can descend.
+    land=river[:16]+[[395,300],[-410,300],[-410,river[0][1]]]
+    dock,stair_route=wharf(scene,g)
+    cutter=[dock.point(x,z) for x,z in [(-42.5,-65),(42.5,-65),(42.5,0),(-42.5,0)]]
+    for i,poly in enumerate(subtract(land,cutter)):
+        if len(poly)>2:g.polygon('ground_floor_south_bank_'+str(i),poly,-.15,.15,'#c6c4aa')
+    g.box('north_bank_background',0,-1,-320,1000,1,180,'#95a77e',record=False)
+    for a,b in zip(river[:15],river[1:16]):g.segment('bank_reed_margin',a,b,4,1.2,'#8e9970',base=-7)
+    roads=[]
+    for road in ref['roads']:
+        points=[xy(p) for p in road['coordinates']];tag=road['tags'];width=7 if tag.get('highway') in ('residential','unclassified') else 13
+        if road['osmId']=='way/130634137':width=6
+        roads.append(dict(id=road['osmId'],name=tag.get('name',''),points=points,width=width))
+        for a,b in zip(points,points[1:]):
+            segment=clipped_segment(a,b,bounds)
+            if not segment:continue
+            a,b=segment
+            g.segment('road-edge_'+road['osmId'],a,b,width+3,.025,'#b7ae99',base=.008)
+            g.segment('road_'+road['osmId'],a,b,width,.018,'#7e8582',base=.038)
+            # Road surfaces also bridge the water; require-floor blocks the river.
+            if tag.get('bridge')=='yes':
+                g.segment('walk-floor_bridge_'+road['osmId'],a,b,width,.5,'#90978c',base=-.5)
+                for j in range(1,max(2,int(math.dist(a,b)/35))):
+                    t=j/max(2,int(math.dist(a,b)/35));g.box('bridge_pier',a[0]+(b[0]-a[0])*t,-4,a[1]+(b[1]-a[1])*t,2.4,8,3.2,'#a3aca4',record=False)
+            length=math.dist(a,b)
+            if width>7:
+                for j in range(int(length/9)):
+                    t=(j+.5)*9/length;c=[a[k]+(b[k]-a[k])*t for k in (0,1)];u=[(b[k]-a[k])/length for k in (0,1)]
+                    g.segment('road_center_mark',[c[k]-u[k]*1.6 for k in (0,1)],[c[k]+u[k]*1.6 for k in (0,1)],.12,.006,'#ded5a9',base=.061,record=False)
+    gallery_center=xy([126.711504,35.000721]);literature_center=xy([126.712917,34.9998292])
+    # OSM footprint shells provide the surrounding street's real structure.
+    count=0
+    for feature in data['features']:
+        if not feature['properties'].get('building') or feature['geometry']['type']!='Polygon':continue
+        pts=[xy(p) for p in feature['geometry']['coordinates'][0][:-1]]
+        cx=sum(p[0] for p in pts)/len(pts);cz=sum(p[1] for p in pts)/len(pts)
+        if not(-405<cx<390 and -300<cz<290) or math.dist((cx,cz),gallery_center)<22 or math.dist((cx,cz),literature_center)<32:continue
+        h=float(feature['properties'].get('building:levels',2))*3.1
+        if h>20:h=9
+        color=rng.choice(['#c7bda7','#c5c7ba','#b9bcae','#b6a88e'])
+        g.polygon('osm-building_'+feature['id'].replace('/','_'),pts,0,h,color,True);g.polygon('context_roof_'+str(count),pts,h,.16,rng.choice(['#6d8d91','#718779','#86857a']))
+        count+=1
+    # Photo-informed low-rise shop rhythm along the mapped Hong-eo street.
+    traced=[]
+    roof_source=json.loads((ROOT/'knowledge/sources/yeongsanpo-traced-roofs.json').read_text(encoding='utf-8'))
+    for roof in roof_source['roofs']:
+        pts=[xy(p) for p in roof['footprint']];pts=pts[:-1] if pts[0]==pts[-1] else pts
+        cx=sum(p[0] for p in pts)/len(pts);cz=sum(p[1] for p in pts)/len(pts)
+        if not(-405<cx<390 and -300<cz<290):continue
+        h=roof['height'];traced.append(pts)
+        g.polygon('photo-building_roof_trace_'+str(roof['id']),pts,0,h,roof['wallColor'],True)
+        g.polygon('traced_roof_'+str(roof['id']),pts,h,.16,roof['roofColor'])
+        a,b=max(zip(pts,pts[1:]+pts[:1]),key=lambda e:math.dist(*e));length=math.dist(a,b)
+        area=sum(p[0]*q[1]-q[0]*p[1] for p,q in zip(pts,pts[1:]+pts[:1]))
+        face=Geometry(scene,[(a[0]+b[0])/2,(a[1]+b[1])/2],math.atan2(b[1]-a[1],b[0]-a[0])+(math.pi if area>0 else 0))
+        for y in (1.65,4.5):
+            if y+.75<h:
+                for i in range(max(1,int(length/4))):
+                    x=-length/2+(i+.5)*length/max(1,int(length/4));face.window('traced_context_window',x,y,.08,min(2.2,length*.7),1.3)
+    street=next(r for r in roads if r['id']=='way/130634137');shopcount=0
+    for a,b in zip(street['points'],street['points'][1:]):
+        length=math.dist(a,b);u=[(b[k]-a[k])/length for k in (0,1)];normal=[-u[1],u[0]]
+        for j in range(max(1,int(length/12))):
+            t=(j+.5)/max(1,int(length/12))
+            for side in (-1,1):
+                center=[a[k]+(b[k]-a[k])*t+normal[k]*side*8.7 for k in (0,1)]
+                if math.dist(center,gallery_center)<20 or math.dist(center,literature_center)<32:continue
+                if any(line_distance(center,ra,rb)<r['width']/2+6 for r in roads if r['id']!=street['id'] for ra,rb in zip(r['points'],r['points'][1:])):continue
+                corners=[[center[k]+u[k]*dx+normal[k]*dz for k in (0,1)] for dx,dz in [(-4.7,-4.25),(4.7,-4.25),(4.7,4.25),(-4.7,4.25)]]
+                if any(any(in_poly(p,pts) for p in corners+[center]) or any(in_poly(p,corners) for p in pts) for pts in traced):continue
+                shop=Geometry(scene,center,math.atan2(u[1],u[0])+(math.pi if side==1 else 0))
+                h=4.2+(shopcount%3)*1.5;shop.box('photo-building_hongeo_shop_'+str(shopcount),0,h/2,0,9.4,h,8.5,rng.choice(['#d6c6ad','#cdc8b2','#c1b6a4']),True)
+                shop.window('hongeo_shopfront',0,1.5,4.3,8.4,2.45)
+                shop.box('hongeo_signboard',0,3.18,4.4,9.3,.75,.12,rng.choice(['#6a7352','#91664c','#44625a','#93694d']),record=False)
+                shop.label(['홍어 · 삼합','영산포 홍어','홍어 이야기','남도 밥상'][shopcount%4],0,3.18,4.49,8.3,.47,color='#fff1da')
+                for x in (-3,0,3):shop.box('shop_awning',x,2.8,4.9,2.8,.1,1.1,'#a49776',record=False)
+                shop.roof('shop_blue_roof',0,h+.15,0,10,9,1.1,['#668590','#768d82','#8c8980'][shopcount%3],tiles=False)
+                if h>5:shop.window('shop_upper_window',0,h-1.05,4.3,6.7,1.2)
+                g.solids+=shop.solids;g.signs+=shop.signs;shopcount+=1
+    portals=[];arrivals={};places=[]
+    for kind,center,angle,title in [('history',gallery_center,-.67,'영산포 역사갤러리'),('literature',literature_center,.15,'타오르는 강 문학관')]:
+        building=Geometry(scene,center,angle);entry,out=exterior(building,kind)
+        g.solids+=building.solids;g.signs+=building.signs
+        p=building.point(*entry);q=building.point(*out)
+        portals.append(dict(id=kind+'-entry',position=p,radius=.83,target='yeongsanpo-'+kind,arrival='entry',label=title+' · 문 안으로 걸어가면 실내가 열립니다.'))
+        arrivals[kind+'-exit']=dict(x=q[0],z=q[1],yaw=math.pi-angle)
+        places.append(place(kind,title,*p,7,'입구로 들어가면 상세 실내가 열립니다.',arrival=q))
+        # A narrow entrance path connects the door to the street network.
+        nearest=min([p for r in roads for p in r['points']],key=lambda p:math.dist(p,q))
+        path=[nearest,[198,132],[220,132],q] if kind=='literature' else [nearest,q]
+        for a,b in zip(path,path[1:]):g.segment('path_'+kind+'_approach',a,b,2.6,.025,'#b6b3a0',base=.065)
+    level=-6.4
+    places.extend([place('landing','황포돛배 선착장',*dock.point(5,-16),15,'계류된 목선과 강변 데크를 둘러보세요.',arrivalHeight=level),place('lighthouse','영산포 등대',*dock.point(4,-4),6,'강변 아래 데크에 남아 있는 흰 등대입니다.',arrivalHeight=level),place('dock-stairs','선착장 내려가는 계단',*stair_route[0],4,'계단을 내려가면 낮은 강변 데크로 이어집니다.'),place('hongeo','영산포 홍어거리',*xy([126.71078,35.0001]),28,'영산3길을 따라 역사갤러리로 이어집니다.'),place('river-view','강변 산책길',-143,138.27,20,'계단을 내려가면 선착장과 등대를 가까이 볼 수 있어요.')])
+    # Riverside street furniture, trees and utility poles at estimated spacing.
+    for x,z in [(-220,183),(-175,168),(-67,127),(6,60),(51,19),(143,-37),(232,-68),(309,148)]:
+        g.tree('street_tree',x,z,1.05,int(x+500));g.box('street_bench',x+3,.43,z,2.2,.15,.65,'#827351',True)
+        g.tube('street_lamp_pole',(x-3,0,z),(x-3,6,z),.055,'#69726c');g.box('street_lamp_head',x-2.5,6,z,1,.12,.35,'#d6d0ae',record=False)
+    for i in range(12):
+        x=-280+i*12;z=230+i%3*5
+        g.box('parked_vehicle',x,.65,z,2.1,1.3,4.4,['#deded3','#949f9b','#5e747d'][i%3],True)
+        g.box('vehicle_window',x,1.32,z,1.83,.65,2.2,'#698488',record=False)
+    for obj in scene.objects:
+        if 'hide_in_overview' in obj:del obj['hide_in_overview']
+    return g,world_data(g,'영산포 · 황포돛배 · 홍어거리',bounds,dict(x=-143,z=138.27,yaw=0),places,origin=dict(lon=ORIGIN[0],lat=ORIGIN[1]),verticalNavigation=True,requireFloor=True,portals=portals,arrivals=arrivals,roads=roads,mappedBuildings=count,tracedRoofs=len(traced),photoInformedShops=shopcount,dockHeight=level,dockStairRoute=stair_route,limitations=['Mapped road and river coordinates are OSM. Building heights and unrecorded shop facades are estimated, not individually surveyed storefronts.','Lighthouse height 8.65m follows archive data. Wharf level -6.4m, stairs, mooring placement and seasonal water level are estimated from photographs.','Museum exteriors use official map/photo positions; interiors are separate authored spaces linked at the doors.','Source imagery, original museum films and long copyrighted panels are not redistributed.'])

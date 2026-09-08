@@ -13,7 +13,7 @@ class MuseumGeometry:
         for name in ('01_OSM_Envelope','02_Photo_Interior','03_Report_Burials','04_Estimated_Fixtures','05_Cutaway_Roof'):
             c=bpy.data.collections.new(name);scene.collection.children.link(c);self.groups[name]=c
         path=Path('C:/Windows/Fonts/malgun.ttf')
-        self.font=bpy.data.fonts.load(str(path)) if path.exists() else None
+        self.font=bpy.data.fonts.load(str(path),check_existing=True) if path.exists() else None
 
     def point(self,x,z):
         c,s=math.cos(self.angle),math.sin(self.angle)

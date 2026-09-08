@@ -8,6 +8,7 @@ import { movePlayer, moveOnFloors, reachableFloor, worldObstacles, solidCollider
 import { destinations, destinationFromSearch, type DestinationId } from '@/lib/destinations';
 import { batchStaticScene } from '@/lib/static-scene';
 import { unpackModel } from '@/lib/model-transport';
+import { sceneArrival, portalAt, portalHref } from '@/lib/scene-travel';
 import { canTravelTo, mapSolids, mapColor } from '@/lib/map-navigation';
 import type { Point } from '@/lib/world';
 import MapTravel from './map-travel';
@@ -87,8 +88,9 @@ export default function Home() {
       const colliders = data.solids.filter(s => s.collision).map(solidCollider);
       const floors = worldFloors(data.solids);
       const obstacles=data.verticalNavigation?worldObstacles(data.solids):[];
-      let px = data.spawn.x, pz = data.spawn.z, yaw = data.spawn.yaw, pitch = 0;
-      let elevation=reachableFloor(px,pz,0,floors)??0;
+      const arrival=sceneArrival(data,window.location.search);
+      let px = arrival.x, pz = arrival.z, yaw = arrival.yaw, pitch = 0;
+      let elevation=reachableFloor(px,pz,arrival.height??0,floors)??0;
       let playing = false, bird = true, drag = false, lastX = 0, lastY = 0;
       let orbit: number = selected.overview.angle, orbitElevation: number = selected.overview.elevation, orbitRadius: number = selected.overview.radius;
       const center = selectedId === 'geumseonggwan' ? new THREE.Vector3(data.spawn.x, 0, data.spawn.z - 3) : new THREE.Vector3(selected.overview.center[0], 0, selected.overview.center[1]);
@@ -174,9 +176,12 @@ export default function Home() {
         if (bird) { orbit -= dx * 0.005; orbitElevation = THREE.MathUtils.clamp(orbitElevation + dy * 0.003, 0.3, 1.3); }
         else if (playing) { yaw -= dx * 0.0028; pitch = THREE.MathUtils.clamp(pitch - dy * 0.0028, -1.15, 1.15); }
       }) as EventListener);
-      listen(canvas, 'wheel', ((e: WheelEvent) => { if (bird) { e.preventDefault(); orbitRadius = THREE.MathUtils.clamp(orbitRadius + e.deltaY * 0.1, 85, selectedId !== 'geumseonggwan' ? 800 : 330); } }) as EventListener, { passive: false });
+      listen(canvas, 'wheel', ((e: WheelEvent) => { if (bird) { e.preventDefault(); orbitRadius = THREE.MathUtils.clamp(orbitRadius + e.deltaY * 0.1, 'parent' in selected ? 12 : 85, selectedId !== 'geumseonggwan' ? 800 : 330); } }) as EventListener, { passive: false });
       listen(canvas, 'webglcontextlost', ((e: Event) => { e.preventDefault(); pause(); setError('3D 화면 연결이 끊겼습니다. 새로고침해 다시 열어주세요.'); }) as EventListener);
       setReady(true);
+      // Door travel opens at eye level. Pointer lock still waits for a user gesture.
+      if(arrival.entered){playing=true;bird=false;setActive(true);setStarted(true);setOverview(false);canvas.focus({preventScroll:true});}
+      let changingScene=false;
       let last = performance.now(), lastHud = 0;
       const frame = (now: number) => {
         if (disposed || !renderer) return;
@@ -188,9 +193,13 @@ export default function Home() {
           const len = Math.hypot(forward, side) || 1;
           const speed = (keys.has('ShiftLeft') || keys.has('ShiftRight') ? 9 : 4.5) * dt / len;
           const dx=(-Math.sin(yaw) * forward + Math.cos(yaw) * side) * speed, dz=(-Math.cos(yaw) * forward - Math.sin(yaw) * side) * speed;
-          const next=data.verticalNavigation?moveOnFloors(px,pz,elevation,dx,dz,obstacles,floors,data.bounds):movePlayer(px,pz,dx,dz,colliders,data.bounds);
+          const next=data.verticalNavigation?moveOnFloors(px,pz,elevation,dx,dz,obstacles,floors,data.bounds,data.requireFloor):movePlayer(px,pz,dx,dz,colliders,data.bounds);
           px = next.x; pz = next.z;
           if('height' in next)elevation=next.height as number;
+          if(!changingScene && (forward || side)){
+            const portal=portalAt(data,px,pz,elevation),href=portal&&portalHref(portal);
+            if(href){changingScene=true;keys.clear();playing=false;window.location.assign(href);}
+          }
         }
         roofParts.forEach(o=>{o.visible=!bird;});
         if (bird) {
@@ -198,7 +207,8 @@ export default function Home() {
         } else { camera.position.set(px, 1.72 + (data.verticalNavigation?elevation:floorHeight(px, pz, floors)), pz); camera.rotation.order = 'YXZ'; camera.rotation.set(pitch, yaw, 0); }
         if (now - lastHud > 180) {
           const place = currentPlace(px, pz, data.places, data.verticalNavigation?elevation:undefined);
-          setView({ x: px, z: pz, yaw, place: place?.name ?? selected.area, detail: place?.description ?? '길을 따라 천천히 둘러보세요.', indoor: place?.indoor ?? place?.id === 'interior' }); lastHud = now;
+          const doorway=data.portals?.find(p=>Math.hypot(p.position[0]-px,p.position[1]-pz)<4 && Math.abs((p.height??0)-elevation)<.6);
+          setView({ x: px, z: pz, yaw, place: place?.name ?? selected.area, detail: doorway?doorway.label:place?.description ?? '길을 따라 천천히 둘러보세요.', indoor: place?.indoor ?? place?.id === 'interior' }); lastHud = now;
         }
         renderer.render(scene, camera); animation = requestAnimationFrame(frame);
       };
@@ -227,14 +237,14 @@ export default function Home() {
       <div className="scene" ref={host} /><div className="vignette" />
       <header className="topbar">
         <div className="brand"><span className="brand-mark"><Compass size={25} strokeWidth={1.4} /></span><div><strong>나주 산책</strong><span>NAJU, ON FOOT</span></div></div>
-        <div className="location-pill"><span className="live-dot" /><span>{destination.area}</span><span className="pill-divider" /><span>실제 지도 기반</span></div>
+        <div className="location-pill"><span className="live-dot" /><span>{destination.area}</span><span className="pill-divider" /><span>{'parent' in destination?'사진 참고 실내':'실제 지도 기반'}</span></div>
         <div className="view-actions"><button className={overview ? 'active' : ''} onClick={() => engine.current?.overview()} disabled={!ready}><MoveUpRight size={16} />전체 보기</button><button className={!overview ? 'active' : ''} onClick={() => engine.current?.start()} disabled={!ready}><Footprints size={16} />걷기</button></div>
       </header>
       <nav className="destination-nav" aria-label="산책 장소">
         <button onClick={openMap}><Map size={18}/><span>지도로 이동</span><ArrowUpRight size={16}/></button>
       </nav>
       {world && <aside className="minimap" aria-label="현재 위치 지도">
-        <div className="map-heading"><span>동네 지도</span><span>N ↑</span></div>
+        <div className="map-heading"><span>{'parent' in destination?'실내 지도':'동네 지도'}</span><span>{'parent' in destination?'출구 ↓':'N ↑'}</span></div>
         <svg viewBox={`${world.bounds[0]} ${world.bounds[2]} ${world.bounds[1] - world.bounds[0]} ${world.bounds[3] - world.bounds[2]}`} role="img" aria-label={`현재 위치: ${view.place}`} onClick={openMap}>
           <rect x={world.bounds[0]} y={world.bounds[2]} width={world.bounds[1] - world.bounds[0]} height={world.bounds[3] - world.bounds[2]} fill="#e5e8df" />
           {mapSolids(world).map((s, i) => <polygon key={i} points={solidCollider(s).map(p => p.join(',')).join(' ')} fill={mapColor(s.name)} stroke={s.kind === 'building' ? '#9aada2' : 'none'} strokeWidth="0.7" />)}
@@ -256,7 +266,7 @@ export default function Home() {
       {active && <><div className="crosshair" aria-hidden="true" /><div className="place-card"><span className="place-icon"><MapPin size={21} /></span><div><span>{view.indoor ? '실내에 도착했어요' : '지금 걷는 곳'}</span><strong>{view.place}</strong><p>{view.detail}</p></div></div>
         <div className="touch-controls" aria-label="이동 버튼"><button aria-label="앞으로" {...press('KeyW')}><ArrowUp /></button><div><button aria-label="왼쪽으로" {...press('KeyA')}><ArrowLeft /></button><button aria-label="뒤로" {...press('KeyS')}><ArrowDown /></button><button aria-label="오른쪽으로" {...press('KeyD')}><ArrowRight /></button></div><div className="turn-controls"><button aria-label="왼쪽 보기" {...press('KeyQ')}>↶</button><button aria-label="오른쪽 보기" {...press('KeyE')}>↷</button></div></div></>}
       <footer className="bottom-bar"><div className="keyboard-guide"><span><kbd>W A S D</kbd> 이동</span><span><kbd>← →</kbd> 시선 회전</span><span><kbd>Shift</kbd> 빠르게</span><span><kbd>Esc</kbd> 쉬기</span></div><div className="bottom-actions"><button onClick={() => engine.current?.reset()} disabled={!ready} aria-label="출발 위치로 돌아가기"><RotateCcw size={16} />처음 위치</button>{active && <button onClick={() => engine.current?.pause()}><Pause size={16} />쉬기</button>}</div></footer>
-      <div className="source-note"><a href="https://www.openstreetmap.org/copyright" target="_blank" rel="noreferrer">© OpenStreetMap 기여자 · ODbL</a><span>·</span><a href={destination.sourceUrl} target="_blank" rel="noreferrer">{destination.sourceLabel}</a>{destinationId !== 'geumseonggwan' && <><span>·</span><a href="https://server.arcgisonline.com/ArcGIS/rest/services/World_Imagery/MapServer" target="_blank" rel="noreferrer">Esri / Vantor 항공사진({destinationId==='dasi'?'2022':'2023'})</a></>}<span>· {destination.limitation}</span></div>
+      <div className="source-note"><a href="https://www.openstreetmap.org/copyright" target="_blank" rel="noreferrer">© OpenStreetMap 기여자 · ODbL</a><span>·</span><a href={destination.sourceUrl} target="_blank" rel="noreferrer">{destination.sourceLabel}</a>{(['dasi','bogam','bogam-museum'].includes(destinationId)) && <><span>·</span><a href="https://server.arcgisonline.com/ArcGIS/rest/services/World_Imagery/MapServer" target="_blank" rel="noreferrer">Esri / Vantor 항공사진({destinationId==='dasi'?'2022':'2023'})</a></>}{destinationId==='yeongsanpo'&&<><span>·</span><a href="https://server.arcgisonline.com/ArcGIS/rest/services/World_Imagery/MapServer" target="_blank" rel="noreferrer">Esri / Vantor 항공사진 참고</a></>}<span>· {destination.limitation}</span></div>
       {mapOpen&&<MapTravel destinationId={destinationId} world={world} position={[view.x,view.z]} onClose={()=>setMapOpen(false)} onTravel={(point,height)=>engine.current?.travel(point,height)??false}/>}
     </main>
   );

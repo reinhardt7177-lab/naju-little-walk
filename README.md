@@ -2,6 +2,17 @@
 
 금성관 주변의 실제 OpenStreetMap 건물 윤곽과 도로 좌표를 **Blender 4.5 LTS**에서 입체로 제작하고, Blender에서 내보낸 GLB를 **Three.js**로 불러와 탐험합니다.
 
+## 영산포 강변 · 홍어거리 · 두 전시관
+
+`/?place=yeongsanpo`에서 황포돛배 선착장과 등대, 영산3길 홍어거리, 역사갤러리·타오르는 강 문학관 외관을 같은 지도에서 둘러봅니다. 두 전시관의 열린 현관으로 걸어 들어가면 별도의 상세 실내가 열리고, 같은 문으로 나가면 원래 거리의 입구 앞으로 돌아옵니다. 문학관은 서재 뒤 계단을 통해 2층 독서공간까지 올라갈 수 있습니다.
+
+- 새 편집본: `outputs/yeongsanpo.blend`, `outputs/yeongsanpo-history.blend`, `outputs/yeongsanpo-literature.blend`
+- 제작: `scripts/build_yeongsanpo.py` 및 `yeongsanpo_*.py`
+- 실제 자료와 추정의 구분: [구현 기록](knowledge/yeongsanpo-implementation.md), [공식·방문 사진 검토](knowledge/yeongsanpo-photo-references.md)
+- 배포: `public/yeongsanpo*-world.json`과 `public/models/yeongsanpo*.glb.gz` (손실 없는 압축)
+
+공개 사진에서 확인한 건축과 전시 특징을 재현했습니다. 방 치수·상점 입면·전시 도식·수면 높이 등은 추정이며 실제 현장의 완전한 스캔은 아닙니다.
+
 ## 금성관 입구와 주변 거리 보완
 
 망화루 앞 박석 보행대, 안내판, 자연석 기와담장, 낮은 원목 울타리와 관목 화단, 양쪽 잔디마당을 사진에 맞춰 보완했습니다. OSM의 서측 주차장 윤곽과 통로를 반영했으며, 위성영상에서 해석한 **주변 지붕 37개**를 별도 출처로 추가했습니다. 주변 건물 높이·창문, 주차 차량과 시설물 배치는 추정입니다.

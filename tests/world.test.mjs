@@ -6,12 +6,85 @@ import { destinationFromSearch, destinations } from '../lib/destinations.ts';
 import * as THREE from 'three';
 import { batchStaticScene } from '../lib/static-scene.ts';
 import { unpackModel } from '../lib/model-transport.ts';
+import { sceneArrival,portalAt,portalHref } from '../lib/scene-travel.ts';
 import { canTravelTo, mapArrival, mapSolids, regionalPoint, regionalSize } from '../lib/map-navigation.ts';
 
 const bogam=JSON.parse(fs.readFileSync(new URL('../public/bogam-world.json',import.meta.url),'utf8'));
 const bogamColliders=bogam.solids.filter(s=>s.collision).map(solidCollider);
 const museum=JSON.parse(fs.readFileSync(new URL('../public/bogam-museum-world.json',import.meta.url),'utf8'));
 const museumFloors=worldFloors(museum.solids), museumObstacles=worldObstacles(museum.solids);
+
+const yeongsanWorlds=Object.fromEntries(['yeongsanpo','yeongsanpo-history','yeongsanpo-literature'].map(id=>[id,JSON.parse(fs.readFileSync(new URL(`../public/${id}-world.json`,import.meta.url),'utf8'))]));
+function walkRoute(world,route,height=0){
+  const floors=worldFloors(world.solids),obstacles=worldObstacles(world.solids);
+  let p={x:route[0][0],z:route[0][1],height};
+  for(const [x,z] of route.slice(1)){
+    p=moveOnFloors(p.x,p.z,p.height,x-p.x,z-p.z,obstacles,floors,world.bounds,world.requireFloor);
+    assert.ok(Math.hypot(p.x-x,p.z-z)<.06,`Blocked ${world.subtitle} waypoint ${x},${z}: ${JSON.stringify(p)}`);
+  }
+  return p;
+}
+
+test('museum doors enter separate scenes and return to safe street arrivals without loops',()=>{
+  const outdoor=yeongsanWorlds.yeongsanpo;
+  for(const portal of outdoor.portals){
+    const inside=yeongsanWorlds[portal.target],href=portalHref(portal);
+    assert.equal(destinationFromSearch(href.split('?')[1]),portal.target);
+    const arrival=sceneArrival(inside,href.split('?')[1]);assert.equal(arrival.entered,true);
+    assert.equal(portalAt(inside,arrival.x,arrival.z),undefined);
+    const exit=inside.portals[0];const back=sceneArrival(outdoor,portalHref(exit).split('?')[1]);
+    assert.equal(back.entered,true);assert.equal(portalAt(outdoor,back.x,back.z),undefined);
+    walkRoute(outdoor,[[back.x,back.z],portal.position]);
+    assert.equal(portalAt(outdoor,...portal.position)?.target,portal.target);
+    assert.equal(portalAt(outdoor,...portal.position,5),undefined);
+  }
+  assert.equal(portalHref({...outdoor.portals[0],target:'https://example.com'}),null);
+  assert.equal(sceneArrival(outdoor,'?at=__proto__').entered,false);
+});
+
+test('history gallery visitors can circle the exhibits and leave through the original door',()=>{
+  const world=yeongsanWorlds['yeongsanpo-history'];const end=walkRoute(world,world.walkRoute);
+  assert.equal(portalAt(world,end.x,end.z,end.height)?.target,'yeongsanpo');
+});
+
+test('literature museum stairs reach the attic and return without walking inside the steps',()=>{
+  const world=yeongsanWorlds['yeongsanpo-literature'];
+  const route=[[0,7.3],[6,7.3],[6,4],[4,0],[4,-3.5],[0,-3.5],[-.6,-3.5],[-.6,-1.8],[-2,-1.8],[-2,-8.45],[-4,-8.45],[-7.5,-8.45],[-7.5,-4]];
+  const top=walkRoute(world,route);assert.ok(Math.abs(top.height-3.36)<.03);
+  const back=walkRoute(world,[...route].reverse(),top.height);assert.ok(Math.abs(back.height)<.04);
+  const side=moveOnFloors(-3.3,-6,0,1.3,0,worldObstacles(world.solids),worldFloors(world.solids),world.bounds);
+  assert.ok(side.x<-3.08,'The side of a tall step must stop a ground-level visitor');
+});
+
+test('Yeongsanpo river blocks walking while street and lower wharf stairs stay connected',()=>{
+  const world=yeongsanWorlds.yeongsanpo;
+  assert.equal(canTravelTo([-170,-50],world),false,'Open water is not a ground floor');
+  const route=world.dockStairRoute;const lower=walkRoute(world,route);assert.ok(Math.abs(lower.height-world.dockHeight)<.03);
+  const back=walkRoute(world,[...route].reverse(),lower.height);assert.ok(Math.abs(back.height)<.03);
+  const road=world.roads.find(r=>r.id==='way/729505193');
+  const section=road.points.filter(p=>p[0]>-205&&p[0]<0);
+  walkRoute(world,section);
+  for(const place of world.places)assert.ok(mapArrival(place,world),`No map arrival for ${place.name}`);
+});
+
+test('three new Blender scenes have standalone buffers and exact compressed transport',async()=>{
+  for(const id of Object.keys(yeongsanWorlds)){
+    const raw=fs.readFileSync(new URL(`../public/models/${id}.glb`,import.meta.url));
+    const zipped=fs.readFileSync(new URL(`../public/models/${id}.glb.gz`,import.meta.url));
+    const restored=await unpackModel(zipped.buffer.slice(zipped.byteOffset,zipped.byteOffset+zipped.byteLength));
+    assert.deepEqual(Buffer.from(restored),raw);assert.ok(zipped.length<26214400);
+    const json=JSON.parse(raw.toString('utf8',20,20+raw.readUInt32LE(12)));
+    assert.match(json.asset.generator,/Blender/);assert.ok(json.buffers.every(b=>!b.uri));
+    assert.ok(json.nodes.some(n=>n.name?.startsWith(id==='yeongsanpo'?'yeongsanpo_lighthouse':id.endsWith('history')?'boat_white_sail_screen':'attic_white_bookshelf')));
+    if(id==='yeongsanpo')assert.equal(json.nodes.some(n=>n.extras?.hide_in_overview),false,'Exterior roofs remain visible in the regional overview');
+  }
+});
+
+test('one outdoor walk connects the riverfront, Hong-eo street and both museum doorways',()=>{
+  const w=yeongsanWorlds.yeongsanpo,h=w.arrivals['history-exit'],l=w.arrivals['literature-exit'];
+  const hp=w.portals.find(p=>p.id==='history-entry').position,lp=w.portals.find(p=>p.id==='literature-entry').position;
+  walkRoute(w,[[w.spawn.x,w.spawn.z],[-50.189387567,105.687208],[-39.13,99.49],[-33.02,117.14],[83.828313937,35.076932],[h.x,h.z],hp,[h.x,h.z],[83.828313937,35.076932],[-33.02,117.14],[-26.57,135.69],[52.16,117.63],[190.31,90.22],[198,132],[220,132],[l.x,l.z],lp]);
+});
 
 test('museum bridge bends have walkable outer corners and continuous edge guards',()=>{
   const frame=JSON.parse(fs.readFileSync(new URL('../knowledge/sources/bogam-museum-hall-frame.json',import.meta.url),'utf8')).hallFrame;

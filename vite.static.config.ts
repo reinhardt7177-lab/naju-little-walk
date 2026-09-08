@@ -2,7 +2,7 @@ import react from '@vitejs/plugin-react';
 import tailwindcss from '@tailwindcss/postcss';
 import { defineConfig } from 'vite';
 import { fileURLToPath } from 'node:url';
-import { readFileSync, unlinkSync } from 'node:fs';
+import { readFileSync, readdirSync, unlinkSync } from 'node:fs';
 import { gunzipSync } from 'node:zlib';
 
 // A shared React page with a plain static production entry avoids the Windows
@@ -12,11 +12,13 @@ export default defineConfig({
     name:'publish-compressed-blender-model',
     apply:'build',
     closeBundle(){
-      const raw=new URL('./dist/client/models/geumseonggwan.glb',import.meta.url);
-      const compressed=new URL('./dist/client/models/geumseonggwan.glb.gz',import.meta.url);
+      for(const name of readdirSync(new URL('./dist/client/models/',import.meta.url)).filter(n=>n.endsWith('.glb.gz'))){
+      const raw=new URL('./dist/client/models/'+name.slice(0,-3),import.meta.url);
+      const compressed=new URL('./dist/client/models/'+name,import.meta.url);
       if(!gunzipSync(readFileSync(compressed)).equals(readFileSync(raw)))throw new Error('Compressed Blender model is stale; regenerate it before publishing.');
       // Only omit the redundant build copy. The original GLB stays in public/.
       unlinkSync(raw);
+      }
     },
   }],
   resolve: { alias: { '@': fileURLToPath(new URL('.', import.meta.url)) } },
