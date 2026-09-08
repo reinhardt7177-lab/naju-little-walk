@@ -19,7 +19,7 @@ export const destinations = {
   },
   'yeongsanpo-literature': {
     coordinates:{lat:34.9998292,lon:126.712917},parent:'yeongsanpo',
-    name:'타오르는 강 문학관',area:'타오르는 강 문학관 실내',worldUrl:'/yeongsanpo-literature-world.json?v=interior-1',modelUrl:'/models/yeongsanpo-literature.glb.gz?v=interior-1',
+    name:'타오르는 강 문학관',area:'타오르는 강 문학관 실내',worldUrl:'/yeongsanpo-literature-world.json?v=ground-1',modelUrl:'/models/yeongsanpo-literature.glb.gz?v=ground-1',
     heading:['목조 복도를 따라,','이야기가 흐르는 집.'],
     introduction:['다다미 전시방과 서재, 좌식 독서실을 둘러보세요.','현관의 출구로 나가면 영산포 거리로 돌아갑니다.'],
     sourceUrl:'https://www.jnfilm.or.kr/web_jnfilm/jn_ldbview.php?clmsuid=5079',sourceLabel:'전남영상위원회 사진 참고',
