@@ -14,6 +14,8 @@ ROOT=Path(__file__).resolve().parents[1]
 sys.path.insert(0,str(ROOT/'scripts'))
 from museum_geometry import MuseumGeometry
 OUTPUT=ROOT/'outputs/bogam-museum.blend'
+if '--output-blend' in sys.argv:
+    OUTPUT=ROOT/Path(sys.argv[sys.argv.index('--output-blend')+1])
 if OUTPUT.exists() and '--replace' not in sys.argv:raise RuntimeError('Preserve your edits; existing output requires explicit --replace.')
 frame=json.loads((ROOT/'knowledge/sources/bogam-museum-hall-frame.json').read_text(encoding='utf-8'))
 trace=json.loads((ROOT/'knowledge/sources/bogam-museum-burials.json').read_text(encoding='utf-8'))
@@ -74,7 +76,11 @@ bridge_path=[[-21.5,17.8],[-21.5,-19],[-6.7,-19],[-6.7,-3.8],[20.7,-3.8],[20.7,1
 def distance_segment(x,z,a,b):
     dx,dz=b[0]-a[0],b[1]-a[1];t=max(0,min(1,((x-a[0])*dx+(z-a[1])*dz)/(dx*dx+dz*dz)))
     return math.hypot(x-a[0]-dx*t,z-a[1]-dz*t)
-def beneath_bridge(x,z):return any(distance_segment(x,z,a,b)<1.18 for a,b in zip(bridge_path,bridge_path[1:]))
+def beneath_bridge(x,z):
+    # Include the full square landing and a terrain-cell margin at each bend.
+    # A circular path buffer alone leaves tall soil colliders beside outer corners.
+    return (any(distance_segment(x,z,a,b)<1.18 for a,b in zip(bridge_path,bridge_path[1:]))
+            or any(abs(x-p[0])<1.35 and abs(z-p[1])<1.35 for p in bridge_path[1:-1]))
 for b in burials:
     if beneath_bridge(*b['model_center']):b['replica_floor']=min(b['replica_floor'],1.2)
 
@@ -176,19 +182,62 @@ def staircase(name,x,start_z,start_y,sign= -1,total=20,width=2.15):
 stair_route,h,end_z=staircase('main_stair_',-21.5,25,BASE,total=21)
 # 20 risers × 0.17m = 3.40m above the 0.12m floor.
 bridge_path[0]=[-21.5,end_z]
+half_width=1.1
+directions=[]
+for a,b in zip(bridge_path,bridge_path[1:]):
+    length=math.dist(a,b);directions.append(((b[0]-a[0])/length,(b[1]-a[1])/length))
+
+# Separate square landings and straight decks share edges, never overlapping top faces.
+# This closes the missing outside quadrant at each bend without flickering board joints.
+for j,p in enumerate(bridge_path[1:-1],1):
+    box('walk-floor_bridge_landing_'+str(j),p[0],BRIDGE-.09,p[1],2.2,.18,2.2,'#b39873')
+    ux,uz=directions[j-1];nx,nz=-uz,ux
+    for k in range(1,9):
+        t=-half_width+k*2.2/9
+        aa=[p[0]+ux*t+nx*1.04,p[1]+uz*t+nz*1.04]
+        bb=[p[0]+ux*t-nx*1.04,p[1]+uz*t-nz*1.04]
+        segment('bridge_landing_board_joint',aa,bb,.006,.003,'#6f6250',base=BRIDGE+.001,record=False)
+
 for j,(a,b) in enumerate(zip(bridge_path,bridge_path[1:])):
-    segment('walk-floor_bridge_'+str(j),a,b,2.2,.18,'#b39873',base=BRIDGE-.18)
     dx,dz=b[0]-a[0],b[1]-a[1];length=math.hypot(dx,dz);ux,uz=dx/length,dz/length;nx,nz=-uz,ux
-    for side in (-1,1):
-        aa=[a[0]+ux*1.12+nx*1.11*side,a[1]+uz*1.12+nz*1.11*side]
-        bb=[b[0]-ux*1.12+nx*1.11*side,b[1]-uz*1.12+nz*1.11*side]
-        if math.dist(aa,bb)>1:g.railing('bridge_rail_'+str(j)+'_'+str(side),aa,bb,BRIDGE)
+    start=half_width if j else 0
+    end=length-(half_width if j<len(directions)-1 else 0)
+    aa=[a[0]+ux*start,a[1]+uz*start];bb=[a[0]+ux*end,a[1]+uz*end]
+    segment('walk-floor_bridge_'+str(j),aa,bb,2.2,.18,'#b39873',base=BRIDGE-.18)
     for k in range(int(length/2)+1):
         t=k/max(1,int(length/2));x=a[0]+dx*t;z=a[1]+dz*t
-        for side in (-1,1):box('bridge_black_support',x+nx*.83*side,BRIDGE/2,z+nz*.83*side,.085,BRIDGE,.085,'#303736',record=False)
-    for k in range(int(length/.25)):
-        t=k*.25/length;aa=[a[0]+dx*t+nx,a[1]+dz*t+nz];bb=[a[0]+dx*t-nx,a[1]+dz*t-nz]
-        segment('bridge_board_joint',aa,bb,.008,.004,'#6f6250',base=BRIDGE+.001,record=False)
+        for side in (-1,1):box('bridge_black_support',x+nx*.83*side,(BRIDGE-.18)/2,z+nz*.83*side,.085,BRIDGE-.18,.085,'#303736',record=False)
+    for k in range(int((end-start)/.25)):
+        t=start+(k+.5)*.25;aa=[a[0]+ux*t+nx*1.04,a[1]+uz*t+nz*1.04];bb=[a[0]+ux*t-nx*1.04,a[1]+uz*t-nz*1.04]
+        segment('bridge_board_joint',aa,bb,.006,.003,'#6f6250',base=BRIDGE+.001,record=False)
+
+# Offset the complete path: outer rails extend around corners, inner rails meet at
+# their intersection. Keep the stair entry open and close only the actual dead end.
+rail_paths=[]
+for side in (-1,1):
+    points=[]
+    for j,p in enumerate(bridge_path):
+        before=directions[max(0,j-1)];after=directions[min(j,len(directions)-1)]
+        den=1+before[0]*after[0]+before[1]*after[1]
+        x=p[0]+side*1.04*(-before[1]-after[1])/den
+        z=p[1]+side*1.04*(before[0]+after[0])/den
+        if j==len(bridge_path)-1:x-=after[0]*.06;z-=after[1]*.06
+        points.append([x,z])
+    rail_paths.append(points)
+    for j,(a,b) in enumerate(zip(points,points[1:])):
+        name=f'bridge_rail_{j}_{side}'
+        g.railing(name,a,b,BRIDGE,start_post=(j==0))
+        segment(name+'_edge_fascia',a,b,.075,.22,'#8d7555',base=BRIDGE-.23,record=False)
+        segment(name+'_glass_shoe',a,b,.045,.055,'#a2acab',base=BRIDGE+.055,record=False)
+    # Small timber collars cover the handrail butt joints at each turn.
+    for p in points[1:-1]:
+        g.tube('bridge_corner_handrail_cap',(p[0],BRIDGE+1.025,p[1]),(p[0],BRIDGE+1.095,p[1]),.057,'#9e784c',n=16)
+    sx=bridge_path[0][0]+side*1.135
+    g.tube('bridge_stair_handrail_join',(sx,BRIDGE+1.06,end_z),(points[0][0],BRIDGE+1.06,points[0][1]),.045,'#9e784c')
+end_a,end_b=rail_paths[0][-1],rail_paths[1][-1]
+g.railing('bridge_terminal_rail',end_a,end_b,BRIDGE,start_post=False,end_post=False)
+segment('bridge_terminal_fascia',end_a,end_b,.08,.22,'#8d7555',base=BRIDGE-.23,record=False)
+segment('bridge_terminal_glass_shoe',end_a,end_b,.045,.055,'#a2acab',base=BRIDGE+.055,record=False)
 
 # Main exhibit case: the post-2024 dark display wall and pale stepped ceramic shelf.
 box('exhibit-case_pottery',23.6,1.85,5,1.5,3.5,16,'#302e29',True)
@@ -298,12 +347,13 @@ places=[
     place('lobby','1층 안내 로비',[-16,52],[-20,51],0,14,'전시관의 실제 지도 윤곽과 공식 층별 배치를 참고한 출발 공간입니다.'),
 ]
 spawn=g.point(-16,52)
-route_local=[[-16,52],[-24.2,52],[-24.2,43],[-22,28],[-21.5,25.3]]+[[r[0],r[1]] for r in stair_route]+bridge_path[1:]
+bridge_arrival=[bridge_path[-1][0]-directions[-1][0]*.6,bridge_path[-1][1]-directions[-1][1]*.6]
+route_local=[[-16,52],[-24.2,52],[-24.2,43],[-22,28],[-21.5,25.3]]+[[r[0],r[1]] for r in stair_route]+bridge_path[1:-1]+[bridge_arrival]
 world=dict(title='나주 산책',subtitle='복암리고분전시관 · 내부 사진과 발굴도 참고',source='© OpenStreetMap contributors, ODbL 1.0',source_url='https://www.openstreetmap.org/way/471352007',origin=layout['origin'],bounds=[-65,65,-65,80],spawn=dict(x=spawn[0],z=spawn[1],yaw=.1),verticalNavigation=True,solids=g.solids,signs=g.signs,places=places,lights=g.lights,buildings=[dict(osm_id='471352007',footprint=layout['building']['museumLocalXZ'][:-1],height=10.5,height_source='Photo-informed envelope heights, not measured')],burials=burials,walkRoute=[g.point(*p) for p in route_local],bridgeHeight=BRIDGE,stairs=dict(main=stair_route,cafe=cafe_stairs),limitations=[
     'Exterior footprint is OSM way471352007. Official floor icons establish relative room arrangement, not measured room walls.',
     'Official photos and post-renovation visitor photos dated 2024-08-17 inform ochre replica, pale blue-grey floor, black trusses, glass/metal/wood rails, stairs and dark pottery case.',
     '41 burial centres are manually traced from the 2001 excavation report, not a measured survey of the museum replica. Exposed sizes, elevations and museum alignment are inferred.',
-    'Bridge height 3.52m includes 0.12m floor and 20 estimated 0.17m risers. Exact bridge path, exhibition partitions, room dimensions, lighting and furniture placement are estimates.',
+    'Bridge height 3.52m includes 0.12m floor and 20 estimated 0.17m risers. Exact bridge path, exhibition partitions, room dimensions, lighting and furniture placement are estimates. Continuous corner landings, rail joints and terminal guard are model finishing details, not newly verified real-site measurements.',
     'The central replica uses an estimated stepped height surface. Ancient remains were not modelled as present-day human remains; the 2024 exhibition changed after the displayed skeleton was moved for study.',
     'Theatre has 38 seats per official description; screen content is original placeholder typography. Digital room retains three screens without redistributing the actual film.',
     'The 2F cafe is walkable. Unverified staff/service interiors, toilet interiors and 3F observatory interiors are not reproduced.',
@@ -319,6 +369,11 @@ scene.render.engine='BLENDER_EEVEE_NEXT';scene.render.resolution_x=1700;scene.re
 bpy.ops.file.pack_all();bpy.ops.wm.save_as_mainfile(filepath=str(OUTPUT))
 bpy.ops.export_scene.gltf(filepath=str(ROOT/'public/models/bogam-museum.glb'),export_format='GLB',use_active_scene=True,export_cameras=False,export_lights=False,export_extras=True,export_apply=True)
 print(json.dumps(dict(objects=len(scene.objects),burials=len(burials),solids=len(g.solids),bridgeHeight=BRIDGE,blend=str(OUTPUT)),ensure_ascii=False))
+if '--render-bridge' in sys.argv:
+    camera.data.type='PERSP';camera.data.lens=26;camera.data.clip_start=.1
+    scene.render.resolution_x=1400;scene.render.resolution_y=1000
+    for name,eye,target in [('bogam-museum-corner-finished',(-21.5,5.24,-12),(-21.1,4.5,-19.4)),('bogam-museum-corner-detail',(-23.3,6.4,-21.8),(-20,3.7,-18)),('bogam-museum-end-finished',(20.7,5.24,11.5),(20.7,4.3,18))]:
+        camera.location=g.bp(*eye);camera.rotation_euler=(Vector(g.bp(*target))-camera.location).to_track_quat('-Z','Y').to_euler();scene.render.filepath=str(ROOT/'outputs'/f'{name}.png');bpy.ops.render.render(write_still=True)
 if '--render' in sys.argv:
     for o in scene.objects:
         if o.get('hide_in_overview'):o.hide_render=True

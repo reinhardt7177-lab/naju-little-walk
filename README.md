@@ -6,7 +6,8 @@
 
 **복암리고분전시관 내부도 추가했습니다.** 지도에서 전시관을 선택하면 황토색 3호분 절개 모형, 보고서에서 위치를 추적한 41개 매장시설, 유리 난간 관람교량, 토기 진열장, 38석 영상실, 체험 공간과 2층 북카페를 둘러볼 수 있습니다. 계단을 실제로 올라가며 같은 위치의 아래층·위층을 구분합니다.
 
-- 전시관 Blender: `outputs/bogam-museum.blend`
+- 전시관 Blender 최신 마감본: `outputs/bogam-museum-finished.blend` (기존 `outputs/bogam-museum.blend` 보존)
+- 관람교량 네 코너의 바닥·난간 연결과 막다른 끝부분을 마감했습니다. 계단 입구와 회전 통로는 그대로 걸을 수 있습니다.
 - 전시관 렌더: `outputs/bogam-museum-overview.png`, `outputs/bogam-museum-main.png`, `outputs/bogam-museum-bridge.png`
 - 제작: `scripts/build_bogam_museum.py`, `scripts/museum_geometry.py`
 - 검증 범위와 추정 사항: `knowledge/sources/BOGAM_MUSEUM_REFERENCES.md`

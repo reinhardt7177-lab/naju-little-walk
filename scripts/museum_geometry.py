@@ -107,14 +107,14 @@ class MuseumGeometry:
         faces=[tuple(range(8)),tuple(range(24,32))]+[(j*8+i,j*8+(i+1)%8,j*8+(i+1)%8+8,j*8+i+8) for j in range(3) for i in range(8)]
         return self.mesh(name,verts,faces,color,'03_Report_Burials',True)
 
-    def railing(self,name,a,b,height,width=.045,glass=True):
+    def railing(self,name,a,b,height,width=.045,glass=True,start_post=True,end_post=True):
         length=math.dist(a,b);n=max(1,math.ceil(length/1.35))
         self.segment(name+'_collision',a,b,.10,1.05,'#939b99',base=height,collision=True,record=True).hide_render=True
         # Hidden proxy stays in collision JSON only, never in exported visible geometry.
         proxy=self.scene.objects.get(name+'_collision')
         if proxy:bpy.data.objects.remove(proxy,do_unlink=True)
         self.tube(name+'_wood_handrail',(a[0],height+1.06,a[1]),(b[0],height+1.06,b[1]),.045,'#9e784c')
-        for i in range(n+1):
+        for i in range(0 if start_post else 1,n+1 if end_post else n):
             t=i/n;x=a[0]+(b[0]-a[0])*t;z=a[1]+(b[1]-a[1])*t
             self.tube(name+'_steel_post',(x,height,z),(x,height+1.03,z),.023,'#a2acab')
         if glass:

@@ -12,6 +12,25 @@ const bogamColliders=bogam.solids.filter(s=>s.collision).map(solidCollider);
 const museum=JSON.parse(fs.readFileSync(new URL('../public/bogam-museum-world.json',import.meta.url),'utf8'));
 const museumFloors=worldFloors(museum.solids), museumObstacles=worldObstacles(museum.solids);
 
+test('museum bridge bends have walkable outer corners and continuous edge guards',()=>{
+  const frame=JSON.parse(fs.readFileSync(new URL('../knowledge/sources/bogam-museum-hall-frame.json',import.meta.url),'utf8')).hallFrame;
+  const local=(x,z)=>[frame.center[0]+frame.u[0]*x+frame.v[0]*z,frame.center[1]+frame.u[1]*x+frame.v[1]*z];
+  for(const point of [[-22.05,-19.55],[-6.15,-19.55],[-7.25,-3.25],[21.25,-4.35]]){
+    const [x,z]=local(...point);
+    assert.ok(Math.abs(reachableFloor(x,z,museum.bridgeHeight,museumFloors)-museum.bridgeHeight)<.001,`Missing corner floor ${point}`);
+    assert.equal(blocksWalking(x,z,museum.bridgeHeight,museumObstacles),false,`Corner passage blocked ${point}`);
+  }
+  const route=[[-21.5,-18.3],[-22.05,-19.55],[-20.8,-19]].map(p=>local(...p));
+  let p={x:route[0][0],z:route[0][1],height:museum.bridgeHeight};
+  for(const [x,z] of [...route.slice(1),...route.slice(0,-1).reverse()]){
+    p=moveOnFloors(p.x,p.z,p.height,x-p.x,z-p.z,museumObstacles,museumFloors,museum.bounds);
+    assert.ok(Math.hypot(p.x-x,p.z-z)<.05,`Cannot walk around finished corner: ${JSON.stringify(p)}`);
+  }
+  for(const point of [[-22.54,-19.55],[-22.05,-20.04],[-6.15,-20.04],[-5.66,-19.55],[-7.74,-3.25],[-7.25,-2.76],[21.74,-4.35],[21.25,-4.84],[20.7,17.74]]){
+    assert.equal(blocksWalking(...local(...point),museum.bridgeHeight,museumObstacles),true,`Missing edge guard ${point}`);
+  }
+});
+
 test('museum lower lobby does not snap to the cafe above, and the stairs reach the full bridge circuit',()=>{
   let p={x:museum.spawn.x,z:museum.spawn.z,height:.12};
   assert.equal(reachableFloor(p.x,p.z,0,museumFloors),.12);

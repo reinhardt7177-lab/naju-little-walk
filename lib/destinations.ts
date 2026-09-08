@@ -28,7 +28,7 @@ export const destinations = {
   },
   'bogam-museum': {
     coordinates: {lat:34.996091,lon:126.657059219},
-    name:'복암리고분전시관',area:'복암리고분전시관 내부',worldUrl:'/bogam-museum-world.json',modelUrl:'/models/bogam-museum.glb',
+    name:'복암리고분전시관',area:'복암리고분전시관 내부',worldUrl:'/bogam-museum-world.json?v=bridge-finish-1',modelUrl:'/models/bogam-museum.glb?v=bridge-finish-1',
     heading:['고분 속으로,','시간을 따라.'],
     introduction:['석실과 옹관, 관람교량을 가까이 둘러보세요.','계단을 올라 3호분 재현 공간을 내려다볼 수 있어요.'],
     sourceUrl:'http://www.njbogam.or.kr/page/s21',sourceLabel:'전시관 공식 사진',

@@ -2,6 +2,16 @@
 
 작성: 2026-09-08. Blender 원본 `outputs/bogam-museum.blend`, 웹 모델 `public/models/bogam-museum.glb`, 이동 정보 `public/bogam-museum-world.json`.
 
+## 관람교량 마감 보완 · 2026-09-08
+
+사용자 화면에서 확인된 코너 바닥 결손과 끊긴 난간을 수정했습니다. 네 코너에 겹치지 않는 정사각 연결 바닥을 만들고, 바깥·안쪽 난간을 각각 연속으로 연결했습니다. 손잡이 접합부 덮개, 하부 유리 고정대와 바닥 옆면 마감, 계단 손잡이 연결부도 추가했습니다. 막다른 교량 종점에는 끝 난간을 두고 이동 경로의 도착점을 안쪽으로 옮겼습니다. 계단 입구와 코너를 돌아가는 통로는 열어 두었습니다.
+
+이 변경은 기존 참고 모델의 마감 보완이며 실제 전시관에서 새로 확인한 실측 정보가 아닙니다. 바닥과 난간의 충돌 정보도 같은 Blender 생성 과정에서 갱신합니다. 수정본은 `outputs/bogam-museum-finished.blend`로 별도 저장해 기존 `bogam-museum.blend`를 보존합니다.
+
+```powershell
+& '.\work\tools\blender-4.5.13-windows-x64\blender.exe' --background --python scripts/build_bogam_museum.py -- --output-blend outputs/bogam-museum-finished.blend --render-bridge
+```
+
 ## 제작 범위
 
 실제 건물의 지도 윤곽에 공식 내부 사진과 2024년 개편 이후 방문 사진을 대조한 **상세 참고 모델**입니다. 1층 로비·전시홀·토기 진열·영상실·디지털 공간·체험실과 계단으로 연결한 상부 관람교량·2층 북카페를 제작했습니다. 전체 보기에서는 지붕을 숨겨 내부를 내려다보고, 걷기에서는 노출 철골 천장이 보입니다.
