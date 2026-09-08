@@ -25,6 +25,26 @@ test('literature ceilings enclose the reported sky gaps and the stair landing',(
     assert.ok(ray.intersectObject(scene,true).length,`Sky leak above ${x},${y},${z}`);
   }
 });
+test('attic wall tops, corners and the floor beside the high windows are enclosed',()=>{
+  const {scene}=readModel(new URL('../public/models/yeongsanpo-literature.glb',import.meta.url));
+  for(const [origin,direction] of [
+    [[-5.6,5.58,-3],[-1,0,0]],[[-5.6,5.58,-3],[1,0,0]],
+    [[-5.6,5.58,-3],[0,0,-1]],[[-5.6,5.58,-3],[0,0,1]],
+    [[-8.58,5.08,-8.53],[0,1,0]],[[-8.58,5.08,2.7],[0,1,0]],
+  ])assert.ok(new THREE.Raycaster(new THREE.Vector3(...origin),new THREE.Vector3(...direction),.01,7).intersectObject(scene,true).length,`Open attic envelope ${origin} ${direction}`);
+  for(const z of [-7,-3,1]){
+    const hit=new THREE.Raycaster(new THREE.Vector3(-8.60,3.8,z),new THREE.Vector3(0,-1,0),.01,1).intersectObject(scene,true)[0];
+    assert.ok(hit&&hit.point.y>=3.35,`Missing upper floor by window at ${z}`);
+  }
+});
+test('detailed reading furniture leaves both side aisles and the stair route accessible',()=>{
+  const w=yeongsanWorlds['yeongsanpo-literature'],a=sceneArrival(w,'?at=reading');
+  assert.equal(a.entered,true);assert.equal(a.height,3.36);assert.ok(canTravelTo([a.x,a.z],w,a.height));
+  walkRoute(w,[[-7.5,1.95],[-7.5,-7.9],[-4,-7.9],[-2,-8.45],[-4,-8.45],[-7.5,-8.45],[-7.5,1.95]],3.36);
+  const chairs=w.solids.filter(s=>s.name==='attic_chair_collision');assert.equal(chairs.length,12);
+  const p=chairs[0].footprint.reduce((sum,p)=>[sum[0]+p[0]/4,sum[1]+p[1]/4],[0,0]);
+  assert.equal(blocksWalking(...p,3.36,worldObstacles(w.solids)),true);
+});
 test('gallery has seven staggered lightboxes, black mesh ceiling and enclosed food vitrines',()=>{
   const {gltf}=readModel(new URL('../public/models/yeongsanpo-history.glb',import.meta.url));
   assert.equal(gltf.nodes.filter(n=>/^timeline_lightbox_\d+$/.test(n.name)).length,7);

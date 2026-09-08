@@ -8,6 +8,7 @@ from pathlib import Path
 from mathutils import Vector
 ROOT=Path(__file__).resolve().parents[1];sys.path.insert(0,str(ROOT/'scripts'))
 from yeongsanpo_interiors import history,literature
+from yeongsanpo_literature_detail import literature
 from yeongsanpo_gallery_detail import history
 from yeongsanpo_outdoor import outdoor
 
