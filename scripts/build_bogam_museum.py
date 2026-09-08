@@ -13,6 +13,7 @@ from mathutils import Vector
 ROOT=Path(__file__).resolve().parents[1]
 sys.path.insert(0,str(ROOT/'scripts'))
 from museum_geometry import MuseumGeometry
+from bogam_museum_detail import materials as detail_materials, stone_wall as detailed_stone_wall, flagstone_floor, finish_hall
 OUTPUT=ROOT/'outputs/bogam-museum.blend'
 if '--output-blend' in sys.argv:
     OUTPUT=ROOT/Path(sys.argv[sys.argv.index('--output-blend')+1])
@@ -24,6 +25,7 @@ scene=bpy.data.scenes.new('Bogam_Museum_Interior');bpy.context.window.scene=scen
 g=MuseumGeometry(scene,frame['hallFrame']['center'],frame['hallFrame']['worldXZangle'])
 rng=random.Random(20162024)
 box,mesh,segment,label=g.box,g.mesh,g.segment,g.label
+detail_materials(g)
 BASE=.12;BRIDGE=3.52
 footprint=frame['completeBuildingFootprintInHallLocal'][:-1]
 box('ground_base',0,-.5,14,160,1,180,'#9cac86',group='01_OSM_Envelope')
@@ -50,15 +52,7 @@ box('information_desk',-20,.70,48,6,1.2,1.2,'#b28b62',True)
 label('안내  INFORMATION',-20,1.1,48.62,4.8,.23,color='#f2ecdd')
 label('전시실  ↑',-20,2.15,44.5,5,.45,color='#526667')
 
-# Original ochre soil texture, baked for the GLB; source photos are never used as textures.
-soil=g.mat('#c28c56')
-image=bpy.data.images.new('Original_exhibition_ochre',width=256,height=256)
-pixels=[]
-for j in range(256):
-    for i in range(256):
-        noise=rng.uniform(-.025,.025);pixels.extend((.71+noise,.44+noise,.235+noise*.7,1))
-image.pixels=pixels;image.pack();node=soil.node_tree.nodes.new('ShaderNodeTexImage');node.image=image
-soil.node_tree.links.new(node.outputs['Color'],soil.node_tree.nodes['Principled BSDF'].inputs['Base Color'])
+# Fine original material grain is supplied by bogam_museum_detail; no photo textures.
 
 # The original excavation centres supply horizontal positions. Current replica elevations
 # and exposed pit sizes are inferred, and are not the dimensions of the original chambers.
@@ -88,10 +82,14 @@ def terrain(x,z):
     # Rounded base with deliberately exposed rectilinear excavation terraces.
     radius=(abs(x/20.1)**5+abs(z/22)**5)**.2
     h=BASE+4.25*min(1,max(0,(1-radius)/.43))
+    # Broad level changes and a lightly irregular earth surface, visible in photos.
+    h-=.20*(.5+.5*math.sin(x*.24+z*.11))*min(1,max(0,1-radius)*3)
     if -3<x<5 and -19<z<-14:h=BASE+5.6
     for b in burials:
         bx,bz=b['model_center'];w,d=b['modelOpening']
-        if abs(x-bx)<w/2+.22 and abs(z-bz)<d/2+.25:h=b['replica_floor']
+        if abs(x-bx)<w/2+.95 and abs(z-bz)<d/2+.95:
+            h=min(h,b['replica_floor']+(1.62 if b['category']=='stone_burial' else .55))
+        if abs(x-bx)<w/2+.32 and abs(z-bz)<d/2+.35:h=b['replica_floor']
     if beneath_bridge(x,z):h=min(h,2.5)
     return h
 
@@ -120,42 +118,34 @@ g.solids.append(dict(name='replica_outline',kind='building',position=[0,BASE,0],
 
 stone_colors=['#b9b5a8','#aaa99e','#989e99','#c1bdad','#929a99']
 def stone_wall(name,x,z,w,d,y,levels=3):
-    for level in range(levels):
-        yy=y+.18+level*.34
-        for side in (-1,1):
-            for k in range(max(2,int(w/.65))):
-                xx=x-w/2+(k+.5)*w/max(2,int(w/.65))
-                g.rock(name+'_stone',xx,yy,z+side*d/2,.61,.33,.38,stone_colors[rng.randrange(5)],rng)
-            for k in range(max(2,int(d/.7))):
-                zz=z-d/2+(k+.5)*d/max(2,int(d/.7))
-                # South entry opening is intentionally left visible.
-                if side==1 and k==max(2,int(d/.7))//2:continue
-                g.rock(name+'_stone',x+side*w/2,yy,zz,.39,.33,.65,stone_colors[rng.randrange(5)],rng)
+    detailed_stone_wall(g,name,x,z,w,d,y,levels,rng,stone_colors)
 
 for i,b in enumerate(burials):
     x,z=b['model_center'];w,d=b['modelOpening'];y=b['replica_floor'];bid=b['id']
     box('earth_support_'+bid,x,(BASE+y)/2,z,w+.12,y-BASE,d+.12,'#c28c56',record=False)
     if b['category']=='stone_burial':
         box('burial_floor_'+bid,x,y-.055,z,w,.11,d,'#ae9a7c',record=False)
-        levels=4 if bid in ('S96','S12','S9') else (2+i%2)
+        levels=5 if bid in ('S96','S12','S9') else (3+i%2)
         stone_wall(bid,x,z,w*.91,d*.92,y,levels)
-        for k in range(18):
-            g.rock(bid+'_floor_stone',x+rng.uniform(-w*.39,w*.39),y+.04,z+rng.uniform(-d*.39,d*.39),rng.uniform(.15,.42),.09,rng.uniform(.16,.38),stone_colors[k%5],rng)
+        flagstone_floor(g,bid,x,z,w*.91,d*.92,y,rng,stone_colors)
         for k in range(2+(i%3)):
             g.vessel(bid+'_vessel',x-w*.25+k*w*.15,y+.12,z+d*.13,.18+.10*(k%3),'#65615a')
         if bid=='S96':
             # Recorded chamber interior is 3.80m long and 2.40–2.60m wide.
             b['recorded_chamber_internal']={'length':3.8,'southWidth':2.4,'northWidth':2.6,'preservedHeight':2.6,'source':'2001 report printed p138'}
             for k in range(4):
-                g.vessel('S96_internal_jar_'+str(k),x-.85+(k%2)*1.4,y+.47,z-1.1+(k//2)*1.9,1.4,'#c9c2a9',horizontal=True,profile=[(0,.10),(.10,.29),(.32,.40),(.74,.38),(1,.28),(1.1,.28),(1.1,.23),(.8,.26)])
+                g.vessel('S96_internal_jar_'+str(k),x-.67+(k//2)*1.34,y+.56,z+(-.77 if k%2==0 else .77),1.4,'#c9c2a9',horizontal=True,rotation=0 if k%2==0 else math.pi,profile=[(0,.10),(.10,.29),(.32,.40),(.74,.38),(1,.28),(1.1,.28),(1.1,.23),(.8,.26)])
         title='96 돌방무덤' if bid=='S96' else bid[1:]+'호 돌방무덤'
-        box('burial_label_base_'+bid,x,y+.06,z+d/2+.37,min(1.2,w),.06,.27,'#e0dbc9',record=False)
-        label(title,x,y+.28,z+d/2+.47,min(1.15,w),.14,color='#4d5651',group='03_Report_Burials')
+        box('burial_label_base_'+bid,x,y+.25,z+d/2+.48,min(1.35,w),.32,.065,'#473e32',record=False)
+        label(title,x,y+.26,z+d/2+.516,min(1.28,w),.14,color='#f0e0bd',group='03_Report_Burials')
     elif b['category']=='jar_coffin':
-        s=max(.60,min(1.8,max(w,d)*.62))
+        s=max(.38,min(1.3,max(w,d)*.42))
         angle=math.pi/2 if w>d else 0
-        g.vessel('burial_'+bid,x,y+.35*s,z,s,'#bcb8a2',horizontal=True,rotation=angle,profile=[(0,.10),(.10,.24),(.25,.34),(.56,.40),(.87,.39),(1.1,.27),(1.12,.27),(1.12,.20),(.85,.30)])
-        g.vessel('burial_'+bid+'_lid',x+math.sin(angle)*s*.55,y+.35*s,z-math.cos(angle)*s*.55,s*.68,'#c8c4af',horizontal=True,rotation=angle+math.pi,profile=[(0,.1),(.12,.29),(.4,.40),(.65,.38),(.68,.38)])
+        profile=[(0,.10),(.10,.24),(.25,.34),(.56,.40),(.87,.39),(1.1,.27),(1.12,.27),(1.12,.20),(.85,.30)]
+        # Two mouths meet at the burial anchor. Earlier lid placement met the base.
+        offset=.57*s
+        g.vessel('burial_'+bid,x+math.sin(angle)*offset,y+.4*s,z-math.cos(angle)*offset,s,'#bcb8a2',horizontal=True,rotation=angle,profile=profile)
+        g.vessel('burial_'+bid+'_lid',x-math.sin(angle)*offset*.94,y+.4*s,z+math.cos(angle)*offset*.94,s*.94,'#c8c4af',horizontal=True,rotation=angle+math.pi,profile=profile)
     else:
         box('burial_W1_wood_coffin',x,y+.16,z,1.8,.32,.78,'#75624a',record=False)
         for side in (-1,1):box('coffin_rim',x,y+.36,z+side*.37,1.8,.12,.09,'#574f40',record=False)
@@ -334,6 +324,8 @@ for x,z in [(-18,46),(-8,34),(10,32),(-15,51),(4,44)]:
     data=bpy.data.lights.new('Visitor_wing_area','AREA');data.energy=600;data.size=8
     o=bpy.data.objects.new('Visitor_wing_area',data);scene.collection.objects.link(o);o.location=g.bp(x,6.8,z)
 
+detail_manifest=finish_hall(g,scene,burials,BRIDGE,terrain)
+
 def place(pid,name,arrival,position=None,height=0,radius=4,description=''):
     return dict(id=pid,name=name,position=g.point(*(position or arrival)),arrival=g.point(*arrival),arrivalHeight=height,radius=radius,indoor=True,description=description)
 places=[
@@ -359,6 +351,8 @@ world=dict(title='나주 산책',subtitle='복암리고분전시관 · 내부 �
     'The 2F cafe is walkable. Unverified staff/service interiors, toilet interiors and 3F observatory interiors are not reproduced.',
     'This is a detailed reference model, not an exact current interior scan or as-built digital twin. Original photos, video and satellite imagery are not redistributed.',
 ])
+world['lighting']={'exposure':1.12,'ambient':.95,'sun':.18}
+world['exhibitionDetails']=detail_manifest
 (ROOT/'public/bogam-museum-world.json').write_text(json.dumps(world,ensure_ascii=False,separators=(',',':')),encoding='utf-8')
 (ROOT/'knowledge/sources/bogam-museum-model-provenance.json').write_text(json.dumps({k:world[k] for k in ('source','source_url','origin','buildings','burials','bridgeHeight','limitations')},ensure_ascii=False,indent=2),encoding='utf-8')
 
