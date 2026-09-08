@@ -35,15 +35,15 @@ class Geometry(MuseumGeometry):
 
     def river_material(self,color):
         # Original packed material study: mottled water-floor finish, not a photo.
-        n=256;image=bpy.data.images.new('Original_river_floor_material',width=n,height=n)
+        n=512;image=bpy.data.images.new('Original_river_floor_material',width=n,height=n)
         pixels=[]
         for j in range(n):
             for i in range(n):
                 u=i/n*math.tau;v=j/n*math.tau
-                noise=(math.sin(u*3+math.sin(v*2))+math.cos(v*4+math.sin(u*2))+math.sin(u*9+v*7)*.3)/2.3
-                t=(noise+1)/2;pixels.extend((.14+t*.15,.23+t*.17,.22+t*.15,1))
+                noise=sum(math.sin(u*f+math.sin(v*(f+1))*.8)*math.cos(v*(f-1)+.6)*a for f,a in [(3,.32),(7,.19),(17,.12),(31,.08),(67,.04)])
+                t=max(0,min(1,.5+noise));pixels.extend((.025+t*.095,.046+t*.11,.044+t*.09,1))
         image.pixels.foreach_set(pixels);image.pack()
-        mat=self.mat(color);bs=mat.node_tree.nodes['Principled BSDF'];bs.inputs['Roughness'].default_value=.2
+        mat=self.mat(color);bs=mat.node_tree.nodes['Principled BSDF'];bs.inputs['Roughness'].default_value=.28
         node=mat.node_tree.nodes.new('ShaderNodeTexImage');node.image=image;mat.node_tree.links.new(node.outputs['Color'],bs.inputs['Base Color'])
 
     def window(self,name,x,y,z,w,h,rotation=0,lattice=False):

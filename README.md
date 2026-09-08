@@ -4,6 +4,14 @@
 
 ## 영산포 강변 · 홍어거리 · 두 전시관
 
+황포돛배 **나주호·왕건호**에 각각 승선해 갑판과 객실을 걸어보고 직접 조종할 수 있습니다. 배 이름의 선착장 버튼 → **승선 / F** → **운전석으로 / F** 순서로 시작하세요. 조종은 **W/S 전진·후진, A/D 방향, Space 제동**이며, `갑판 둘러보기`와 `선착장으로 복귀`를 제공합니다. 정박한 뒤 내릴 수 있습니다.
+
+왕건호는 보도 제원 **29.9 × 9.9m**, 나주호는 **사진 비례 추정 21.0 × 5.6m**입니다. 두 선실의 내부 치수도 사진 참고 추정입니다. 선착장 지반·계단 아래와 문학관 천장 틈을 마감하고, 역사갤러리 연표·7개 입체 상자·검은 격자 천장·옹기·3칸 음식장을 다시 모델링했습니다. [자료와 추정·조작 설명](knowledge/yeongsanpo-detail-and-boats.md)을 확인하세요.
+
+- 최신 편집본: `outputs/yeongsanpo-detail.blend`, `outputs/yeongsanpo-history-detail.blend`, `outputs/yeongsanpo-literature-detail.blend`, `outputs/najuho-detail.blend`, `outputs/wanggeonho-detail.blend`
+- 선박 제작: `scripts/build_yeongsanpo_boats.py`; 선박을 먼저 만든 뒤 `scripts/build_yeongsanpo.py`를 실행합니다.
+- 조종: `lib/boat-navigation.ts`, 승선과 선내 보행: `lib/boat-fleet.ts`
+
 `/?place=yeongsanpo`에서 황포돛배 선착장과 등대, 영산3길 홍어거리, 역사갤러리·타오르는 강 문학관 외관을 같은 지도에서 둘러봅니다. 두 전시관의 열린 현관으로 걸어 들어가면 별도의 상세 실내가 열리고, 같은 문으로 나가면 원래 거리의 입구 앞으로 돌아옵니다. 문학관은 서재 뒤 계단을 통해 2층 독서공간까지 올라갈 수 있습니다.
 
 - 새 편집본: `outputs/yeongsanpo.blend`, `outputs/yeongsanpo-history.blend`, `outputs/yeongsanpo-literature.blend`

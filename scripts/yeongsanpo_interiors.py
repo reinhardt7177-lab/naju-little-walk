@@ -141,6 +141,15 @@ def literature(scene):
     ceiling.hide_render=True
     for a,b in [(0.2,9)]:g.box('cutaway_east_room_ceiling',(a+b)/2,3.2,0,b-a,.13,18,'#39382f',group='05_Cutaway_Roof')
     g.box('cutaway_corridor_ceiling',0,3.2,7.4,18,.12,3,'#39382f',group='05_Cutaway_Roof')
+    # Continuous opaque backing around the only opening: the actual stairwell.
+    for name,x,z,w,d in [('west_edge',-8.65,-2.95,.7,12.1),('west_front',-4.4,4.5,9.2,3.1),('centre_front',-.35,1.45,1.1,8.9),('centre_rear',-.35,-5.8,1.1,6.4),('stair_front',-1.95,.25,2.3,5.5),('west_back',-5,-8.95,8.2,.18)]:
+        g.box('cutaway_closed_ceiling_'+name,x,3.2,z,w,.14,d,'#39382f',group='05_Cutaway_Roof')
+    # The stair opening reaches the attic, whose cap and high walls stop sky leaks.
+    g.box('attic_stairwell_cap',-1.85,6.04,-5.75,2.35,.18,6.45,'#d3d1bb',group='05_Cutaway_Roof')
+    g.box('attic_stairwell_east',-.76,4.63,-5.75,.16,2.9,6.45,'#ded7c0',True,group='05_Cutaway_Roof')
+    for z in (-8.99,-2.53):g.box('attic_stairwell_end',-1.85,4.63,z,2.35,2.9,.16,'#ded7c0',True,group='05_Cutaway_Roof')
+    # Seal the narrow seam between stairwell and reading-room ceiling.
+    g.box('attic_cap_join',-2.8,5.87,-5.75,.3,.45,6.45,'#d3d1bb',group='05_Cutaway_Roof')
     g.roof('attic_roof',-4.55,top+2.35,-2.9,9,12,1.7,'#66665b')
     g.box('attic_wall',-8.85,top+1.05,-2.9,.12,2.1,11.8,'#ded7c0',True)
     g.box('attic_wall_door_opening',-2.9,top+1.05,-2.3,.12,2.1,10.6,'#ded7c0',True)
@@ -158,7 +167,11 @@ def literature(scene):
         for y in (.25,.9,1.55):g.box('attic_white_bookshelf',-3.22,top+y,z,.38,.045,2.6,'#dcded2',record=False)
         for zz in (z-1.3,z,z+1.3):g.box('attic_bookshelf_divider',-3.22,top+.85,zz,.38,1.5,.035,'#dcded2',record=False)
     g.box('attic_white_ceiling',-5.6,top+2.38,-2.9,5.6,.12,11.8,'#d3d1bb',group='05_Cutaway_Roof')
-    for z in (-7,-2,2):g.box('attic_dark_beam',-5.6,top+2.26,z,5.6,.22,.2,wood,group='05_Cutaway_Roof',record=False)
+    for z in (-7,-2,2):
+        for i in range(14):
+            a=-8.4+i*.4;b=a+.4
+            y1=top+2.1+.16*math.sin((a+8.4)/5.6*math.pi);y2=top+2.1+.16*math.sin((b+8.4)/5.6*math.pi)
+            g.tube('attic_curved_dark_beam',(a,y1,z),(b,y2,z),.13,wood,'05_Cutaway_Roof',8)
     g.label('영산강 문학쉼터',-2,2.62,-2.55,1.6,.17,color='#514838')
     g.label('영산포 거리로 나가기',0,2.55,8.92,1.85,.17,rotation=math.pi,color='#65765b')
     g.box('walk-floor_exit',0,-.04,9.6,2.1,.08,1.4,wood)

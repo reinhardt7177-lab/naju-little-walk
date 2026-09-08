@@ -8,6 +8,9 @@ import { batchStaticScene } from '../lib/static-scene.ts';
 import { unpackModel } from '../lib/model-transport.ts';
 import { sceneArrival,portalAt,portalHref } from '../lib/scene-travel.ts';
 import { canTravelTo, mapArrival, mapSolids, regionalPoint, regionalSize } from '../lib/map-navigation.ts';
+import { readModel } from './gltf-geometry.mjs';
+import { mooredBoat, boatToWorld, worldToBoat, atBerth, canBoard, boatFitsWater, stepBoat, stepDeparture, polygonsOverlap } from '../lib/boat-navigation.ts';
+import { BoatFleet } from '../lib/boat-fleet.ts';
 
 const bogam=JSON.parse(fs.readFileSync(new URL('../public/bogam-world.json',import.meta.url),'utf8'));
 const bogamColliders=bogam.solids.filter(s=>s.collision).map(solidCollider);
@@ -15,6 +18,106 @@ const museum=JSON.parse(fs.readFileSync(new URL('../public/bogam-museum-world.js
 const museumFloors=worldFloors(museum.solids), museumObstacles=worldObstacles(museum.solids);
 
 const yeongsanWorlds=Object.fromEntries(['yeongsanpo','yeongsanpo-history','yeongsanpo-literature'].map(id=>[id,JSON.parse(fs.readFileSync(new URL(`../public/${id}-world.json`,import.meta.url),'utf8'))]));
+test('literature ceilings enclose the reported sky gaps and the stair landing',()=>{
+  const {scene}=readModel(new URL('../public/models/yeongsanpo-literature.glb',import.meta.url));
+  for(const [x,y,z] of [[-8.6,1.72,0],[-1.8,1.72,1.5],[-.4,1.72,-5],[-4,1.72,4.4],[-8.5,1.72,-8.93],[-2,5.08,-8.45],[-2,3.8,-5]]){
+    const ray=new THREE.Raycaster(new THREE.Vector3(x,y,z),new THREE.Vector3(0,1,0),.01,8);
+    assert.ok(ray.intersectObject(scene,true).length,`Sky leak above ${x},${y},${z}`);
+  }
+});
+test('gallery has seven staggered lightboxes, black mesh ceiling and enclosed food vitrines',()=>{
+  const {gltf}=readModel(new URL('../public/models/yeongsanpo-history.glb',import.meta.url));
+  assert.equal(gltf.nodes.filter(n=>/^timeline_lightbox_\d+$/.test(n.name)).length,7);
+  for(const prefix of ['cutaway_ceiling_mesh','vitrine_glass_lid','onggi_straw_bundle','ceiling_projector'])assert.ok(gltf.nodes.some(n=>n.name.startsWith(prefix)),prefix);
+});
+const testBoat={id:'test',name:'Test',home:{x:0,z:0,yaw:0},length:12,beam:4,hull:[[-2,-6],[2,-6],[2,6],[-2,6]],shore:[3,0],shoreHeight:0};
+const openWater={polygons:[[[-50,-80],[50,-80],[50,80],[-50,80]]],obstacles:[]};
+test('boat local coordinates and boarding remain correct after rotation and translation',()=>{
+  const state={...mooredBoat(testBoat),x:19,z:-27,yaw:1.23};
+  for(const point of [[0,0],[2,-6],[-1.3,4.2]]){
+    const p=worldToBoat(boatToWorld(point,state),state);assert.ok(Math.hypot(p[0]-point[0],p[1]-point[1])<1e-10);
+  }
+  assert.equal(canBoard([3,0],0,mooredBoat(testBoat),testBoat),true);
+  assert.equal(canBoard([3,0],6,mooredBoat(testBoat),testBoat),false);
+  assert.equal(atBerth({...mooredBoat(testBoat),speed:1},testBoat),false);
+  assert.equal(atBerth({...mooredBoat(testBoat),x:2},testBoat),false);
+});
+test('boat accelerates, turns, brakes and reverses while its hull remains in the river',()=>{
+  let state=mooredBoat(testBoat);
+  for(let i=0;i<100;i++)state=stepBoat(state,testBoat,{throttle:1,steer:.5,brake:false},.05,openWater,[]);
+  assert.ok(state.speed>2&&state.z< -5&&state.yaw<-.1);
+  const speed=state.speed;
+  for(let i=0;i<20;i++)state=stepBoat(state,testBoat,{throttle:0,steer:0,brake:true},.05,openWater,[]);
+  assert.ok(state.speed<speed*.02);
+  for(let i=0;i<70;i++)state=stepBoat(state,testBoat,{throttle:-1,steer:0,brake:false},.05,openWater,[]);
+  assert.ok(state.speed< -1);
+});
+test('swept hull movement stops before a thin obstacle and other boats, including edge crossings',()=>{
+  const obstacle=[[-40,-12.05],[40,-12.05],[40,-12],[-40,-12]];
+  let state={...mooredBoat(testBoat),speed:4.1};
+  for(let i=0;i<30;i++)state=stepBoat(state,testBoat,{throttle:1,steer:0,brake:false},.25,{...openWater,obstacles:[obstacle]},[]);
+  assert.equal(state.blocked,true);assert.ok(state.z>=-6);assert.equal(state.speed,0);
+  assert.equal(polygonsOverlap([[-5,-1],[5,-1],[5,1],[-5,1]],[[-1,-5],[1,-5],[1,5],[-1,5]]),true);
+  const other={definition:testBoat,state:{...mooredBoat(testBoat),id:'other',z:-11}};
+  assert.equal(boatFitsWater(mooredBoat(testBoat),testBoat,openWater,[other]),false);
+  assert.equal(boatFitsWater({...mooredBoat(testBoat),x:49},testBoat,openWater,[]),false);
+  const huge=stepBoat(mooredBoat(testBoat),testBoat,{throttle:1,steer:0,brake:false},100,openWater,[]);
+  assert.ok(Math.abs(huge.z)<.1,'A resumed tab must not simulate an unbounded time jump');
+});
+test('both authored boats board from safe dock arrivals and have walkable cabins and stern decks',()=>{
+  const outdoor=yeongsanWorlds.yeongsanpo;assert.equal(outdoor.boats.length,2);
+  const wang=outdoor.boats.find(b=>b.id==='wanggeonho');assert.equal(wang.length,29.9);assert.equal(wang.beam,9.9);
+  for(const b of outdoor.boats){
+    const state=mooredBoat(b);assert.ok(canTravelTo(b.shore,outdoor,b.shoreHeight),b.id+' shore arrival');
+    assert.ok(canBoard(b.shore,b.shoreHeight,state,b));
+    assert.equal(sceneArrival(outdoor,'?at=board-'+b.id).entered,true);
+    assert.ok(boatFitsWater(state,b,outdoor.navigationWater,outdoor.boats.map(definition=>({definition,state:mooredBoat(definition)}))),b.id+' initial hull');
+    const local={title:b.name,bounds:[-b.beam/2,b.beam/2,-b.length/2,b.length/2],solids:b.solids,requireFloor:true};
+    for(const route of [b.walkRoute,b.exploreRoute])walkRoute(local,[...route,...route.slice(0,-1).reverse()],b.deckHeight);
+    const p=moveOnFloors(...b.boarding,b.deckHeight,100,0,worldObstacles(b.solids),worldFloors(b.solids),local.bounds,true);
+    assert.ok(p.x<b.beam/2,'A passenger cannot walk off the deck into water');
+  }
+});
+test('boat cabin GLBs enclose overhead surfaces and embed complete compressed assets',async()=>{
+  for(const b of yeongsanWorlds.yeongsanpo.boats){
+    const path=new URL('../public/models/'+b.id+'.glb',import.meta.url),raw=fs.readFileSync(path);
+    const compressed=fs.readFileSync(new URL('../public/models/'+b.id+'.glb.gz',import.meta.url));
+    assert.deepEqual(Buffer.from(await unpackModel(compressed.buffer.slice(compressed.byteOffset,compressed.byteOffset+compressed.byteLength))),raw);
+    const {scene,gltf}=readModel(path);assert.match(gltf.asset.generator,/Blender/);
+    const hit=new THREE.Raycaster(new THREE.Vector3(b.helm[0],b.deckHeight+1.72,b.helm[1]),new THREE.Vector3(0,1,0),.01,4).intersectObject(scene,true)[0];
+    assert.ok(hit&&hit.point.y-b.deckHeight>=2.29,b.id+' helm headroom');
+    assert.ok(gltf.images.every(i=>i.bufferView!==undefined&&!i.uri));
+  }
+});
+test('both full-size hulls cast off and can steer away from the wharf',()=>{
+  const w=yeongsanWorlds.yeongsanpo;
+  for(const b of w.boats){
+    let state=mooredBoat(b);const others=w.boats.map(definition=>({definition,state:mooredBoat(definition)}));
+    for(let i=0;i<100;i++)state=stepDeparture(state,b,b.length*.25/100,w.navigationWater,others);
+    assert.equal(state.blocked,false,b.id+' cast off');
+    for(let i=0;i<220;i++)state=stepBoat(state,b,{throttle:1,steer:i<130?-1:0,brake:false},.05,w.navigationWater,others);
+    assert.equal(state.blocked,false,b.id+' departure turn');
+    assert.ok(Math.hypot(state.x-b.home.x,state.z-b.home.z)>25,b.id+' leaves berth');
+  }
+});
+test('fleet modes stop motion on pause, retain passengers on deck and disembark only at berth',()=>{
+  const w=yeongsanWorlds.yeongsanpo,fleet=new BoatFleet(w);
+  fleet.vessels=w.boats.map(definition=>({definition,state:mooredBoat(definition),object:new THREE.Group(),floors:worldFloors(definition.solids),obstacles:worldObstacles(definition.solids)}));
+  const b=w.boats[0];assert.equal(fleet.board(b.id,b.shore,b.shoreHeight),true);
+  fleet.drive();assert.ok(fleet.passenger.departure>0);
+  for(let i=0;i<100;i++)fleet.update(.05,new Set(),b.home.yaw);
+  for(let i=0;i<40;i++)fleet.update(.05,new Set(['KeyW']),b.home.yaw);
+  assert.equal(fleet.leave(),null,'No disembarkation in open water');
+  assert.ok(fleet.eye().height<0&&fleet.eye().height> -7.47);
+  fleet.stop();assert.equal(fleet.passenger.vessel.state.speed,0);assert.equal(fleet.passenger.departure,0);
+  const anchor={...fleet.passenger.vessel.state};fleet.deck();fleet.update(.05,new Set(['KeyW']),b.home.yaw);
+  assert.equal(fleet.passenger.helm,false);assert.deepEqual(fleet.passenger.vessel.state,anchor);
+  fleet.returnToBerth();assert.equal(fleet.hud(b.shore,b.shoreHeight).canLeave,true);
+  assert.deepEqual(fleet.leave().position,b.shore);assert.equal(fleet.passenger,null);
+  const other=w.boats[1];assert.equal(fleet.board(other.id,other.shore,other.shoreHeight),true);
+  fleet.drive();fleet.update(.05,new Set(),other.home.yaw);fleet.leaveForTravel();
+  assert.equal(fleet.passenger,null);assert.equal(atBerth(fleet.vessels[1].state,other),true);
+});
 function walkRoute(world,route,height=0){
   const floors=worldFloors(world.solids),obstacles=worldObstacles(world.solids);
   let p={x:route[0][0],z:route[0][1],height};

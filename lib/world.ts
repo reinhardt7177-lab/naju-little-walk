@@ -28,6 +28,9 @@ export type World = {
   requireFloor?: boolean;
   arrivals?: Record<string, Arrival>;
   portals?: Portal[];
+  boats?: import('./boat-navigation.ts').BoatDefinition[];
+  navigationWater?: import('./boat-navigation.ts').NavigationWater;
+  lighting?: { exposure: number; ambient: number; sun: number };
 };
 
 export function currentPlace(x: number, z: number, places: Place[], height?:number): Place | undefined {

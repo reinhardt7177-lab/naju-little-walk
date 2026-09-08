@@ -8,17 +8,19 @@ from pathlib import Path
 from mathutils import Vector
 ROOT=Path(__file__).resolve().parents[1];sys.path.insert(0,str(ROOT/'scripts'))
 from yeongsanpo_interiors import history,literature
+from yeongsanpo_gallery_detail import history
 from yeongsanpo_outdoor import outdoor
 
 for name,builder,views in [
-    ('yeongsanpo',outdoor,[('overview',(410,380,480),(0,0,35)),('wharf',(-117,15,162),(-159,-2,117)),('gallery',(112,8,40),(92,2,8)),('literature',(238,11,148),(220,2,108))]),
+    ('yeongsanpo',outdoor,[('overview',(410,380,480),(0,0,35)),('wharf',(-117,15,162),(-159,-2,117)),('lower-deck',(-149,-4.68,113),(-148,-2.5,129)),('gallery',(112,8,40),(92,2,8)),('literature',(238,11,148),(220,2,108))]),
     ('yeongsanpo-history',history,[('interior',(-3.3,1.8,7.1),(0,1.7,-7)),('exhibition',(2.7,1.8,-4),(4.5,1.5,5))]),
-    ('yeongsanpo-literature',literature,[('rooms',(5.9,1.75,4.5),(3.8,1.7,-6)),('library',(-4.2,1.75,3.8),(-5,1.6,-6)),('attic',(-7.8,5.1,2.3),(-5.4,4.5,-6))]),
+    ('yeongsanpo-literature',literature,[('rooms',(5.9,1.75,4.5),(3.8,1.7,-6)),('library',(-4.2,1.75,3.8),(-5,1.6,-6)),('ceiling',(-1.7,1.75,1.5),(-2.0,4,-4)),('attic',(-7.8,5.1,2.3),(-5.4,4.5,-6))]),
 ]:
     if '--only' in sys.argv and name!=sys.argv[sys.argv.index('--only')+1]:continue
     bpy.ops.wm.read_factory_settings(use_empty=True);scene=bpy.context.scene
     bpy.context.preferences.filepaths.save_version=0
     g,world=builder(scene)
+    if name!='yeongsanpo':world['lighting']=dict(exposure=1.08,ambient=.72,sun=.18)
     (ROOT/'outputs').mkdir(exist_ok=True);(ROOT/'public/models').mkdir(exist_ok=True)
     (ROOT/f'public/{name}-world.json').write_text(json.dumps(world,ensure_ascii=False,separators=(',',':')),encoding='utf-8')
     scene.world=bpy.data.worlds.new('Reference_daylight');scene.world.use_nodes=True
@@ -31,10 +33,22 @@ for name,builder,views in [
     # Omit intentionally hidden construction proxies from GLB as well as renders.
     for o in list(scene.objects):
         if o.hide_render and o.type=='MESH':bpy.data.objects.remove(o,do_unlink=True)
-    bpy.ops.file.pack_all();bpy.ops.wm.save_as_mainfile(filepath=str(ROOT/f'outputs/{name}.blend'))
     model=ROOT/f'public/models/{name}.glb'
     bpy.ops.export_scene.gltf(filepath=str(model),export_format='GLB',use_active_scene=True,export_cameras=False,export_lights=False,export_extras=True,export_apply=True,export_animations=False)
-    model.with_suffix('.glb.gz').write_bytes(gzip.compress(model.read_bytes(),compresslevel=9,mtime=0))
+    packed=gzip.compress(model.read_bytes(),compresslevel=9,mtime=0);compressed=model.with_suffix('.glb.gz')
+    if not compressed.exists() or compressed.read_bytes()!=packed:
+        staging=ROOT/'work'/f'{name}-compressed.tmp';staging.parent.mkdir(exist_ok=True)
+        staging.write_bytes(packed);staging.replace(compressed)
+    # The editable full-scene .blend and renders include both separate boat assets.
+    # Browser world GLB remains static; runtime loads the two boats independently.
+    for boat in world.get('boats',[]):
+        with bpy.data.libraries.load(str(ROOT/f"outputs/{boat['id']}-detail.blend"),link=False) as (source,dest):dest.objects=source.objects
+        root=bpy.data.objects.new('Dynamic_'+boat['id'],None);scene.collection.objects.link(root)
+        root.location=g.bp(boat['home']['x'],boat['waterY'],boat['home']['z']);root.rotation_euler.z=boat['home']['yaw'];root['dynamic_boat_id']=boat['id']
+        for obj in dest.objects:
+            if obj and obj.type in ('MESH','FONT'):
+                scene.collection.objects.link(obj);obj.parent=root
+    bpy.ops.file.pack_all();bpy.ops.wm.save_as_mainfile(filepath=str(ROOT/f'outputs/{name}-detail.blend'))
     print(json.dumps(dict(model=name,objects=len(scene.objects),solids=len(g.solids),bytes=model.stat().st_size,gzipBytes=model.with_suffix('.glb.gz').stat().st_size)),flush=True)
     if '--render' in sys.argv:
         for view,eye,target in views:

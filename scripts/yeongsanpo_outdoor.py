@@ -62,10 +62,16 @@ def wharf(scene,g):
     dock.box('walk-floor_dock',0,level-.12,-16,85,.24,26,'#9a8060')
     for i in range(169):dock.box('dock_plank_seam',-42.25+i*.5,level+.006,-16,.018,.008,25.9,'#665a49',record=False)
     dock.box('retaining_wall',-6,-3.2,0,73,6.4,.4,'#a4a998',True)
+    for x in (-42.45,42.45):dock.box('dock_return_retaining_wall',x,-3.25,-14.5,.32,6.5,29,'#9c9f8e',True)
+    dock.box('dock_stair_side_masonry',30.35,-3.4,-7,.3,6.4,14,'#a4a998',True)
+    for row in range(11):
+        dock.box('retaining_masonry_course',-6,-.5-row*.53,-.225,72.8,.018,.025,'#7c897e',record=False)
+    for x in (-41,41):dock.railing('dock_upper_side_guard',(x,-26),(x,-1),0,glass=False)
     route=[dock.point(36,1)]
     for i in range(40):
         z=-.175-i*.35;top=-(i+1)*.16
         dock.box('walk-floor_dock_stair_'+str(i),36,top-.09,z,11,.18,.37,'#b8b8a7');route.append(dock.point(36,z))
+        if top>level+.18:dock.box('dock_stair_solid_infill',36,(top-.18+level-.24)/2,z,11,top-.18-level+.24,.37,'#a7aa9b',record=False)
     for x in (30,42):
         dock.tube('dock_stair_handrail',(x,1.0,0),(x,-5.4,-14),.055,'#e2ddc9')
         for i in range(12):dock.tube('dock_stair_post',(x,-i/11*6.4,-i/11*14),(x,1-i/11*6.4,-i/11*14),.035,'#dedac8')
@@ -80,11 +86,11 @@ def wharf(scene,g):
         dock.tube('lighthouse_round_guard',(lx+math.cos(a)*1.98,level+7.55,lz+math.sin(a)*1.98),(lx+math.cos(b)*1.98,level+7.55,lz+math.sin(b)*1.98),.032,'#b6c1b9')
     dock.collider('lighthouse_collision',[[lx-1.1,lz-1.1],[lx+1.1,lz-1.1],[lx+1.1,lz+1.1],[lx-1.1,lz+1.1]],level,8.65)
     dock.label('영산포 등대',lx,level+1.1,lz-1.12,1.75,.25,rotation=math.pi,color='#727464')
-    # Two observed passenger-boat styles, moored with sails stowed.
-    for i,(x,z) in enumerate([(-12,-32),(24,-32)]):
-        boat=Geometry(scene,dock.point(x,z),dock.angle+math.pi/2);boat.boat('moored_naju_boat' if i==0 else 'moored_passenger_boat',0,0,1 if i==0 else 1.15,False,base=-7,flat=i==1)
-        g.solids+=boat.solids;g.signs+=boat.signs
-        for j in (-5,3):dock.tube('mooring_rope',(x+j,-6,z),(x+j,level+.2,-28),.027,'#d3c096')
+    # Moving boats are independently authored GLBs, never part of the static batch.
+    for x,name in [(-23,'나주호'),(16,'왕건호')]:
+        dock.box('boarding_information',x,level+1.3,-27.7,2.1,.6,.08,'#315451',record=False)
+        dock.label(name+' 승선',x,level+1.3,-27.64,1.9,.25,color='#ede1bf')
+        for dx in (-.85,.85):dock.box('boarding_sign_post',x+dx,level+.65,-27.7,.05,1.3,.05,'#465a51',record=False)
     dock.box('ticket_house',-33,level+1.5,-9,10,3,4,'#343c3b',True)
     dock.window('ticket_counter',-33,level+1.7,-6.9,7,1.5)
     dock.label('황포돛배 매표소',-33,level+2.75,-6.8,8,.34,color='#ece6d8')
@@ -180,9 +186,10 @@ def outdoor(scene):
     dock,stair_route=wharf(scene,g)
     cutter=[dock.point(x,z) for x,z in [(-42.5,-65),(42.5,-65),(42.5,0),(-42.5,0)]]
     for i,poly in enumerate(subtract(land,cutter)):
-        if len(poly)>2:g.polygon('ground_floor_south_bank_'+str(i),poly,-.15,.15,'#c6c4aa')
-    g.box('north_bank_background',0,-1,-320,1000,1,180,'#95a77e',record=False)
-    for a,b in zip(river[:15],river[1:16]):g.segment('bank_reed_margin',a,b,4,1.2,'#8e9970',base=-7)
+        if len(poly)>2:g.polygon('ground_floor_south_bank_'+str(i),poly,-11,11,'#c6c4aa')
+    g.box('north_bank_background',0,-5.25,-320,1000,9.5,180,'#95a77e',record=False)
+    for a,b in zip(river[:15],river[1:16]):
+        if line_distance(dock.point(0,-15),a,b)>65:g.segment('bank_reed_margin',a,b,3.2,7.0,'#8e9970',base=-7.4)
     roads=[]
     for road in ref['roads']:
         points=[xy(p) for p in road['coordinates']];tag=road['tags'];width=7 if tag.get('highway') in ('residential','unclassified') else 13
@@ -267,6 +274,22 @@ def outdoor(scene):
         path=[nearest,[198,132],[220,132],q] if kind=='literature' else [nearest,q]
         for a,b in zip(path,path[1:]):g.segment('path_'+kind+'_approach',a,b,2.6,.025,'#b6b3a0',base=.065)
     level=-6.4
+    boats=[]
+    for boat_id,x,z in [('najuho',-23,-33.7),('wanggeonho',16,-36.0)]:
+        spec=json.loads((ROOT/f'knowledge/sources/{boat_id}-navigation.json').read_text(encoding='utf-8'))
+        home=dock.point(x,z);shore=dock.point(x,-26)
+        boats.append({**spec,'modelUrl':f'/models/{boat_id}.glb.gz?v=detail-1','home':dict(x=home[0],z=home[1],yaw=-(dock.angle+math.pi/2)),'waterY':-7.47,'shore':shore,'shoreHeight':level})
+        places.append(place('board-'+boat_id,spec['name']+' 승선 입구',*shore,3,'승선 버튼이나 F를 눌러 배에 올라보세요.',arrivalHeight=level))
+        arrivals['board-'+boat_id]=dict(x=shore[0],z=shore[1],height=level,yaw=-(dock.angle+math.pi/2))
+        # Closed gangway reaches the side entry; no collision floor extends into water.
+        end=z+spec['beam']/2;length=-29-end
+        dock.box('boarding_gangway_'+boat_id,x,level-.08,(-29+end)/2,1.65,.16,length+.18,'#897354',record=False)
+        for dx in (-.79,.79):dock.tube('gangway_rope',(x+dx,level+.7,-29),(x+dx,level+.7,end),.022,'#c2b18a')
+    # Navigation includes the excavated berth and excludes the dock and bridge piers.
+    channel=[clip(clip(clip(clip(river,0,bounds[0],False),0,bounds[1]),1,bounds[2],False),1,bounds[3]),[dock.point(x,z) for x,z in [(-42.5,-65),(42.5,-65),(42.5,-29),(-42.5,-29)]]]
+    water_obstacles=[s['footprint'] for s in g.solids if s['name'].startswith('walk-floor_dock') and 'stair' not in s['name']]
+    # Keep bridge navigation clear of piers and insufficient overhead clearance.
+    water_obstacles += [s['footprint'] for s in g.solids if s['name'].startswith('walk-floor_bridge')]
     places.extend([place('landing','황포돛배 선착장',*dock.point(5,-16),15,'계류된 목선과 강변 데크를 둘러보세요.',arrivalHeight=level),place('lighthouse','영산포 등대',*dock.point(4,-4),6,'강변 아래 데크에 남아 있는 흰 등대입니다.',arrivalHeight=level),place('dock-stairs','선착장 내려가는 계단',*stair_route[0],4,'계단을 내려가면 낮은 강변 데크로 이어집니다.'),place('hongeo','영산포 홍어거리',*xy([126.71078,35.0001]),28,'영산3길을 따라 역사갤러리로 이어집니다.'),place('river-view','강변 산책길',-143,138.27,20,'계단을 내려가면 선착장과 등대를 가까이 볼 수 있어요.')])
     # Riverside street furniture, trees and utility poles at estimated spacing.
     for x,z in [(-220,183),(-175,168),(-67,127),(6,60),(51,19),(143,-37),(232,-68),(309,148)]:
@@ -278,4 +301,4 @@ def outdoor(scene):
         g.box('vehicle_window',x,1.32,z,1.83,.65,2.2,'#698488',record=False)
     for obj in scene.objects:
         if 'hide_in_overview' in obj:del obj['hide_in_overview']
-    return g,world_data(g,'영산포 · 황포돛배 · 홍어거리',bounds,dict(x=-143,z=138.27,yaw=0),places,origin=dict(lon=ORIGIN[0],lat=ORIGIN[1]),verticalNavigation=True,requireFloor=True,portals=portals,arrivals=arrivals,roads=roads,mappedBuildings=count,tracedRoofs=len(traced),photoInformedShops=shopcount,dockHeight=level,dockStairRoute=stair_route,limitations=['Mapped road and river coordinates are OSM. Building heights and unrecorded shop facades are estimated, not individually surveyed storefronts.','Lighthouse height 8.65m follows archive data. Wharf level -6.4m, stairs, mooring placement and seasonal water level are estimated from photographs.','Museum exteriors use official map/photo positions; interiors are separate authored spaces linked at the doors.','Source imagery, original museum films and long copyrighted panels are not redistributed.'])
+    return g,world_data(g,'영산포 · 황포돛배 · 홍어거리',bounds,dict(x=-143,z=138.27,yaw=0),places,origin=dict(lon=ORIGIN[0],lat=ORIGIN[1]),verticalNavigation=True,requireFloor=True,portals=portals,arrivals=arrivals,roads=roads,boats=boats,navigationWater=dict(polygons=channel,obstacles=water_obstacles),mappedBuildings=count,tracedRoofs=len(traced),photoInformedShops=shopcount,dockHeight=level,dockStairRoute=stair_route,limitations=['Mapped road and river coordinates are OSM. Building heights and unrecorded shop facades are estimated, not individually surveyed storefronts.','Lighthouse height 8.65m follows archive data. Wharf level -6.4m, stairs, mooring placement and seasonal water level are estimated from photographs.','Wanggeonho length 29.9m and beam 9.9m follow construction reports. Najuho dimensions and both interior layouts are photo-proportioned estimates.','Museum exteriors use official map/photo positions; interiors are separate authored spaces linked at the doors.','Source imagery, original museum films and long copyrighted panels are not redistributed.'])

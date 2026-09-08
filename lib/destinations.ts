@@ -1,16 +1,16 @@
 export const destinations = {
   yeongsanpo: {
     coordinates:{lat:35.00025,lon:126.71075},
-    name:'영산포 · 홍어거리',area:'영산포 강변과 홍어거리',worldUrl:'/yeongsanpo-world.json?v=1',modelUrl:'/models/yeongsanpo.glb.gz?v=1',
+    name:'영산포 · 홍어거리',area:'영산포 강변과 홍어거리',worldUrl:'/yeongsanpo-world.json?v=detail-2',modelUrl:'/models/yeongsanpo.glb.gz?v=detail-2',
     heading:['강을 따라서,','영산포 한 바퀴.'],
-    introduction:['황포돛배와 등대, 홍어거리를 함께 걸어보세요.','역사갤러리와 문학관은 입구로 들어가면 실내가 열려요.'],
+    introduction:['두 황포돛배에 올라 강 위를 직접 운전해 보세요.','홍어거리의 역사갤러리와 문학관은 입구로 들어갈 수 있어요.'],
     sourceUrl:'https://www.naju.go.kr/tour',sourceLabel:'나주시 관광 사진',
     limitation:'지도·공식 사진 참고 · 높이·세부 추정',
     overview:{center:[40,45],radius:620,elevation:.86,angle:-.45},
   },
   'yeongsanpo-history': {
     coordinates:{lat:35.000721,lon:126.711504},parent:'yeongsanpo',
-    name:'영산포 역사갤러리',area:'영산포 역사갤러리 실내',worldUrl:'/yeongsanpo-history-world.json?v=1',modelUrl:'/models/yeongsanpo-history.glb.gz?v=1',
+    name:'영산포 역사갤러리',area:'영산포 역사갤러리 실내',worldUrl:'/yeongsanpo-history-world.json?v=detail-2',modelUrl:'/models/yeongsanpo-history.glb.gz?v=detail-2',
     heading:['옛 포구 안으로,','영산포의 기억.'],
     introduction:['배 모형과 홍어, 포구의 생활 전시를 둘러보세요.','들어온 문을 지나면 홍어거리로 돌아갑니다.'],
     sourceUrl:'https://korean.visitkorea.or.kr/detail/ms_detail.do?cotid=b6fd947a-7ff4-461c-bffd-8952bcc6b105',sourceLabel:'한국관광공사 사진 참고',
@@ -19,7 +19,7 @@ export const destinations = {
   },
   'yeongsanpo-literature': {
     coordinates:{lat:34.9998292,lon:126.712917},parent:'yeongsanpo',
-    name:'타오르는 강 문학관',area:'타오르는 강 문학관 실내',worldUrl:'/yeongsanpo-literature-world.json?v=1',modelUrl:'/models/yeongsanpo-literature.glb.gz?v=1',
+    name:'타오르는 강 문학관',area:'타오르는 강 문학관 실내',worldUrl:'/yeongsanpo-literature-world.json?v=detail-2',modelUrl:'/models/yeongsanpo-literature.glb.gz?v=detail-2',
     heading:['목조 복도를 따라,','이야기가 흐르는 집.'],
     introduction:['다다미 전시방과 서재, 좌식 독서실을 둘러보세요.','현관의 출구로 나가면 영산포 거리로 돌아갑니다.'],
     sourceUrl:'https://www.jnfilm.or.kr/web_jnfilm/jn_ldbview.php?clmsuid=5079',sourceLabel:'전남영상위원회 사진 참고',

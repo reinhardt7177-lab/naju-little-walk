@@ -12,9 +12,10 @@ import { sceneArrival, portalAt, portalHref } from '@/lib/scene-travel';
 import { canTravelTo, mapSolids, mapColor } from '@/lib/map-navigation';
 import type { Point } from '@/lib/world';
 import MapTravel from './map-travel';
+import { BoatFleet, type BoatHud } from '@/lib/boat-fleet';
 
 type ViewState = { x: number; z: number; yaw: number; place: string; detail: string; indoor: boolean };
-type Engine = { start: () => void; pause: () => void; reset: () => void; overview: () => void; key: (key: string, down: boolean) => void; travel: (point: Point, height?:number) => boolean };
+type Engine = { start: () => void; pause: () => void; reset: () => void; overview: () => void; key: (key: string, down: boolean) => void; travel: (point: Point, height?:number) => boolean; boatAction: (action:string,id?:string)=>void };
 
 export default function Home() {
   const host = useRef<HTMLDivElement>(null);
@@ -26,6 +27,7 @@ export default function Home() {
   const [overview, setOverview] = useState(true);
   const [mapOpen,setMapOpen] = useState(false);
   const [error, setError] = useState('');
+  const [boatHud,setBoatHud] = useState<BoatHud|null>(null);
   const [destinationId, setDestinationId] = useState<DestinationId>('geumseonggwan');
   const destination = destinations[destinationId];
   const [view, setView] = useState<ViewState>({ x: 0, z: 0, yaw: 0, place: '금성관 주변', detail: '', indoor: false });
@@ -51,15 +53,15 @@ export default function Home() {
       renderer.shadowMap.type = THREE.PCFShadowMap;
       renderer.outputColorSpace = THREE.SRGBColorSpace;
       renderer.toneMapping = THREE.ACESFilmicToneMapping;
-      renderer.toneMappingExposure = 1.25;
+      renderer.toneMappingExposure = data.lighting?.exposure??1.25;
       const canvas = renderer.domElement;
       canvas.setAttribute('aria-label', `${selected.area} 3D 탐험 화면. 마우스를 끌어서 시선을 움직일 수 있습니다.`);
       canvas.tabIndex = 0;
       mount.appendChild(canvas);
       scene.background = new THREE.Color('#bbd9e6');
       scene.fog = new THREE.Fog('#bbd9e6', selectedId !== 'geumseonggwan' ? 650 : 260, selectedId !== 'geumseonggwan' ? 1350 : 690);
-      scene.add(new THREE.HemisphereLight('#e1f3ff', '#918673', data.verticalNavigation ? 1.5 : 2.8));
-      const sun = new THREE.DirectionalLight('#fff0d1', 3.1);
+      scene.add(new THREE.HemisphereLight('#e1f3ff', '#918673', data.lighting?.ambient??(data.verticalNavigation ? 1.5 : 2.8)));
+      const sun = new THREE.DirectionalLight('#fff0d1', data.lighting?.sun??3.1);
       sun.position.set(-80, 145, 65); sun.castShadow = true;
       sun.shadow.mapSize.set(2048, 2048);
       sun.shadow.camera.left = sun.shadow.camera.bottom = -165;
@@ -84,6 +86,9 @@ export default function Home() {
       const roofParts: THREE.Object3D[]=[];
       gltf.scene.traverse(o=>{if(o.userData.hide_in_overview)roofParts.push(o);});
       scene.add(gltf.scene);
+      const fleet=new BoatFleet(data);
+      await fleet.load(scene);
+      if(disposed){scene.traverse(disposeObject);return;}
       const camera = new THREE.PerspectiveCamera(60, 1, 0.12, selectedId !== 'geumseonggwan' ? 1800 : 1000);
       const colliders = data.solids.filter(s => s.collision).map(solidCollider);
       const floors = worldFloors(data.solids);
@@ -107,6 +112,7 @@ export default function Home() {
         target.addEventListener(name, fn, options); cleanups.push(() => target.removeEventListener(name, fn, options));
       };
       const pause = () => {
+        fleet.stop();
         playing = false; keys.clear(); drag = false; setActive(false);
         if (document.pointerLockElement === canvas) document.exitPointerLock();
       };
@@ -114,17 +120,32 @@ export default function Home() {
         playing = true; bird = false; setActive(true); setStarted(true); setOverview(false);
         canvas.focus({ preventScroll: true });
         // Drag and keyboard controls also work when an embedded browser denies pointer lock.
-        if (window.matchMedia('(pointer:fine)').matches && canvas.requestPointerLock) {
+        // River controls stay clickable; drag-look works alongside the boat dashboard.
+        if (!data.boats?.length && window.matchMedia('(pointer:fine)').matches && canvas.requestPointerLock) {
           try { const request = canvas.requestPointerLock(); request?.catch(() => {}); } catch { /* drag fallback */ }
         }
       };
+      const alignPassenger=()=>{const p=fleet.eye();if(p){px=p.x;pz=p.z;elevation=p.height;}};
+      const boatAction=(action:string,id?:string)=>{
+        keys.clear();
+        if(action==='board'&&id){
+          const vessel=fleet.vessels.find(v=>v.definition.id===id);if(!vessel)return;
+          if(fleet.board(id,[px,pz],elevation)){yaw=vessel.state.yaw;pitch=0;alignPassenger();}
+          else if(!fleet.passenger){engine.current?.travel(vessel.definition.shore,vessel.definition.shoreHeight);return;}
+        }else if(action==='helm'){fleet.drive();if(fleet.passenger)yaw=fleet.passenger.vessel.state.yaw;pitch=0;alignPassenger();}
+        else if(action==='deck')fleet.deck();
+        else if(action==='dock'){fleet.returnToBerth();alignPassenger();}
+        else if(action==='leave'){const p=fleet.leave();if(p){px=p.position[0];pz=p.position[1];elevation=p.height;}}
+        start();
+      };
       engine.current = {
-        start, pause,
-        reset: () => { px = data.spawn.x; pz = data.spawn.z; elevation=reachableFloor(px,pz,0,floors)??0; yaw = data.spawn.yaw; pitch = 0; start(); },
+        start, pause, boatAction,
+        reset: () => { fleet.reset();px = data.spawn.x; pz = data.spawn.z; elevation=reachableFloor(px,pz,0,floors)??0; yaw = data.spawn.yaw; pitch = 0; start(); },
         overview: () => { pause(); bird = true; setOverview(true); },
         key: (key, down) => { if (down) keys.add(key); else keys.delete(key); },
         travel: (point,height=0) => {
           if(!canTravelTo(point,data,height))return false;
+          fleet.leaveForTravel();
           px=point[0];pz=point[1];pitch=0;keys.clear();
           elevation=reachableFloor(px,pz,height,floors)??0;
           const arrival=data.places.find(p=>p.arrival && Math.hypot(p.arrival[0]-px,p.arrival[1]-pz)<.1);
@@ -155,6 +176,7 @@ export default function Home() {
         if (e.target instanceof HTMLButtonElement || e.target instanceof HTMLAnchorElement) return;
         if (e.code === 'Escape') { pause(); return; }
         if (!playing) return;
+        if(e.code==='KeyF'&&!e.repeat){e.preventDefault();const hud=fleet.hud([px,pz],elevation);if(hud.mode==='helm')boatAction('deck');else if(hud.aboard)boatAction('helm');else if(hud.near)boatAction('board',hud.near);return;}
         if (['KeyW','KeyA','KeyS','KeyD','ArrowUp','ArrowDown','ArrowLeft','ArrowRight','KeyQ','KeyE','ShiftLeft','ShiftRight','Space'].includes(e.code)) { e.preventDefault(); keys.add(e.code); }
       }) as EventListener);
       listen(window, 'keyup', ((e: KeyboardEvent) => { keys.delete(e.code); }) as EventListener);
@@ -189,14 +211,18 @@ export default function Home() {
         if (playing) {
           const forward = Number(keys.has('KeyW') || keys.has('ArrowUp')) - Number(keys.has('KeyS') || keys.has('ArrowDown'));
           const side = Number(keys.has('KeyD')) - Number(keys.has('KeyA'));
-          yaw += (Number(keys.has('ArrowLeft') || keys.has('KeyQ')) - Number(keys.has('ArrowRight') || keys.has('KeyE'))) * dt * 1.6;
+          yaw += (Number(keys.has('KeyQ') || (!fleet.passenger?.helm&&keys.has('ArrowLeft'))) - Number(keys.has('KeyE') || (!fleet.passenger?.helm&&keys.has('ArrowRight')))) * dt * 1.6;
           const len = Math.hypot(forward, side) || 1;
           const speed = (keys.has('ShiftLeft') || keys.has('ShiftRight') ? 9 : 4.5) * dt / len;
           const dx=(-Math.sin(yaw) * forward + Math.cos(yaw) * side) * speed, dz=(-Math.cos(yaw) * forward - Math.sin(yaw) * side) * speed;
-          const next=data.verticalNavigation?moveOnFloors(px,pz,elevation,dx,dz,obstacles,floors,data.bounds,data.requireFloor):movePlayer(px,pz,dx,dz,colliders,data.bounds);
-          px = next.x; pz = next.z;
-          if('height' in next)elevation=next.height as number;
-          if(!changingScene && (forward || side)){
+          const passenger=fleet.update(dt,keys,yaw);
+          if(passenger){px=passenger.x;pz=passenger.z;elevation=passenger.height;yaw+=passenger.yawDelta;}
+          else{
+            const next=data.verticalNavigation?moveOnFloors(px,pz,elevation,dx,dz,obstacles,floors,data.bounds,data.requireFloor):movePlayer(px,pz,dx,dz,colliders,data.bounds);
+            px = next.x; pz = next.z;
+            if('height' in next)elevation=next.height as number;
+          }
+          if(!fleet.passenger && !changingScene && (forward || side)){
             const portal=portalAt(data,px,pz,elevation),href=portal&&portalHref(portal);
             if(href){changingScene=true;keys.clear();playing=false;window.location.assign(href);}
           }
@@ -206,9 +232,10 @@ export default function Home() {
           camera.position.set(center.x + Math.sin(orbit) * Math.cos(orbitElevation) * orbitRadius, Math.sin(orbitElevation) * orbitRadius, center.z + Math.cos(orbit) * Math.cos(orbitElevation) * orbitRadius); camera.lookAt(center);
         } else { camera.position.set(px, 1.72 + (data.verticalNavigation?elevation:floorHeight(px, pz, floors)), pz); camera.rotation.order = 'YXZ'; camera.rotation.set(pitch, yaw, 0); }
         if (now - lastHud > 180) {
+          const hud=fleet.hud([px,pz],elevation);if(fleet.vessels.length)setBoatHud(hud);
           const place = currentPlace(px, pz, data.places, data.verticalNavigation?elevation:undefined);
           const doorway=data.portals?.find(p=>Math.hypot(p.position[0]-px,p.position[1]-pz)<4 && Math.abs((p.height??0)-elevation)<.6);
-          setView({ x: px, z: pz, yaw, place: place?.name ?? selected.area, detail: doorway?doorway.label:place?.description ?? '길을 따라 천천히 둘러보세요.', indoor: place?.indoor ?? place?.id === 'interior' }); lastHud = now;
+          setView({ x: px, z: pz, yaw, place: fleet.passenger?.vessel.definition.name ?? place?.name ?? selected.area, detail: hud.aboard?(hud.mode==='helm'?'W 전진 · S 후진 · A D 방향 · Space 제동':'갑판과 객실을 걸어서 둘러보세요. F를 누르면 운전석으로 이동합니다.'):doorway?doorway.label:place?.description ?? '길을 따라 천천히 둘러보세요.', indoor: !!hud.aboard || (place?.indoor ?? place?.id === 'interior') }); lastHud = now;
         }
         renderer.render(scene, camera); animation = requestAnimationFrame(frame);
       };
@@ -238,7 +265,7 @@ export default function Home() {
       <header className="topbar">
         <div className="brand"><span className="brand-mark"><Compass size={25} strokeWidth={1.4} /></span><div><strong>나주 산책</strong><span>NAJU, ON FOOT</span></div></div>
         <div className="location-pill"><span className="live-dot" /><span>{destination.area}</span><span className="pill-divider" /><span>{'parent' in destination?'사진 참고 실내':'실제 지도 기반'}</span></div>
-        <div className="view-actions"><button className={overview ? 'active' : ''} onClick={() => engine.current?.overview()} disabled={!ready}><MoveUpRight size={16} />전체 보기</button><button className={!overview ? 'active' : ''} onClick={() => engine.current?.start()} disabled={!ready}><Footprints size={16} />걷기</button></div>
+        <div className="view-actions"><button className={overview ? 'active' : ''} onClick={() => engine.current?.overview()} disabled={!ready}><MoveUpRight size={16} />전체 보기</button><button className={!overview ? 'active' : ''} onClick={() => boatHud?.aboard?engine.current?.boatAction('deck'):engine.current?.start()} disabled={!ready}><Footprints size={16} />걷기</button></div>
       </header>
       <nav className="destination-nav" aria-label="산책 장소">
         <button onClick={openMap}><Map size={18}/><span>지도로 이동</span><ArrowUpRight size={16}/></button>
@@ -248,6 +275,7 @@ export default function Home() {
         <svg viewBox={`${world.bounds[0]} ${world.bounds[2]} ${world.bounds[1] - world.bounds[0]} ${world.bounds[3] - world.bounds[2]}`} role="img" aria-label={`현재 위치: ${view.place}`} onClick={openMap}>
           <rect x={world.bounds[0]} y={world.bounds[2]} width={world.bounds[1] - world.bounds[0]} height={world.bounds[3] - world.bounds[2]} fill="#e5e8df" />
           {mapSolids(world).map((s, i) => <polygon key={i} points={solidCollider(s).map(p => p.join(',')).join(' ')} fill={mapColor(s.name)} stroke={s.kind === 'building' ? '#9aada2' : 'none'} strokeWidth="0.7" />)}
+          {boatHud?.boats.map(b=><g key={b.id} transform={`translate(${b.x} ${b.z}) rotate(${-b.yaw*180/Math.PI})`}><path d="M 0,-13 L 4,-7 L 4,11 L -4,11 L -4,-7 Z" fill={boatHud.aboard===b.id?'#d27c32':'#664d33'} stroke="#fff" strokeWidth="1.6"/></g>)}
           <g transform={`translate(${view.x} ${view.z}) scale(${(world.bounds[1]-world.bounds[0])/245})`}>
             <circle r="6" fill="#fff" /><circle r="3.5" fill="#c96734" />
             <path d="M 0,-11 L -3,-6 L 3,-6 Z" fill="#c96734" transform={`rotate(${-view.yaw * 180 / Math.PI})`} />
@@ -255,7 +283,7 @@ export default function Home() {
         </svg><div className="map-legend"><span className="you-dot" />내 위치<span>약 {Math.round((world.bounds[1] - world.bounds[0]) / 10) * 10}m 구역</span></div>
         <button className="minimap-travel" onClick={openMap}>지도 열고 이동하기 <ArrowUpRight size={14}/></button>
       </aside>}
-      {!active && <section className="welcome" aria-label="산책 시작">
+      {!active && !boatHud?.aboard && <section className="welcome" aria-label="산책 시작">
         <div className="eyebrow"><span />나주 · {destination.name}</div>
         <h1>{started ? '잠시, 쉬어가기.' : <>{destination.heading[0]}<br />{destination.heading[1]}</>}</h1>
         <p>{started ? '산책을 이어가거나, 위에서 동네를 둘러보세요.' : <>{destination.introduction[0]}<br />{destination.introduction[1]}</>}</p>
@@ -263,8 +291,18 @@ export default function Home() {
         <div className="welcome-help"><span><kbd>W A S D</kbd> 이동</span><span>마우스 / 드래그로 둘러보기</span></div>
         {error && <div className="error-message" role="alert">{error}<button onClick={() => window.location.reload()}>다시 불러오기</button></div>}
       </section>}
-      {active && <><div className="crosshair" aria-hidden="true" /><div className="place-card"><span className="place-icon"><MapPin size={21} /></span><div><span>{view.indoor ? '실내에 도착했어요' : '지금 걷는 곳'}</span><strong>{view.place}</strong><p>{view.detail}</p></div></div>
+      {active && <><div className="crosshair" aria-hidden="true" />{!boatHud?.aboard&&<div className="place-card"><span className="place-icon"><MapPin size={21} /></span><div><span>{view.indoor ? '실내에 도착했어요' : '지금 걷는 곳'}</span><strong>{view.place}</strong><p>{view.detail}</p></div></div>}
         <div className="touch-controls" aria-label="이동 버튼"><button aria-label="앞으로" {...press('KeyW')}><ArrowUp /></button><div><button aria-label="왼쪽으로" {...press('KeyA')}><ArrowLeft /></button><button aria-label="뒤로" {...press('KeyS')}><ArrowDown /></button><button aria-label="오른쪽으로" {...press('KeyD')}><ArrowRight /></button></div><div className="turn-controls"><button aria-label="왼쪽 보기" {...press('KeyQ')}>↶</button><button aria-label="오른쪽 보기" {...press('KeyE')}>↷</button></div></div></>}
+      {boatHud&&(active||!!boatHud.aboard)&&!mapOpen&&<aside className={`boat-panel ${boatHud.aboard?'aboard':'at-shore'}`} aria-label="황포돛배 승선과 조종">
+        <div className="boat-panel-title"><span>{boatHud.aboard?view.place:'영산강 황포돛배'}</span>{boatHud.aboard&&<strong>{boatHud.speed.toFixed(1)} <small>km/h</small></strong>}</div>
+        {boatHud.aboard?<>
+          <p>{boatHud.departing?'출항 중이에요. 선착장에서 떨어진 뒤 직접 조종할 수 있습니다.':boatHud.mode==='helm'?'W 전진 · S 후진 · A D 방향 · Space 제동':'갑판과 객실을 자유롭게 걸어보세요.'}</p>
+          <p className="boat-mouse-help">{active?'화면을 드래그해 둘러보기 · Esc 일시정지':'배가 정지했어요. 이어서 탐험하거나 아래에서 선택하세요.'}</p>
+          {boatHud.blocked&&<p role="status">강가 또는 다른 배에 가까워 멈췄어요. 반대 방향으로 이동해 주세요.</p>}
+          <div className="boat-actions">{!active&&<button onClick={()=>engine.current?.start()}>이어서 탐험</button>}<button onClick={()=>engine.current?.boatAction(boatHud.mode==='helm'?'deck':'helm')}>{boatHud.mode==='helm'?'갑판 둘러보기':'운전석으로 · F'}</button>{boatHud.mode==='helm'&&active&&<button {...press('Space')}>제동</button>}{boatHud.canLeave?<button onClick={()=>engine.current?.boatAction('leave')}>선착장에 내리기</button>:<button onClick={()=>engine.current?.boatAction('dock')}>선착장으로 복귀</button>}</div>
+          <small className="boat-dimension">{boatHud.boats.find(b=>b.id===boatHud.aboard)?.note}</small>
+        </>:<><p>{boatHud.near?'승선 버튼이나 F를 눌러 배에 올라보세요.':'배를 선택하면 승선 입구로 이동해요.'}</p><div className="boat-actions">{boatHud.boats.map(b=><button key={b.id} onClick={()=>engine.current?.boatAction('board',b.id)}>{b.name} {boatHud.near===b.id?'승선':'선착장'}</button>)}</div></>}
+      </aside>}
       <footer className="bottom-bar"><div className="keyboard-guide"><span><kbd>W A S D</kbd> 이동</span><span><kbd>← →</kbd> 시선 회전</span><span><kbd>Shift</kbd> 빠르게</span><span><kbd>Esc</kbd> 쉬기</span></div><div className="bottom-actions"><button onClick={() => engine.current?.reset()} disabled={!ready} aria-label="출발 위치로 돌아가기"><RotateCcw size={16} />처음 위치</button>{active && <button onClick={() => engine.current?.pause()}><Pause size={16} />쉬기</button>}</div></footer>
       <div className="source-note"><a href="https://www.openstreetmap.org/copyright" target="_blank" rel="noreferrer">© OpenStreetMap 기여자 · ODbL</a><span>·</span><a href={destination.sourceUrl} target="_blank" rel="noreferrer">{destination.sourceLabel}</a>{(['dasi','bogam','bogam-museum'].includes(destinationId)) && <><span>·</span><a href="https://server.arcgisonline.com/ArcGIS/rest/services/World_Imagery/MapServer" target="_blank" rel="noreferrer">Esri / Vantor 항공사진({destinationId==='dasi'?'2022':'2023'})</a></>}{destinationId==='yeongsanpo'&&<><span>·</span><a href="https://server.arcgisonline.com/ArcGIS/rest/services/World_Imagery/MapServer" target="_blank" rel="noreferrer">Esri / Vantor 항공사진 참고</a></>}<span>· {destination.limitation}</span></div>
       {mapOpen&&<MapTravel destinationId={destinationId} world={world} position={[view.x,view.z]} onClose={()=>setMapOpen(false)} onTravel={(point,height)=>engine.current?.travel(point,height)??false}/>}
