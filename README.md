@@ -4,7 +4,9 @@
 
 ## 영산포 강변 · 홍어거리 · 두 전시관
 
-영산포 전체는 위성사진에서 누락 지붕 **30개**와 연결 골목 **4개**를 추가하고, 보도블록·배수로·차양·등대 받침·난간을 보강했습니다. 사진의 204 건물번호와 OSM 윤곽을 연결한 **삼화홍어·죽전골목 입구** 외관도 반영했습니다. 최신 외부 편집본은 `outputs/yeongsanpo-streets.blend`입니다. [자료·추정 범위·재생성 기록](knowledge/yeongsanpo-streets-detail.md)을 확인하세요.
+문학관 외부의 **목재 경계 울타리·열린 정원 입구·측면 격자창·작은 별채·실외기·홈통·처마기둥**을 보강하고, 박공과 지붕 단차의 빈 벽을 마감했습니다. `/?place=yeongsanpo&at=literature-garden`에서 입구, `&at=literature-side`에서 측면을 확인할 수 있습니다. 최신 외부 편집본은 `outputs/yeongsanpo-boundary.blend`이며 [사진과 경계 추정 범위](knowledge/literature-boundary-detail.md)를 기록했습니다.
+
+영산포 전체는 위성사진에서 누락 지붕 **30개**와 연결 골목 **4개**를 추가하고, 보도블록·배수로·차양·등대 받침·난간을 보강했습니다. 사진의 204 건물번호와 OSM 윤곽을 연결한 **삼화홍어·죽전골목 입구** 외관도 반영했습니다. 거리 보강 당시 편집본 `outputs/yeongsanpo-streets.blend`는 보존합니다. [자료·추정 범위·재생성 기록](knowledge/yeongsanpo-streets-detail.md)을 확인하세요.
 
 문학관 **1층 전시벽·도서 진열장·목재 테두리·촘촘한 미닫이문·툇마루**를 추가 보완하고, 창 위와 천장 연결부를 마감했습니다. 창밖에는 처마·디딤석·화분·정원을 배치했습니다. `/?place=yeongsanpo-literature&at=exhibit`에서 1층 전시방, `&at=veranda`에서 툇마루부터 걸을 수 있습니다. 최신 실내 편집본은 `outputs/yeongsanpo-literature-ground.blend`입니다. [사진 근거·추정 범위·재생성](knowledge/literature-ground-detail.md)을 확인하세요.
 
