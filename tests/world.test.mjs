@@ -17,6 +17,16 @@ const bogamColliders=bogam.solids.filter(s=>s.collision).map(solidCollider);
 const museum=JSON.parse(fs.readFileSync(new URL('../public/bogam-museum-world.json',import.meta.url),'utf8'));
 const museumFloors=worldFloors(museum.solids), museumObstacles=worldObstacles(museum.solids);
 
+test('Bitgaram compressed downloads restore the exact authored Blender models',async()=>{
+  for(const id of ['park','overview','observatory']){
+    const raw=fs.readFileSync(new URL(`../public/models/bitgaram-${id}.glb`,import.meta.url));
+    const packed=fs.readFileSync(new URL(`../public/models/bitgaram-${id}.glb.gz`,import.meta.url));
+    const restored=await unpackModel(packed.buffer.slice(packed.byteOffset,packed.byteOffset+packed.byteLength));
+    assert.ok(Buffer.from(restored).equals(raw));
+    assert.ok(packed.length<raw.length,'Transport is smaller than the original');
+  }
+});
+
 test('park aerial roof has an open oculus and physical supports block walking',()=>{
   const {scene}=readModel(new URL('../public/models/bitgaram-park.glb',import.meta.url));
   const roof=scene.getObjectByName('aerial_roof_open_oval');
@@ -36,6 +46,29 @@ test('park aerial roof has an open oculus and physical supports block walking',(
   walkRoute(w,[[0,21],[0,8]],16);
   const shell=w.solids.find(s=>s.name==='photo_exhibition_shell');
   assert.ok(shell&&shell.collision,'Exhibition shell retains a physical boundary');
+});
+
+test('Bitgaram timber guards are physical and the exhibition garden is open above',()=>{
+  const w=JSON.parse(fs.readFileSync(new URL('../public/bitgaram-park-world.json',import.meta.url),'utf8'));
+  const guards=w.solids.filter(s=>s.name==='timber_walk_guard');
+  assert.ok(guards.length>200);
+  const obstacles=worldObstacles(w.solids);
+  for(const guard of guards){
+    const p=solidCollider(guard),x=p.reduce((s,a)=>s+a[0],0)/p.length,z=p.reduce((s,a)=>s+a[1],0)/p.length;
+    assert.ok(blocksWalking(x,z,guard.position[1]+.05,obstacles));
+  }
+  const {scene}=readModel(new URL('../public/models/bitgaram-park.glb',import.meta.url));
+  assert.equal(scene.getObjectByName('timber_walk_guard'),undefined,'Collision proxies are not visible solid walls');
+  const ray=new THREE.Raycaster(new THREE.Vector3(0,20,130),new THREE.Vector3(0,-1,0),0,15);
+  assert.equal(ray.intersectObject(scene.getObjectByName('photo_exhibition_sloped_shell'),true).length,0,'Old closed roof removed');
+  assert.ok(ray.intersectObject(scene.getObjectByName('context_roof_garden_paving'),true).length,'Roof terrace floor remains');
+  const building=solidCollider(w.solids.find(s=>s.name==='photo_exhibition_shell'));
+  scene.traverse(o=>{
+    if(o.name.startsWith('aerial_woodland_canopy')){
+      const p=o.getWorldPosition(new THREE.Vector3());
+      assert.equal(hitsPolygon(p.x,p.z,building,0),false,'Woodland trunks must not emerge through the roof garden');
+    }
+  });
 });
 
 test('Bitgaram signs load valid scenes and preserve elevated park spawn',()=>{

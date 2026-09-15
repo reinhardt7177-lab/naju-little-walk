@@ -4,6 +4,7 @@ import * as THREE from 'three';
 import {GLTFLoader} from 'three/addons/loaders/GLTFLoader.js';
 import {OrbitControls} from 'three/addons/controls/OrbitControls.js';
 import {batchStaticScene} from '@/lib/static-scene';
+import {unpackModel} from '@/lib/model-transport';
 
 type Pin={id:string;label:string;position:[number,number,number]};
 export default function BitgaramOrbit(){
@@ -25,7 +26,12 @@ export default function BitgaramOrbit(){
       controls=new OrbitControls(camera,canvas);controls.enableDamping=true;controls.enablePan=false;controls.minDistance=700;controls.maxDistance=6500;controls.minPolarAngle=.15;controls.maxPolarAngle=Math.PI*.46;
       const restore=()=>{camera.position.set(1500,2450,2700);controls!.target.set(200,0,-50);controls!.update();};reset.current=restore;restore();
       const resize=()=>{camera.aspect=mount.clientWidth/mount.clientHeight;camera.updateProjectionMatrix();renderer!.setSize(mount.clientWidth,mount.clientHeight);};resize();observer=new ResizeObserver(resize);observer.observe(mount);
-      const [model,response]=await Promise.all([new GLTFLoader().loadAsync('/models/bitgaram-overview.glb'),fetch('/bitgaram-orbit.json')]);
+      const loadModel=async()=>{
+        const response=await fetch('/models/bitgaram-overview.glb.gz');
+        if(!response.ok)throw new Error('3D 지도를 불러오지 못했습니다.');
+        return new GLTFLoader().parseAsync(await unpackModel(await response.arrayBuffer()),'');
+      };
+      const [model,response]=await Promise.all([loadModel(),fetch('/bitgaram-orbit.json')]);
       if(disposed){dispose(model.scene);return;}
       if(!response.ok)throw new Error('장소 정보를 불러오지 못했습니다.');
       const data=await response.json() as {pins:Pin[]};if(disposed){dispose(model.scene);return;}
