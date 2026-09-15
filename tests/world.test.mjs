@@ -27,6 +27,17 @@ test('Bitgaram compressed downloads restore the exact authored Blender models',a
   }
 });
 
+test('observatory uses an embedded panorama instead of the old exterior blocks',()=>{
+  const raw=fs.readFileSync(new URL('../public/models/bitgaram-observatory.glb',import.meta.url));
+  const gltf=JSON.parse(raw.subarray(20,20+raw.readUInt32LE(12)).toString());
+  const node=gltf.nodes.find(n=>n.extras?.photo_panorama);
+  assert.ok(node,'Panorama is part of the 3D model');
+  const material=gltf.materials[gltf.meshes[node.mesh].primitives[0].material];
+  assert.ok(material.extensions?.KHR_materials_unlit || (material.emissiveTexture && material.emissiveFactor?.every(v=>v===1) && material.pbrMetallicRoughness?.baseColorFactor?.slice(0,3).every(v=>v===0)),'Photo exports as unlit or emission-only with a black surface');
+  assert.ok(gltf.images.some(i=>i.bufferView!==undefined),'Panorama texture travels inside the GLB');
+  assert.ok(!gltf.nodes.some(n=>/^(context_|lake_osm_|photo_wrap_)/.test(n.name??'')),'Old background geometry must not hide the panorama');
+});
+
 test('park aerial roof has an open oculus and physical supports block walking',()=>{
   const {scene}=readModel(new URL('../public/models/bitgaram-park.glb',import.meta.url));
   const roof=scene.getObjectByName('aerial_roof_open_oval');

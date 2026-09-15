@@ -7,6 +7,7 @@ import { GLTFLoader } from 'three/addons/loaders/GLTFLoader.js';
 import { movePlayer, moveOnFloors, reachableFloor, worldObstacles, solidCollider, worldFloors, floorHeight, currentPlace, type World } from '@/lib/world';
 import { destinations, destinationFromSearch, type DestinationId } from '@/lib/destinations';
 import { batchStaticScene } from '@/lib/static-scene';
+import { createLocalLights } from '@/lib/local-lights';
 import { unpackModel } from '@/lib/model-transport';
 import { sceneArrival, portalAt, portalHref } from '@/lib/scene-travel';
 import { canTravelTo, mapSolids, mapColor } from '@/lib/map-navigation';
@@ -14,7 +15,6 @@ import type { Point } from '@/lib/world';
 import MapTravel from './map-travel';
 import { BoatFleet, type BoatHud } from '@/lib/boat-fleet';
 import BitgaramHub from './bitgaram-hub';
-import ObservatoryVideo from './observatory-video';
 
 type ViewState = { x: number; z: number; yaw: number; place: string; detail: string; indoor: boolean };
 type Engine = { start: () => void; pause: () => void; reset: () => void; overview: () => void; key: (key: string, down: boolean) => void; travel: (point: Point, height?:number) => boolean; boatAction: (action:string,id?:string)=>void };
@@ -45,6 +45,7 @@ function Explorer() {
   useEffect(() => {
     const selectedId = destinationFromSearch(window.location.search);
     const selected = destinations[selectedId];
+    const optimizedCampus=selectedId==='bitgaram-kepco';
     setDestinationId(selectedId);
     document.title = `나주 산책 — ${selected.area}`;
     const mount = host.current!;
@@ -59,7 +60,7 @@ function Explorer() {
       setWorld(data);
       // Keep centimeter-separated landscape layers stable at city overview distances.
       renderer = new THREE.WebGLRenderer({ antialias: true, powerPreference: 'high-performance', logarithmicDepthBuffer: selectedId.startsWith('bitgaram') });
-      renderer.setPixelRatio(Math.min(window.devicePixelRatio, 1.75));
+      renderer.setPixelRatio(Math.min(window.devicePixelRatio, optimizedCampus?1.25:1.75));
       renderer.shadowMap.enabled = true;
       renderer.shadowMap.type = THREE.PCFShadowMap;
       renderer.outputColorSpace = THREE.SRGBColorSpace;
@@ -79,7 +80,8 @@ function Explorer() {
       sun.shadow.camera.right = sun.shadow.camera.top = 165;
       sun.shadow.camera.far = 420; sun.shadow.normalBias = 0.06;
       scene.add(sun);
-      for (const fixture of data.lights ?? []) {
+      const localLights=optimizedCampus?createLocalLights(scene,data.lights??[]):undefined;
+      for (const fixture of optimizedCampus?[]:data.lights ?? []) {
         const light = new THREE.PointLight(fixture.color, fixture.intensity, fixture.distance, 2);
         light.position.set(...fixture.position);
         scene.add(light);
@@ -96,11 +98,30 @@ function Explorer() {
         const landscape=selectedId.startsWith('bitgaram')&&/^(context_ground|lake_osm_|estimated_hill|surrounding_park_lawn|surrounding_mapped_paths|surrounding_parking|surrounding_recreation)/.test(o.name);
         o.castShadow = !o.name.startsWith('ground')&&!landscape;
         o.receiveShadow = !(landscape && o.name!=='estimated_hill');
+        if(o.userData.photo_panorama){
+          o.castShadow=false;o.receiveShadow=false;o.renderOrder=-100;
+          // Blender exports pure emission as an emissive PBR material in this version.
+          const original=Array.isArray(o.material)?o.material:[o.material];
+          const unlit=original.map(m=>{
+            const p=m as THREE.MeshStandardMaterial;
+            const material=new THREE.MeshBasicMaterial({map:p.emissiveMap??p.map,side:m.side});
+            m.dispose();return material;
+          });
+          o.material=Array.isArray(o.material)?unlit:unlit[0];
+          for(const material of Array.isArray(o.material)?o.material:[o.material]){
+            material.toneMapped=false;material.fog=false;material.depthWrite=false;
+          }
+        }
       } });
       batchStaticScene(gltf.scene);
       const roofParts: THREE.Object3D[]=[];
       gltf.scene.traverse(o=>{if(o.userData.hide_in_overview)roofParts.push(o);});
       scene.add(gltf.scene);
+      if(optimizedCampus){
+        gltf.scene.traverse(o=>{o.updateMatrix();o.matrixAutoUpdate=false;});
+        renderer.shadowMap.autoUpdate=false;
+        renderer.shadowMap.needsUpdate=true;
+      }
       const fleet=new BoatFleet(data);
       await fleet.load(scene);
       if(disposed){scene.traverse(disposeObject);return;}
@@ -219,7 +240,8 @@ function Explorer() {
       // Door travel opens at eye level. Pointer lock still waits for a user gesture.
       if(arrival.entered){playing=true;bird=false;setActive(true);setStarted(true);setOverview(false);canvas.focus({preventScroll:true});}
       let changingScene=false;
-      let last = performance.now(), lastHud = 0;
+      let last = performance.now(), lastHud = 0, lastLightUpdate=-Infinity;
+      let shadowBird: boolean|undefined;
       const frame = (now: number) => {
         if (disposed || !renderer) return;
         const dt = Math.min((now - last) / 1000, 0.06); last = now;
@@ -246,6 +268,8 @@ function Explorer() {
         if (bird) {
           camera.position.set(center.x + Math.sin(orbit) * Math.cos(orbitElevation) * orbitRadius, Math.sin(orbitElevation) * orbitRadius, center.z + Math.cos(orbit) * Math.cos(orbitElevation) * orbitRadius); camera.lookAt(center);
         } else { camera.position.set(px, 1.72 + (data.verticalNavigation?elevation:floorHeight(px, pz, floors)), pz); camera.rotation.order = 'YXZ'; camera.rotation.set(pitch, yaw, 0); }
+        if(localLights && now-lastLightUpdate>150){localLights.update(camera.position);lastLightUpdate=now;}
+        if(optimizedCampus && shadowBird!==bird){renderer.shadowMap.needsUpdate=true;shadowBird=bird;}
         if (now - lastHud > 180) {
           const hud=fleet.hud([px,pz],elevation);if(fleet.vessels.length)setBoatHud(hud);
           const place = currentPlace(px, pz, data.places, data.verticalNavigation?elevation:undefined);
@@ -276,7 +300,6 @@ function Explorer() {
   const openMap=()=>{engine.current?.pause();setMapOpen(true);};
   return (
     <main className="explorer">
-      {destinationId==='bitgaram-observatory'&&<ObservatoryVideo onOpen={()=>engine.current?.pause()}/>}
       <div className="scene" ref={host} /><div className="vignette" />
       <header className="topbar">
         <div className="brand"><span className="brand-mark"><Compass size={25} strokeWidth={1.4} /></span><div><strong>나주 산책</strong><span>NAJU, ON FOOT</span></div></div>
