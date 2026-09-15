@@ -5,6 +5,7 @@ root=Path(__file__).resolve().parents[1]
 revision='entry-detail' if '--entry-detail' in sys.argv else 'aerial-detail'
 if '--walkway-detail' in sys.argv:revision='walkway-detail'
 if '--forest-detail' in sys.argv:revision='forest-detail'
+if '--surroundings' in sys.argv:revision='surroundings'
 target=root/f'outputs/bitgaram/bitgaram-overview-{revision}.blend'
 if target.exists() and '--replace-generated' not in sys.argv:raise RuntimeError('Existing overview revision preserved')
 bpy.ops.wm.open_mainfile(filepath=str(root/'outputs/bitgaram/bitgaram-overview.blend'))

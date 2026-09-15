@@ -25,7 +25,7 @@ export const destinations = {
     name:'빛가람 전망대 주변',area:'전망대 앞 쉼터와 산책로',worldUrl:'/bitgaram-park-world.json',modelUrl:'/models/bitgaram-park.glb.gz',
     heading:['나무 사이로,','빛가람 한 걸음.'],introduction:['전망대 주변의 쉼터와 접근 산책로를 걸어보세요.','전망실 푯말을 누르면 내부로 들어갑니다.'],
     sourceUrl:'https://www.youtube.com/watch?v=tQJsYaXqsIg',sourceLabel:'현장 탐방 영상 참고',
-    limitation:'OSM·위성사진 참고 · 지형 높이·세부 추정',overview:{center:[0,30],radius:170,elevation:.8,angle:.4},
+    limitation:'OSM·위성사진 참고 · 지형 높이·세부 추정',overview:{center:[0,35],radius:360,elevation:.8,angle:.4},
   },
   'bitgaram-observatory': {
     coordinates:{lat:35.016925,lon:126.790447},parent:'bitgaram',
