@@ -17,6 +17,23 @@ const bogamColliders=bogam.solids.filter(s=>s.collision).map(solidCollider);
 const museum=JSON.parse(fs.readFileSync(new URL('../public/bogam-museum-world.json',import.meta.url),'utf8'));
 const museumFloors=worldFloors(museum.solids), museumObstacles=worldObstacles(museum.solids);
 
+test('park aerial roof has an open oculus and physical supports block walking',()=>{
+  const {scene}=readModel(new URL('../public/models/bitgaram-park.glb',import.meta.url));
+  const roof=scene.getObjectByName('aerial_roof_open_oval');
+  assert.ok(roof,'Detailed exterior roof is exported');
+  assert.ok(!roof.userData.hide_in_overview,'Exterior roof stays visible in the aerial view');
+  const downward=(x,z)=>new THREE.Raycaster(new THREE.Vector3(x,40,z),new THREE.Vector3(0,-1,0),0,8).intersectObject(roof,true);
+  assert.equal(downward(-2,0).length,0,'Central oval opening remains open');
+  assert.ok(downward(10,0).length,'Outer roof annulus covers the viewing room');
+  const w=JSON.parse(fs.readFileSync(new URL('../public/bitgaram-park-world.json',import.meta.url),'utf8'));
+  const columns=w.solids.filter(s=>s.name==='aerial_column_body');
+  assert.equal(columns.length,6);
+  for(const c of columns){
+    const pts=solidCollider(c),x=pts.reduce((s,p)=>s+p[0],0)/pts.length,z=pts.reduce((s,p)=>s+p[1],0)/pts.length;
+    assert.equal(canTravelTo([x,z],w,16),false,'Support must block visitors');
+  }
+});
+
 test('Bitgaram signs load valid scenes and preserve elevated park spawn',()=>{
   for(const id of ['bitgaram-park','bitgaram-observatory','bitgaram-kepco','bitgaram-kentech']){
     const w=JSON.parse(fs.readFileSync(new URL(`../public/${id}-world.json`,import.meta.url),'utf8'));
