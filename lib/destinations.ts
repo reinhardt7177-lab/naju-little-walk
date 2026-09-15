@@ -1,10 +1,10 @@
 export const destinations = {
   'bitgaram-kepco': {
     coordinates:{lat:35.026466,lon:126.784493},parent:'bitgaram',
-    name:'한국전력 본사 · 1층',area:'한국전력 본사 입구와 로비',worldUrl:'/bitgaram-kepco-world.json',modelUrl:'/models/bitgaram-kepco.glb',
+      name:'한국전력 본사 · 1층',area:'한국전력 본사와 앞마당',worldUrl:'/bitgaram-kepco-world.json',modelUrl:'/models/bitgaram-kepco.glb',
     heading:['에너지의 도시,','한국전력 앞에서.'],introduction:['입구 주변과 1층 로비를 걸어보세요.','전체 안내 푯말로 다른 장소를 선택할 수 있어요.'],
     sourceUrl:'https://www.korea.kr/briefing/policyBriefingView.do?newsId=148817032',sourceLabel:'본사 로비 공개 사진 참고',
-    limitation:'실제 건물 윤곽 · 로비 치수·세부 추정',overview:{center:[0,0],radius:245,elevation:.7,angle:.3},
+      limitation:'실제 부지·건물 윤곽 · 조경·세부 추정',overview:{center:[0,0],radius:420,elevation:.8,angle:.3},
   },
   'bitgaram-kentech': {
     coordinates:{lat:35.010582,lon:126.803269},parent:'bitgaram',

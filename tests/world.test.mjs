@@ -98,6 +98,15 @@ test('Bitgaram signs load valid scenes and preserve elevated park spawn',()=>{
   for(const p of overview.pins)assert.ok(p.x>0&&p.x<100&&p.y>0&&p.y<100,'Pin inside rendered map');
 });
 
+test('KEPCO overview retains the tower and the extended front courtyard connects to the lobby',()=>{
+  const {scene}=readModel(new URL('../public/models/bitgaram-kepco.glb',import.meta.url));
+  const tower=scene.getObjectByName('central_tower');
+  assert.ok(tower&&!tower.userData.hide_in_overview,'Tower must remain visible in the outdoor overview');
+  const w=JSON.parse(fs.readFileSync(new URL('../public/bitgaram-kepco-world.json',import.meta.url),'utf8'));
+  const p=[w.spawn.x,w.spawn.z],lobby=w.places.find(p=>p.id==='lobby').arrival;
+  walkRoute(w,[p,[p[0],p[1]+20],p,lobby,p]);
+});
+
 const yeongsanWorlds=Object.fromEntries(['yeongsanpo','yeongsanpo-history','yeongsanpo-literature'].map(id=>[id,JSON.parse(fs.readFileSync(new URL(`../public/${id}-world.json`,import.meta.url),'utf8'))]));
 test('literature ceilings enclose the reported sky gaps and the stair landing',()=>{
   const {scene}=readModel(new URL('../public/models/yeongsanpo-literature.glb',import.meta.url));
