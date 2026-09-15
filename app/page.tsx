@@ -277,7 +277,7 @@ function Explorer() {
       <nav className="destination-nav" aria-label="산책 장소">
         <button onClick={openMap}><Map size={18}/><span>지도로 이동</span><ArrowUpRight size={16}/></button>
       </nav>
-      {!!world?.sceneLinks?.length && <nav className="scene-signposts" aria-label="장소 이동 푯말">{world.sceneLinks.filter(link=>Object.hasOwn(destinations,link.target)).map(link=><a key={link.target} href={`/?place=${encodeURIComponent(link.target)}`}><MapPin size={18}/><span>{link.label}</span><ArrowUpRight size={16}/></a>)}</nav>}
+      {active && !!world?.sceneLinks?.length && <nav className="scene-signposts" aria-label="장소 이동 푯말">{world.sceneLinks.filter(link=>Object.hasOwn(destinations,link.target)).map(link=><a key={link.target} href={`/?place=${encodeURIComponent(link.target)}`}><MapPin size={18}/><span>{link.label}</span><ArrowUpRight size={16}/></a>)}</nav>}
       {world && <aside className="minimap" aria-label="현재 위치 지도">
         <div className="map-heading"><span>{destinationId.startsWith('bitgaram')?'장소 지도':'parent' in destination?'실내 지도':'동네 지도'}</span><span>{destinationId.startsWith('bitgaram')?'주변 보기':'parent' in destination?'출구 ↓':'N ↑'}</span></div>
         <svg viewBox={`${world.bounds[0]} ${world.bounds[2]} ${world.bounds[1] - world.bounds[0]} ${world.bounds[3] - world.bounds[2]}`} role="img" aria-label={`현재 위치: ${view.place}`} onClick={openMap}>

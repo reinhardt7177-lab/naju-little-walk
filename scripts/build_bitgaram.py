@@ -11,7 +11,7 @@ OUT=ROOT/'outputs/bitgaram';OUT.mkdir(exist_ok=True)
 DATA=json.loads((ROOT/'knowledge/sources/bitgaram/geometry.json').read_text(encoding='utf-8'))
 WAYS={w['id']:w for w in DATA['ways']}
 MODE=sys.argv[sys.argv.index('--place')+1] if '--place' in sys.argv else 'bitgaram-park'
-TARGET=OUT/(MODE+'.blend')
+TARGET=OUT/(MODE+('-detail' if MODE=='bitgaram-park' else '')+'.blend')
 if TARGET.exists() and '--replace-generated' not in sys.argv:raise RuntimeError('Existing model preserved. Use --replace-generated only for generated files.')
 bpy.ops.object.select_all(action='SELECT');bpy.ops.object.delete(use_global=False)
 s=bpy.context.scene;g=MuseumGeometry(s,(0,0),0);rng=random.Random(915)
@@ -87,7 +87,7 @@ if MODE=='bitgaram-park':
     for j in range(N):
         z=-150+j*6
         for i in range(N):
-            x=-150+i*6;verts.append((x,hill(x,z)-.16,z))
+            x=-150+i*6;verts.append((x,min(hill(x,z),15.75)+.02,z))
     for j in range(N-1):
         for i in range(N-1):a=j*N+i;faces.extend([(a,a+1,a+N+1),(a,a+N+1,a+N)])
     g.mesh('estimated_hill',verts,faces,'#6f8654',smooth=True)
@@ -103,6 +103,12 @@ if MODE=='bitgaram-park':
         g.box('walk-floor_approach',(a[0]+b[0])/2,a[1]-.05,(a[2]+b[2])/2,math.dist(a[::2],b[::2])+.18,.10,3.2,'#baa58a',rotation=math.atan2(b[2]-a[2],b[0]-a[0]))
         if i%8==0:
             for dx in [-1.5,1.5]:g.tube('path_post',(a[0]+dx,a[1],a[2]),(a[0]+dx,a[1]+1.05,a[2]),.045,'#665b48')
+        for t in [.25,.5,.75]:
+            x=a[0]+(b[0]-a[0])*t;z=a[2]+(b[2]-a[2])*t
+            g.box('deck_plank_joint',x,a[1]+.004,z,3.08,.008,.016,'#75644d',rotation=math.atan2(b[2]-a[2],b[0]-a[0])+math.pi/2,record=False)
+        if i%20==0:
+            g.box('path_bollard',a[0]-1.8,a[1]+.45,a[2],.16,.9,.16,'#45524c',record=False)
+            g.box('path_bollard_lens',a[0]-1.8,a[1]+.78,a[2],.18,.14,.18,'#f0e5be',record=False)
     for i in range(0,120,8):
         a=route[i];b=route[min(i+8,120)]
         for dx in [-1.5,1.5]:g.tube('path_handrail',(a[0]+dx,a[1]+1.05,a[2]),(b[0]+dx,b[1]+1.05,b[2]),.05,'#8c7454')
@@ -110,10 +116,10 @@ if MODE=='bitgaram-park':
     disk('walk-floor_turnaround',end[0],end[1]-.1,end[2],2.4,2.4,.1,'#baa58a')
     bench(end[0]+1,end[1],end[2]+1)
     for x,z in [(-19,5),(-18,-8),(12,-16)]:bench(x,16,z)
-    for i in range(160):
+    for i in range(320):
         x=rng.uniform(-115,115);z=rng.uniform(-110,130)
         if math.hypot(x,z)<27 or (4<x<23 and z>12):continue
-        tree(x,hill(x,z),z,rng.uniform(.8,1.4))
+        tree(x,hill(x,z),z,rng.uniform(1.25,1.95))
     pts=WAYS['908801772']['points'];g.polygon('exhibition_osm',pts,0,6.2,'#c9ccbf',True)
     for x in range(-17,20,3):g.box('exhibition_front_glass',x,2.4,143,2.6,4.3,.08,'#536f73',record=False)
     g.label('빛가람 전망대',0,5.3,143.1,18,1,color='#215d77')
