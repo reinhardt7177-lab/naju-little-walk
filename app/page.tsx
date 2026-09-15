@@ -56,7 +56,8 @@ function Explorer() {
       const data: World = await response.json();
       if (disposed) return;
       setWorld(data);
-      renderer = new THREE.WebGLRenderer({ antialias: true, powerPreference: 'high-performance' });
+      // Keep centimeter-separated landscape layers stable at city overview distances.
+      renderer = new THREE.WebGLRenderer({ antialias: true, powerPreference: 'high-performance', logarithmicDepthBuffer: selectedId.startsWith('bitgaram') });
       renderer.setPixelRatio(Math.min(window.devicePixelRatio, 1.75));
       renderer.shadowMap.enabled = true;
       renderer.shadowMap.type = THREE.PCFShadowMap;

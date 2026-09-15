@@ -18,7 +18,7 @@ export default function BitgaramOrbit(){
     const camera=new THREE.PerspectiveCamera(45,1,1,12000);
     const dispose=(root:THREE.Object3D)=>root.traverse(o=>{if(o instanceof THREE.Mesh){o.geometry.dispose();for(const m of Array.isArray(o.material)?o.material:[o.material])m.dispose();}});
     async function setup(){
-      renderer=new THREE.WebGLRenderer({antialias:true});renderer.setPixelRatio(Math.min(devicePixelRatio,1.75));
+      renderer=new THREE.WebGLRenderer({antialias:true,logarithmicDepthBuffer:true});renderer.setPixelRatio(Math.min(devicePixelRatio,1.75));
       renderer.toneMapping=THREE.ACESFilmicToneMapping;renderer.toneMappingExposure=1.15;
       const canvas=renderer.domElement;canvas.tabIndex=0;canvas.setAttribute('aria-label','빛가람 3D 지도. 드래그로 회전, 휠로 확대·축소');mount.appendChild(canvas);
       scene.add(new THREE.HemisphereLight('#e4f3ff','#787d61',2));
