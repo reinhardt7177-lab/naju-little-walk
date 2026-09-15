@@ -24,3 +24,11 @@
 이전 Blender 수정본은 보존했다. 새 원본은 `outputs/bitgaram/bitgaram-park-aerial-detail.blend`, 회전 지도는 `outputs/bitgaram/bitgaram-overview-aerial-detail.blend`.
 
 검증: Blender 조감 렌더 확인. 지붕 개구부와 기둥 충돌 회귀 검사 포함 이동 테스트 69개 통과.
+
+## 추가 외관 대조
+
+[2017년 현장 사진](https://live112.tistory.com/4710)의 전체 외관, 둥근 입구, 안내판 사진을 브라우저에서 직접 관찰했다. 한쪽을 감싸는 넓은 은색 외장과 길게 열린 창, 푸른 유리 로비, 은색 수직 창틀, 출입문·청색 안전 띠·점자블록을 추가했다. 2017년 사진이므로 현재 세부 상태를 보증하지 않는다. 방향과 치수는 추정이다.
+
+[KRIC 2021년 외관 사진](https://www.kric.go.kr/v2/UserFiles/Image/2021/07/20/pj210720_03.jpg)을 다시 직접 보고 하부 전시동의 경사진 은색 외장·짙은 창·주황색 패널을 추가했다. 전시동 위치와 윤곽은 기존 OSM way 908801772를 유지했고 높이만 추정하여 충돌 정보에 반영했다.
+
+추가 수정본은 `bitgaram-park-entry-detail.blend`이며, 이전 aerial-detail 수정본도 보존한다. 입구 로비는 외관이며 별도 전망실 진입 방식은 유지한다. 원본 사진을 배포 자산으로 복사하지 않는다.

@@ -32,6 +32,10 @@ test('park aerial roof has an open oculus and physical supports block walking',(
     const pts=solidCollider(c),x=pts.reduce((s,p)=>s+p[0],0)/pts.length,z=pts.reduce((s,p)=>s+p[1],0)/pts.length;
     assert.equal(canTravelTo([x,z],w,16),false,'Support must block visitors');
   }
+  assert.equal(canTravelTo([0,5.8],w,16),false,'The glazed entrance drum is not a pass-through prop');
+  walkRoute(w,[[0,21],[0,8]],16);
+  const shell=w.solids.find(s=>s.name==='photo_exhibition_shell');
+  assert.ok(shell&&shell.collision,'Exhibition shell retains a physical boundary');
 });
 
 test('Bitgaram signs load valid scenes and preserve elevated park spawn',()=>{
