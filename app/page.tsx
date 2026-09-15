@@ -33,6 +33,8 @@ function Explorer() {
   const [started, setStarted] = useState(false);
   const [overview, setOverview] = useState(true);
   const [mapOpen,setMapOpen] = useState(false);
+  const [welcomeExpanded,setWelcomeExpanded] = useState(false);
+  const [minimapExpanded,setMinimapExpanded] = useState(false);
   const [error, setError] = useState('');
   const [boatHud,setBoatHud] = useState<BoatHud|null>(null);
   const [destinationId, setDestinationId] = useState<DestinationId>('geumseonggwan');
@@ -282,8 +284,9 @@ function Explorer() {
         <button onClick={openMap}><Map size={18}/><span>지도로 이동</span><ArrowUpRight size={16}/></button>
       </nav>
       {active && !!world?.sceneLinks?.length && <nav className="scene-signposts" aria-label="장소 이동 푯말">{world.sceneLinks.filter(link=>Object.hasOwn(destinations,link.target)).map(link=><a key={link.target} href={`/?place=${encodeURIComponent(link.target)}`}><MapPin size={18}/><span>{link.label}</span><ArrowUpRight size={16}/></a>)}</nav>}
-      {world && <aside className="minimap" aria-label="현재 위치 지도">
-        <div className="map-heading"><span>{destinationId.startsWith('bitgaram')?'장소 지도':'parent' in destination?'실내 지도':'동네 지도'}</span><span>{destinationId.startsWith('bitgaram')?'주변 보기':'parent' in destination?'출구 ↓':'N ↑'}</span></div>
+      {world && !minimapExpanded && <button className="minimap-toggle" aria-expanded={false} aria-controls="location-minimap" onClick={()=>setMinimapExpanded(true)}><Map size={17}/>미니맵 펼치기</button>}
+      {world && minimapExpanded && <aside id="location-minimap" className="minimap" aria-label="현재 위치 지도">
+        <div className="map-heading"><span>{destinationId.startsWith('bitgaram')?'장소 지도':'parent' in destination?'실내 지도':'동네 지도'}</span><button className="panel-fold" aria-expanded={true} aria-controls="location-minimap" onClick={()=>setMinimapExpanded(false)}>접기 −</button></div>
         <svg viewBox={`${world.bounds[0]} ${world.bounds[2]} ${world.bounds[1] - world.bounds[0]} ${world.bounds[3] - world.bounds[2]}`} role="img" aria-label={`현재 위치: ${view.place}`} onClick={openMap}>
           <rect x={world.bounds[0]} y={world.bounds[2]} width={world.bounds[1] - world.bounds[0]} height={world.bounds[3] - world.bounds[2]} fill="#e5e8df" />
           {mapSolids(world).map((s, i) => <polygon key={i} points={solidCollider(s).map(p => p.join(',')).join(' ')} fill={mapColor(s.name)} stroke={s.kind === 'building' ? '#9aada2' : 'none'} strokeWidth="0.7" />)}
@@ -295,12 +298,13 @@ function Explorer() {
         </svg><div className="map-legend"><span className="you-dot" />내 위치<span>약 {Math.round((world.bounds[1] - world.bounds[0]) / 10) * 10}m 구역</span></div>
         <button className="minimap-travel" onClick={openMap}>지도 열고 이동하기 <ArrowUpRight size={14}/></button>
       </aside>}
-      {!active && !boatHud?.aboard && <section className="welcome" aria-label="산책 시작">
-        <div className="eyebrow"><span />나주 · {destination.name}</div>
+      {!active && !boatHud?.aboard && <section className={`welcome${welcomeExpanded?'':' welcome-compact'}`} aria-label="산책 시작">
+        <button className="welcome-fold panel-fold" aria-expanded={welcomeExpanded} aria-controls="walk-introduction" onClick={()=>setWelcomeExpanded(v=>!v)}>{welcomeExpanded?'안내 접기 −':'이용 안내 +'}</button>
+        {welcomeExpanded && <div id="walk-introduction"><div className="eyebrow"><span />나주 · {destination.name}</div>
         <h1>{started ? '잠시, 쉬어가기.' : <>{destination.heading[0]}<br />{destination.heading[1]}</>}</h1>
-        <p>{started ? '산책을 이어가거나, 위에서 동네를 둘러보세요.' : <>{destination.introduction[0]}<br />{destination.introduction[1]}</>}</p>
+        <p>{started ? '산책을 이어가거나, 위에서 동네를 둘러보세요.' : <>{destination.introduction[0]}<br />{destination.introduction[1]}</>}</p></div>}
         <button className="start-button" onClick={() => engine.current?.start()} disabled={!ready || !!error}><Footprints size={20} /><span>{error ? '화면을 열 수 없어요' : !ready ? '동네 불러오는 중…' : started ? '이어서 걷기' : '산책 시작하기'}</span><ArrowUpRight size={21} /></button>
-        <div className="welcome-help"><span><kbd>W A S D</kbd> 이동</span><span>마우스 / 드래그로 둘러보기</span></div>
+        {welcomeExpanded && <div className="welcome-help"><span><kbd>W A S D</kbd> 이동</span><span>마우스 / 드래그로 둘러보기</span></div>}
         {error && <div className="error-message" role="alert">{error}<button onClick={() => window.location.reload()}>다시 불러오기</button></div>}
       </section>}
       {active && <><div className="crosshair" aria-hidden="true" />{!boatHud?.aboard&&<div className="place-card"><span className="place-icon"><MapPin size={21} /></span><div><span>{view.indoor ? '실내에 도착했어요' : '지금 걷는 곳'}</span><strong>{view.place}</strong><p>{view.detail}</p></div></div>}
