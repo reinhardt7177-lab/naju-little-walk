@@ -88,7 +88,11 @@ function Explorer() {
         return loader.parseAsync(await unpackModel(await response.arrayBuffer()),'');
       })();
       if (disposed) { gltf.scene.traverse(disposeObject); return; }
-      gltf.scene.traverse(o => { if (o instanceof THREE.Mesh) { o.castShadow = !o.name.startsWith('ground'); o.receiveShadow = true; } });
+      gltf.scene.traverse(o => { if (o instanceof THREE.Mesh) {
+        const landscape=selectedId.startsWith('bitgaram')&&/^(context_ground|lake_osm_|estimated_hill)/.test(o.name);
+        o.castShadow = !o.name.startsWith('ground')&&!landscape;
+        o.receiveShadow = !(landscape && o.name!=='estimated_hill');
+      } });
       batchStaticScene(gltf.scene);
       const roofParts: THREE.Object3D[]=[];
       gltf.scene.traverse(o=>{if(o.userData.hide_in_overview)roofParts.push(o);});
@@ -147,7 +151,7 @@ function Explorer() {
       };
       engine.current = {
         start, pause, boatAction,
-        reset: () => { fleet.reset();px = data.spawn.x; pz = data.spawn.z; elevation=reachableFloor(px,pz,0,floors)??0; yaw = data.spawn.yaw; pitch = 0; start(); },
+        reset: () => { fleet.reset();px = data.spawn.x; pz = data.spawn.z; elevation=reachableFloor(px,pz,data.spawn.height??0,floors)??0; yaw = data.spawn.yaw; pitch = 0; start(); },
         overview: () => { pause(); bird = true; setOverview(true); },
         key: (key, down) => { if (down) keys.add(key); else keys.delete(key); },
         travel: (point,height=0) => {
