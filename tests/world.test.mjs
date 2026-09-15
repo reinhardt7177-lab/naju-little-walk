@@ -83,9 +83,10 @@ test('Bitgaram signs load valid scenes and preserve elevated park spawn',()=>{
       const end=walkRoute(w,[[a.x,a.z],...path],16);
       assert.ok(end.height<5,'Path descends to the lower rest area');
     } else if(id==='bitgaram-observatory'){
-      // Circle the room using the clear aisles around the now-solid bench/telescope groups.
+      // Empty room: former furniture and central core positions are now walkable.
       walkRoute(w,[[0,7],[6,7],[6,2],[10,0],[7,-8],[-5,-8],[-5,-4],[-10,0],[-6,0],[-6,7],[0,7]]);
-      assert.equal(canTravelTo([8,4],w),false,'Bench seat blocks a map jump');
+      assert.equal(canTravelTo([8,4],w),true,'Removed bench must not leave an invisible collider');
+      walkRoute(w,[[0,7],[0,0],[0,-7],[8,4]]);
       assert.equal(canTravelTo([12.85,0],w),false,'Inner guard contains visitors');
       assert.equal(canTravelTo([13.8,0],w),false,'Glazing must contain visitors');
     } else {
