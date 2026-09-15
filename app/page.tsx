@@ -92,7 +92,7 @@ function Explorer() {
       })();
       if (disposed) { gltf.scene.traverse(disposeObject); return; }
       gltf.scene.traverse(o => { if (o instanceof THREE.Mesh) {
-        const landscape=selectedId.startsWith('bitgaram')&&/^(context_ground|lake_osm_|estimated_hill)/.test(o.name);
+        const landscape=selectedId.startsWith('bitgaram')&&/^(context_ground|lake_osm_|estimated_hill|surrounding_park_lawn|surrounding_mapped_paths|surrounding_parking|surrounding_recreation)/.test(o.name);
         o.castShadow = !o.name.startsWith('ground')&&!landscape;
         o.receiveShadow = !(landscape && o.name!=='estimated_hill');
       } });
