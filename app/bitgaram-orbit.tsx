@@ -19,9 +19,9 @@ export default function BitgaramOrbit(){
     const dispose=(root:THREE.Object3D)=>root.traverse(o=>{if(o instanceof THREE.Mesh){o.geometry.dispose();for(const m of Array.isArray(o.material)?o.material:[o.material])m.dispose();}});
     async function setup(){
       renderer=new THREE.WebGLRenderer({antialias:true,logarithmicDepthBuffer:true});renderer.setPixelRatio(Math.min(devicePixelRatio,1.75));
-      renderer.toneMapping=THREE.ACESFilmicToneMapping;renderer.toneMappingExposure=1.15;
+      renderer.toneMapping=THREE.ACESFilmicToneMapping;renderer.toneMappingExposure=1.0;
       const canvas=renderer.domElement;canvas.tabIndex=0;canvas.setAttribute('aria-label','빛가람 3D 지도. 드래그로 회전, 휠로 확대·축소, 오른쪽 드래그로 위치 이동');mount.appendChild(canvas);
-      scene.add(new THREE.HemisphereLight('#e4f3ff','#787d61',2));
+      scene.add(new THREE.HemisphereLight('#e4f3ff','#787d61',1.5));
       const sun=new THREE.DirectionalLight('#fff4de',2.5);sun.position.set(-1200,2300,800);scene.add(sun);
       controls=new OrbitControls(camera,canvas);controls.enableDamping=true;controls.enablePan=true;controls.minDistance=350;controls.maxDistance=6500;controls.minPolarAngle=.15;controls.maxPolarAngle=Math.PI*.46;
       const restore=()=>{camera.position.set(1250,1950,2150);controls!.target.set(200,0,-50);controls!.update();};reset.current=restore;restore();
