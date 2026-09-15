@@ -13,11 +13,18 @@ import { canTravelTo, mapSolids, mapColor } from '@/lib/map-navigation';
 import type { Point } from '@/lib/world';
 import MapTravel from './map-travel';
 import { BoatFleet, type BoatHud } from '@/lib/boat-fleet';
+import BitgaramHub from './bitgaram-hub';
 
 type ViewState = { x: number; z: number; yaw: number; place: string; detail: string; indoor: boolean };
 type Engine = { start: () => void; pause: () => void; reset: () => void; overview: () => void; key: (key: string, down: boolean) => void; travel: (point: Point, height?:number) => boolean; boatAction: (action:string,id?:string)=>void };
 
 export default function Home() {
+  const [hub,setHub]=useState(false);
+  useEffect(()=>setHub(new URLSearchParams(window.location.search).get('place')==='bitgaram'),[]);
+  return hub?<BitgaramHub/>:<Explorer/>;
+}
+
+function Explorer() {
   const host = useRef<HTMLDivElement>(null);
   const engine = useRef<Engine | null>(null);
   const [world, setWorld] = useState<World | null>(null);
@@ -264,14 +271,15 @@ export default function Home() {
       <div className="scene" ref={host} /><div className="vignette" />
       <header className="topbar">
         <div className="brand"><span className="brand-mark"><Compass size={25} strokeWidth={1.4} /></span><div><strong>나주 산책</strong><span>NAJU, ON FOOT</span></div></div>
-        <div className="location-pill"><span className="live-dot" /><span>{destination.area}</span><span className="pill-divider" /><span>{'parent' in destination?'사진 참고 실내':'실제 지도 기반'}</span></div>
+        <div className="location-pill"><span className="live-dot" /><span>{destination.area}</span><span className="pill-divider" /><span>{destinationId.startsWith('bitgaram')?'사진·지도 참고':'parent' in destination?'사진 참고 실내':'실제 지도 기반'}</span></div>
         <div className="view-actions"><button className={overview ? 'active' : ''} onClick={() => engine.current?.overview()} disabled={!ready}><MoveUpRight size={16} />전체 보기</button><button className={!overview ? 'active' : ''} onClick={() => boatHud?.aboard?engine.current?.boatAction('deck'):engine.current?.start()} disabled={!ready}><Footprints size={16} />걷기</button></div>
       </header>
       <nav className="destination-nav" aria-label="산책 장소">
         <button onClick={openMap}><Map size={18}/><span>지도로 이동</span><ArrowUpRight size={16}/></button>
       </nav>
+      {!!world?.sceneLinks?.length && <nav className="scene-signposts" aria-label="장소 이동 푯말">{world.sceneLinks.filter(link=>Object.hasOwn(destinations,link.target)).map(link=><a key={link.target} href={`/?place=${encodeURIComponent(link.target)}`}><MapPin size={18}/><span>{link.label}</span><ArrowUpRight size={16}/></a>)}</nav>}
       {world && <aside className="minimap" aria-label="현재 위치 지도">
-        <div className="map-heading"><span>{'parent' in destination?'실내 지도':'동네 지도'}</span><span>{'parent' in destination?'출구 ↓':'N ↑'}</span></div>
+        <div className="map-heading"><span>{destinationId.startsWith('bitgaram')?'장소 지도':'parent' in destination?'실내 지도':'동네 지도'}</span><span>{destinationId.startsWith('bitgaram')?'주변 보기':'parent' in destination?'출구 ↓':'N ↑'}</span></div>
         <svg viewBox={`${world.bounds[0]} ${world.bounds[2]} ${world.bounds[1] - world.bounds[0]} ${world.bounds[3] - world.bounds[2]}`} role="img" aria-label={`현재 위치: ${view.place}`} onClick={openMap}>
           <rect x={world.bounds[0]} y={world.bounds[2]} width={world.bounds[1] - world.bounds[0]} height={world.bounds[3] - world.bounds[2]} fill="#e5e8df" />
           {mapSolids(world).map((s, i) => <polygon key={i} points={solidCollider(s).map(p => p.join(',')).join(' ')} fill={mapColor(s.name)} stroke={s.kind === 'building' ? '#9aada2' : 'none'} strokeWidth="0.7" />)}

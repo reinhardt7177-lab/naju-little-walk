@@ -17,6 +17,30 @@ const bogamColliders=bogam.solids.filter(s=>s.collision).map(solidCollider);
 const museum=JSON.parse(fs.readFileSync(new URL('../public/bogam-museum-world.json',import.meta.url),'utf8'));
 const museumFloors=worldFloors(museum.solids), museumObstacles=worldObstacles(museum.solids);
 
+test('Bitgaram signs load valid scenes and preserve elevated park spawn',()=>{
+  for(const id of ['bitgaram-park','bitgaram-observatory','bitgaram-kepco','bitgaram-kentech']){
+    const w=JSON.parse(fs.readFileSync(new URL(`../public/${id}-world.json`,import.meta.url),'utf8'));
+    const a=sceneArrival(w,'');
+    assert.ok(canTravelTo([a.x,a.z],w,a.height),id);
+    for(const link of w.sceneLinks) assert.ok(destinations[link.target],link.target);
+    if(id==='bitgaram-park'){
+      assert.equal(a.height,16);
+      const path=Array.from({length:121},(_,i)=>[12+6*Math.sin(i/35),16+i*.68]);
+      const end=walkRoute(w,[[a.x,a.z],...path],16);
+      assert.ok(end.height<5,'Path descends to the lower rest area');
+    } else if(id==='bitgaram-observatory'){
+      walkRoute(w,[[0,7],[7,7],[10,0],[7,-7],[-7,-7],[-10,0],[-7,7],[0,7]]);
+      assert.equal(canTravelTo([13.8,0],w),false,'Glazing must contain visitors');
+    } else {
+      const lobby=w.places.find(p=>p.id==='lobby').arrival;
+      walkRoute(w,[[a.x,a.z],lobby,[a.x,a.z]]);
+    }
+  }
+  const overview=JSON.parse(fs.readFileSync(new URL('../public/bitgaram-overview.json',import.meta.url),'utf8'));
+  assert.equal(overview.pins.length,3);
+  for(const p of overview.pins)assert.ok(p.x>0&&p.x<100&&p.y>0&&p.y<100,'Pin inside rendered map');
+});
+
 const yeongsanWorlds=Object.fromEntries(['yeongsanpo','yeongsanpo-history','yeongsanpo-literature'].map(id=>[id,JSON.parse(fs.readFileSync(new URL(`../public/${id}-world.json`,import.meta.url),'utf8'))]));
 test('literature ceilings enclose the reported sky gaps and the stair landing',()=>{
   const {scene}=readModel(new URL('../public/models/yeongsanpo-literature.glb',import.meta.url));
@@ -550,7 +574,7 @@ test('map relocation rejects obstacles, nonfinite coordinates and out-of-bounds 
   assert.equal(destinationFromSearch('?place=bogam'),'bogam');
   for(const d of Object.values(destinations)){
     const w=JSON.parse(fs.readFileSync(new URL('../public'+d.worldUrl,import.meta.url),'utf8'));
-    assert.ok(canTravelTo([w.spawn.x,w.spawn.z],w));
+    assert.ok(canTravelTo([w.spawn.x,w.spawn.z],w,w.spawn.height??0));
     for(const p of w.places){
       const target=mapArrival(p,w);
       assert.ok(target,`No accessible arrival for ${d.name} / ${p.name}`);

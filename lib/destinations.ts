@@ -1,4 +1,39 @@
 export const destinations = {
+  'bitgaram-kepco': {
+    coordinates:{lat:35.026466,lon:126.784493},parent:'bitgaram',
+    name:'한국전력 본사 · 1층',area:'한국전력 본사 입구와 로비',worldUrl:'/bitgaram-kepco-world.json',modelUrl:'/models/bitgaram-kepco.glb',
+    heading:['에너지의 도시,','한국전력 앞에서.'],introduction:['입구 주변과 1층 로비를 걸어보세요.','전체 안내 푯말로 다른 장소를 선택할 수 있어요.'],
+    sourceUrl:'https://www.korea.kr/briefing/policyBriefingView.do?newsId=148817032',sourceLabel:'본사 로비 공개 사진 참고',
+    limitation:'실제 건물 윤곽 · 로비 치수·세부 추정',overview:{center:[0,0],radius:245,elevation:.7,angle:.3},
+  },
+  'bitgaram-kentech': {
+    coordinates:{lat:35.010582,lon:126.803269},parent:'bitgaram',
+    name:'KENTECH · 1층',area:'KENTECH 입구와 1층',worldUrl:'/bitgaram-kentech-world.json',modelUrl:'/models/bitgaram-kentech.glb',
+    heading:['미래를 연구하는 곳,','KENTECH.'],introduction:['개교 당시 완공 건물의 입구와 1층을 둘러보세요.','외관은 공개 사진 참고, 로비 동선은 추정한 초안입니다.'],
+    sourceUrl:'https://home.kentech.ac.kr/campusMap.do',sourceLabel:'KENTECH 공식 캠퍼스 지도',
+    limitation:'2022년 완공 외관 참고 · 1층 실내 배치 추정',overview:{center:[0,0],radius:105,elevation:.65,angle:.4},
+  },
+  bitgaram: {
+    coordinates:{lat:35.016925,lon:126.790447},
+    name:'빛가람 · 장소 선택',area:'빛가람 안내 지도',worldUrl:'/bitgaram-park-world.json',modelUrl:'/models/bitgaram-park.glb',
+    heading:['빛가람에서,','머물고 싶은 곳.'],introduction:['푯말을 눌러 장소별 산책으로 들어가세요.','전망대 주변과 두 기관의 1층을 따로 둘러봅니다.'],
+    sourceUrl:'https://www.openstreetmap.org/way/656235304',sourceLabel:'OpenStreetMap · 현장 사진 참고',
+    limitation:'실제 지도 윤곽 · 높이와 실내 치수 추정',overview:{center:[0,0],radius:380,elevation:.9,angle:.25},
+  },
+  'bitgaram-park': {
+    coordinates:{lat:35.016925,lon:126.790447},parent:'bitgaram',
+    name:'빛가람 전망대 주변',area:'전망대 앞 쉼터와 산책로',worldUrl:'/bitgaram-park-world.json',modelUrl:'/models/bitgaram-park.glb',
+    heading:['나무 사이로,','빛가람 한 걸음.'],introduction:['전망대 주변의 쉼터와 접근 산책로를 걸어보세요.','전망실 푯말을 누르면 내부로 들어갑니다.'],
+    sourceUrl:'https://www.youtube.com/watch?v=tQJsYaXqsIg',sourceLabel:'현장 탐방 영상 참고',
+    limitation:'OSM·위성사진 참고 · 지형 높이·세부 추정',overview:{center:[0,30],radius:170,elevation:.8,angle:.4},
+  },
+  'bitgaram-observatory': {
+    coordinates:{lat:35.016925,lon:126.790447},parent:'bitgaram',
+    name:'빛가람 전망실',area:'빛가람 전망대 내부',worldUrl:'/bitgaram-observatory-world.json',modelUrl:'/models/bitgaram-observatory.glb',
+    heading:['유리창 너머,','빛가람을 바라보다.'],introduction:['곡면 창을 따라 전망실을 둘러보세요.','밖으로 나가기 푯말로 산책로에 돌아갑니다.'],
+    sourceUrl:'https://www.youtube.com/watch?v=tQJsYaXqsIg',sourceLabel:'현장 사진·탐방 영상 참고',
+    limitation:'공개 사진 기반 · 실내 치수·가구 배치 추정',overview:{center:[0,0],radius:32,elevation:.9,angle:.4},
+  },
   yeongsanpo: {
     coordinates:{lat:35.00025,lon:126.71075},
     name:'영산포 · 홍어거리',area:'영산포 강변과 홍어거리',worldUrl:'/yeongsanpo-world.json?v=riverfront-1',modelUrl:'/models/yeongsanpo.glb.gz?v=riverfront-1',

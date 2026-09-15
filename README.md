@@ -2,6 +2,14 @@
 
 금성관 주변의 실제 OpenStreetMap 건물 윤곽과 도로 좌표를 **Blender 4.5 LTS**에서 입체로 제작하고, Blender에서 내보낸 GLB를 **Three.js**로 불러와 탐험합니다.
 
+## 빛가람 장소별 산책 초안
+
+`/?place=bitgaram`의 Blender 조감 화면에서 푯말을 누르면 전망대 주변 공원, 전망실, 한국전력 본사 입구·1층, KENTECH 입구·1층을 각각 불러옵니다. 공원 전체를 연결한 대형 보행 맵은 만들지 않았습니다. KENTECH는 2022년 완공 건물 외관을 대상으로 하며, 내부는 공개 자료가 부족한 추정 초안입니다.
+
+- Blender 원본: `outputs/bitgaram/*.blend` — 사용자가 직접 수정한 뒤에는 생성 스크립트로 덮어쓰지 않습니다.
+- 제작 근거와 재현 범위: [빛가람 제작 기록](knowledge/bitgaram-progress.md)
+- 전체 안내 `bitgaram`, 공원 `bitgaram-park`, 전망실 `bitgaram-observatory`, 한국전력 `bitgaram-kepco`, KENTECH `bitgaram-kentech`.
+
 ## 영산포 강변 · 홍어거리 · 두 전시관
 
 선착장 맞은편 **상가·주택·창고 20개**의 지붕과 정면·골목 측면을 보강했습니다. 주소점과 사진을 연결한 홍어세상·금성수산, 그 사이 담장 주택, 푸른 박공지붕 창고군을 구분하고 위성사진에서 확인한 **약 168m 주차·진입 포장**을 추가했습니다. `/?place=yeongsanpo&at=riverfront-shops`에서 확인할 수 있습니다. 최신 외부 편집본은 `outputs/yeongsanpo-riverfront.blend`이며 [관찰 근거·추정 범위](knowledge/yeongsanpo-riverfront-detail.md)를 기록했습니다.
