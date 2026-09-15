@@ -14,6 +14,7 @@ import type { Point } from '@/lib/world';
 import MapTravel from './map-travel';
 import { BoatFleet, type BoatHud } from '@/lib/boat-fleet';
 import BitgaramHub from './bitgaram-hub';
+import ObservatoryVideo from './observatory-video';
 
 type ViewState = { x: number; z: number; yaw: number; place: string; detail: string; indoor: boolean };
 type Engine = { start: () => void; pause: () => void; reset: () => void; overview: () => void; key: (key: string, down: boolean) => void; travel: (point: Point, height?:number) => boolean; boatAction: (action:string,id?:string)=>void };
@@ -275,6 +276,7 @@ function Explorer() {
   const openMap=()=>{engine.current?.pause();setMapOpen(true);};
   return (
     <main className="explorer">
+      {destinationId==='bitgaram-observatory'&&<ObservatoryVideo onOpen={()=>engine.current?.pause()}/>}
       <div className="scene" ref={host} /><div className="vignette" />
       <header className="topbar">
         <div className="brand"><span className="brand-mark"><Compass size={25} strokeWidth={1.4} /></span><div><strong>나주 산책</strong><span>NAJU, ON FOOT</span></div></div>
