@@ -31,3 +31,11 @@ test('satellite revision replaces old building collisions and keeps garden arriv
   assert.equal(canTravelTo(center,w),false);
  }
 });
+test('walking surfaces carry embedded color and normal textures',()=>{
+ const raw=fs.readFileSync(new URL('../public/models/naju-arboretum.glb',import.meta.url));
+ const g=JSON.parse(raw.subarray(20,20+raw.readUInt32LE(12)));
+ for(const name of ['Authored_bark_grain','Authored_fine_path','Authored_meadow','Authored_timber']){
+  const m=g.materials.find(m=>m.name===name);assert.ok(m?.pbrMetallicRoughness?.baseColorTexture,name);assert.ok(m.normalTexture,name);
+ }
+ assert.ok(g.images.every(i=>i.bufferView!==undefined),'Materials do not depend on external photo servers');
+});
