@@ -22,3 +22,12 @@ test('arboretum download is exact and regional destination stays inside the map'
  const d=destinations['naju-arboretum'],p=regionalPoint(d.coordinates.lon,d.coordinates.lat);
  assert.ok(p[0]>0&&p[0]<regionalSize[0]&&p[1]>0&&p[1]<regionalSize[1]);
 });
+test('satellite revision replaces old building collisions and keeps garden arrival open',()=>{
+ assert.ok(w.solids.filter(s=>s.name.startsWith('traced_building_')&&s.collision).length>=4);
+ assert.ok(!w.solids.some(s=>s.name.startsWith('estimated_building_')||s.name==='estimated_greenhouse'));
+ const garden=w.places.find(p=>p.id==='garden');assert.ok(canTravelTo(garden.arrival,w));
+ for(const building of w.solids.filter(s=>s.name.startsWith('traced_building_'))){
+  const p=building.footprint;const center=[p.reduce((n,a)=>n+a[0],0)/p.length,p.reduce((n,a)=>n+a[1],0)/p.length];
+  assert.equal(canTravelTo(center,w),false);
+ }
+});
