@@ -45,7 +45,7 @@ function Explorer() {
   useEffect(() => {
     const selectedId = destinationFromSearch(window.location.search);
     const selected = destinations[selectedId];
-    const optimizedCampus=selectedId==='bitgaram-kepco';
+    const optimizedCampus=selectedId==='bitgaram-kepco'||selectedId==='naju-arboretum';
     setDestinationId(selectedId);
     document.title = `나주 산책 — ${selected.area}`;
     const mount = host.current!;
