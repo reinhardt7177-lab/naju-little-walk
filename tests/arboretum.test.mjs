@@ -5,6 +5,7 @@ import zlib from 'node:zlib';
 import {movePlayer,solidCollider} from '../lib/world.ts';
 import {canTravelTo,regionalPoint,regionalSize} from '../lib/map-navigation.ts';
 import {destinations} from '../lib/destinations.ts';
+import {sceneArrival} from '../lib/scene-travel.ts';
 const w=JSON.parse(fs.readFileSync(new URL('../public/naju-arboretum-world.json',import.meta.url)));
 test('arboretum main avenue is continuous, and trunks and pond block walking',()=>{
  const obstacles=w.solids.filter(s=>s.collision).map(solidCollider);
@@ -38,4 +39,22 @@ test('walking surfaces carry embedded color and normal textures',()=>{
   const m=g.materials.find(m=>m.name===name);assert.ok(m?.pbrMetallicRoughness?.baseColorTexture,name);assert.ok(m.normalTexture,name);
  }
  assert.ok(g.images.every(i=>i.bufferView!==undefined),'Materials do not depend on external photo servers');
+});
+
+test('playground and flowers have reachable arrivals and continuous access walks',()=>{
+ const local=(s,t)=>[-475+.98*s-.2*t,-50+.2*s+.98*t];
+ for(const id of ['playground','flowers']){
+  const p=w.places.find(p=>p.id===id);assert.ok(p?.arrival,id);
+  assert.ok(canTravelTo(p.arrival,w),id+' arrival');
+  assert.equal(sceneArrival(w,'?at='+id).entered,true);
+ }
+ for(const route of [[[220,0],[220,-28],[217,-43],[220,-52]],[[181,0],[181,100]]]){
+  for(let j=1;j<route.length;j++)for(let k=0;k<=100;k++){
+   const t=k/100,a=route[j-1],b=route[j];
+   assert.ok(canTravelTo(local(a[0]+(b[0]-a[0])*t,a[1]+(b[1]-a[1])*t),w),'access walk '+j+' '+k);
+  }
+ }
+ const slide=w.solids.find(s=>s.name==='play_slide_collision');assert.ok(slide?.collision);
+ const center=[0,1].map(i=>slide.footprint.reduce((n,p)=>n+p[i],0)/slide.footprint.length);
+ assert.equal(canTravelTo(center,w),false,'the slide cannot be walked through');
 });
