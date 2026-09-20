@@ -32,7 +32,7 @@ export function mapArrival(place: Place, world: World): Point | null {
 }
 
 export function mapSolids(world: World) {
-  return world.solids.filter(s=>/^(osm-building|photo-building|context_.*_wall|mapped_reservoir_water|mapped_river_water|ground_floor|road_|road-edge|hall-wall|rail-ballast|walk-floor_platform|walk-floor_approach|walk-floor_turnaround|mound_|path_|replica_outline|exhibit-case|museum-wall|walk-floor_bridge|walk-floor_cafe|walk-floor_dock|walk-floor_riverfront)/.test(s.name));
+  return world.solids.filter(s=>/^(osm-building|photo-building|context_.*_wall|mapped_reservoir_water|mapped_river_water|ground_floor|road_|road-edge|hall-wall|rail-ballast|walk-floor_platform|walk-floor_approach|walk-floor_turnaround|mound_|path_|replica_outline|exhibit-case|museum-wall|walk-floor_bridge|walk-floor_cafe|walk-floor_dock|walk-floor_riverfront|campus_building_|campus_upper_envelope_|rc_residence_|library_annular_envelope|campus_parking_|sports_court_|athletics_track_red|football_pitch)/.test(s.name));
 }
 
 export function mapColor(name: string): string {

@@ -45,7 +45,7 @@ function Explorer() {
   useEffect(() => {
     const selectedId = destinationFromSearch(window.location.search);
     const selected = destinations[selectedId];
-    const optimizedCampus=selectedId==='bitgaram-kepco'||selectedId==='naju-arboretum'||selectedId==='deudeulgang';
+    const optimizedCampus=selectedId==='bitgaram-kepco'||selectedId==='bitgaram-kentech'||selectedId==='naju-arboretum'||selectedId==='deudeulgang';
     setDestinationId(selectedId);
     document.title = `나주 산책 — ${selected.area}`;
     const mount = host.current!;
@@ -79,6 +79,11 @@ function Explorer() {
       sun.shadow.camera.left = sun.shadow.camera.bottom = -165;
       sun.shadow.camera.right = sun.shadow.camera.top = 165;
       sun.shadow.camera.far = 420; sun.shadow.normalBias = 0.06;
+      if(selectedId==='bitgaram-kentech'){
+        sun.position.set(-220,420,220);sun.target.position.set(30,0,20);scene.add(sun.target);
+        sun.shadow.camera.left=sun.shadow.camera.bottom=-340;
+        sun.shadow.camera.right=sun.shadow.camera.top=340;sun.shadow.camera.far=1000;
+      }
       scene.add(sun);
       const localLights=optimizedCampus?createLocalLights(scene,data.lights??[]):undefined;
       for (const fixture of optimizedCampus?[]:data.lights ?? []) {
@@ -97,7 +102,7 @@ function Explorer() {
       gltf.scene.traverse(o => { if (o instanceof THREE.Mesh) {
         const landscape=selectedId.startsWith('bitgaram')&&/^(context_ground|lake_osm_|estimated_hill|surrounding_park_lawn|surrounding_mapped_paths|surrounding_parking|surrounding_recreation)/.test(o.name);
         const riverSurface=selectedId==='deudeulgang'&&/^(path_|road_|mapped_river_water|water_glint|pine_litter_patch|understory_moss|crop_row|satellite_field)/.test(o.name);
-        o.castShadow = !o.name.startsWith('ground')&&!landscape&&!riverSurface;
+        o.castShadow = !o.name.startsWith('ground')&&!landscape&&!riverSurface&&!o.userData.no_shadow;
         o.receiveShadow = !(landscape && o.name!=='estimated_hill');
         if(o.userData.photo_panorama){
           o.castShadow=false;o.receiveShadow=false;o.renderOrder=-100;
