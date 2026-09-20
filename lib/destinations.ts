@@ -22,7 +22,7 @@ export const destinations = {
   },
   'bitgaram-kentech': {
     coordinates:{lat:35.010582,lon:126.803269},parent:'bitgaram',
-    name:'KENTECH · 캠퍼스와 1층',area:'KENTECH 캠퍼스',worldUrl:'/bitgaram-kentech-world.json?v=campus-20260920',modelUrl:'/models/bitgaram-kentech.glb.gz?v=campus-20260920',
+    name:'KENTECH · 캠퍼스와 1층',area:'KENTECH 캠퍼스',worldUrl:'/bitgaram-kentech-world.json?v=campus-detail-53',modelUrl:'/models/bitgaram-kentech.glb.gz?v=campus-detail-53',
     heading:['미래를 연구하는 곳,','KENTECH.'],introduction:['강의동 앞마당과 운동장, 생활관 주변을 걸어보세요.','정문으로 들어가면 1층 로비를 둘러볼 수 있습니다.'],
     sourceUrl:'https://home.kentech.ac.kr/campusMap.do',sourceLabel:'공식 캠퍼스 지도 · 항공·현장 사진 참고',
     limitation:'지도 윤곽 기반 · 높이·도서관 마감·1층 배치 추정',overview:{center:[30,20],radius:530,elevation:.72,angle:-.6},
