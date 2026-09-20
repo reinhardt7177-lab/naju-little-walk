@@ -46,3 +46,22 @@ test('pine canopy has paired authored LOD, alpha-tested needles and exact gzip t
  assert.equal(material.alphaMode,'MASK');assert.ok(material.pbrMetallicRoughness.baseColorTexture);
  for(const n of near){assert.equal(n.extras.authored_vegetation,true);assert.equal(n.extras.vegetation_lod,'near');}
 });
+
+test('distant wooded background stays opaque and outside the walking shadow pass',()=>{
+ const raw=fs.readFileSync(new URL('public/models/deudeulgang.glb',root));
+ const d=JSON.parse(raw.subarray(20,20+raw.readUInt32LE(12)));
+ const backdrop=d.nodes.filter(n=>n.extras?.background_only);
+ assert.ok(backdrop.length>=3&&backdrop.length<=16,'Background is delivered as a bounded set of batched meshes');
+ assert.equal(d.nodes.some(n=>n.name?.startsWith('west_bank_background_pine')),false,'Sparse alpha needle trees were replaced');
+ for(const n of backdrop){
+  assert.equal(n.extras.no_shadow,true);assert.equal(n.extras.no_receive_shadow,true);
+  for(const p of d.meshes[n.mesh].primitives){
+   const m=d.materials[p.material];
+   assert.ok(!m.alphaMode||m.alphaMode==='OPAQUE','Canopies must not disappear from distant alpha testing');
+   const t=m.pbrMetallicRoughness.baseColorTexture;
+   assert.ok(t,'Wooded hills must retain their detailed forest surface');
+   assert.ok(Number.isInteger(d.images[d.textures[t.index].source].bufferView),'Texture is embedded, with no external image dependency');
+  }
+ }
+ assert.ok(world.solids.some(s=>s.name==='background_ridge_boundary'&&s.collision),'Background remains inaccessible');
+});

@@ -103,7 +103,7 @@ function Explorer() {
         const landscape=selectedId.startsWith('bitgaram')&&/^(context_ground|lake_osm_|estimated_hill|surrounding_park_lawn|surrounding_mapped_paths|surrounding_parking|surrounding_recreation)/.test(o.name);
         const riverSurface=selectedId==='deudeulgang'&&/^(path_|road_|mapped_river_water|water_glint|pine_litter_patch|understory_moss|crop_row|satellite_field)/.test(o.name);
         o.castShadow = !o.name.startsWith('ground')&&!landscape&&!riverSurface&&!o.userData.no_shadow;
-        o.receiveShadow = !(landscape && o.name!=='estimated_hill');
+        o.receiveShadow = !o.userData.no_receive_shadow && !(landscape && o.name!=='estimated_hill');
         if(o.userData.photo_panorama){
           o.castShadow=false;o.receiveShadow=false;o.renderOrder=-100;
           // Blender exports pure emission as an emissive PBR material in this version.
