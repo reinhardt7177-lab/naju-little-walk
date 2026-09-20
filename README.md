@@ -2,6 +2,14 @@
 
 금성관 주변의 실제 OpenStreetMap 건물 윤곽과 도로 좌표를 **Blender 4.5 LTS**에서 입체로 제작하고, Blender에서 내보낸 GLB를 **Three.js**로 불러와 탐험합니다.
 
+## Vercel 배포
+
+`vercel.json`은 정적 웹 빌드(`npm run build`)와 배포 폴더(`dist/client`)를 지정합니다. GitHub에서 `codex/bitgaram-place-walks` 브랜치의 최신 작업을 선택해 배포합니다. 프레임워크 자동 감지 대신 일반 정적 프로젝트 설정을 사용합니다.
+
+`.vercelignore`는 Blender 원본·도구, 참고 자료와 임시 파일을 업로드에서 제외합니다. 완성된 빌드에는 무손실 압축한 `.glb.gz`만 들어가며, 중복된 `.glb`는 포함하지 않습니다. 모델 로더가 gzip 압축을 해제하므로 별도의 `Content-Encoding` 설정은 필요하지 않습니다. `/?place=deudeulgang` 등 기존 장소 주소를 그대로 사용할 수 있습니다.
+
+설정 근거: [Vercel 프로젝트 설정](https://vercel.com/docs/project-configuration).
+
 ## 드들강 솔밭과 전체 맵 채색
 
 `/?place=deudeulgang`에서 소나무 숲길, 노래비, 강변과 남쪽 쉼터를 산책할 수 있습니다. OSM 보행로·시설 위치와 Esri 위성영상, 2025년 현장 사진을 참고했습니다. 소나무 280그루의 위치·수형과 세부 시설 치수는 추정입니다. Blender 편집본은 `outputs/deudeulgang/deudeulgang-pine-grove-v3.blend`입니다.
