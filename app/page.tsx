@@ -6,7 +6,7 @@ import * as THREE from 'three';
 import { GLTFLoader } from 'three/addons/loaders/GLTFLoader.js';
 import { movePlayer, moveOnFloors, reachableFloor, worldObstacles, solidCollider, worldFloors, floorHeight, currentPlace, type World } from '@/lib/world';
 import { destinations, destinationFromSearch, type DestinationId } from '@/lib/destinations';
-import { batchStaticScene } from '@/lib/static-scene';
+import { batchStaticScene, updateVegetationDetail } from '@/lib/static-scene';
 import { createLocalLights } from '@/lib/local-lights';
 import { unpackModel } from '@/lib/model-transport';
 import { sceneArrival, portalAt, portalHref } from '@/lib/scene-travel';
@@ -269,6 +269,7 @@ function Explorer() {
           camera.position.set(center.x + Math.sin(orbit) * Math.cos(orbitElevation) * orbitRadius, Math.sin(orbitElevation) * orbitRadius, center.z + Math.cos(orbit) * Math.cos(orbitElevation) * orbitRadius); camera.lookAt(center);
         } else { camera.position.set(px, 1.72 + (data.verticalNavigation?elevation:floorHeight(px, pz, floors)), pz); camera.rotation.order = 'YXZ'; camera.rotation.set(pitch, yaw, 0); }
         if(localLights && now-lastLightUpdate>150){localLights.update(camera.position);lastLightUpdate=now;}
+        if(selectedId==='naju-arboretum' && updateVegetationDetail(gltf.scene,camera.position))renderer.shadowMap.needsUpdate=true;
         if(optimizedCampus && shadowBird!==bird){renderer.shadowMap.needsUpdate=true;shadowBird=bird;}
         if (now - lastHud > 180) {
           const hud=fleet.hud([px,pz],elevation);if(fleet.vessels.length)setBoatHud(hud);
