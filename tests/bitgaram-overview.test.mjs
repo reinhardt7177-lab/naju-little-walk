@@ -12,10 +12,22 @@ test('district overview transports exact geometry and retains destination pins',
  for(const mesh of g.meshes)for(const p of mesh.primitives){const a=g.accessors[p.indices];assert.equal(a.componentType,5123);assert.ok(a.max[0]<g.accessors[p.attributes.POSITION].count);triangles+=a.count/3;}
  for(const a of g.accessors)for(const values of [a.min,a.max])if(values)assert.ok(values.every(Number.isFinite));
  }
- assert.equal(triangles,JSON.parse(read('knowledge/sources/bitgaram/district-street-detail-metrics.json')).triangles,'Both transport parts together keep every triangle');
+ assert.equal(triangles,JSON.parse(read('knowledge/sources/bitgaram/district-color-metrics.json')).triangles,'Both transport parts together keep every triangle');
  const pins=JSON.parse(read('public/bitgaram-orbit.json')).pins;
  assert.deepEqual(pins.map(p=>p.id).sort(),['bitgaram-kentech','bitgaram-kepco','bitgaram-park']);
  for(const p of pins)assert.ok(p.position.every(Number.isFinite));
+});
+test('Blender roof and wall palette survives both GLB transport parts',()=>{
+ const palette=JSON.parse(read('knowledge/sources/bitgaram/district-palette.json'));
+ const linear=h=>[1,3,5].map(i=>{const v=parseInt(h.slice(i,i+2),16)/255;return v<=.04045?v/12.92:((v+.055)/1.055)**2.4;});
+ const used=[];
+ for(const name of ['bitgaram-overview','bitgaram-overview-part2']){
+  const raw=read(`public/models/${name}.glb`),g=JSON.parse(raw.subarray(20,20+raw.readUInt32LE(12)));
+  for(const mesh of g.meshes)for(const p of mesh.primitives)used.push(g.materials[p.material].pbrMetallicRoughness.baseColorFactor);
+ }
+ const has=hex=>used.some(c=>c&&linear(hex).every((v,i)=>Math.abs(v-c[i])<.00001));
+ assert.ok(palette.walls.filter(has).length>=4);assert.ok(palette.roofs.filter(has).length>=4);assert.ok(has(palette.water));
+ const m=JSON.parse(read('knowledge/sources/bitgaram/district-color-metrics.json'));assert.ok(m.counts.building_shells>400&&m.counts.roof_faces>400);assert.ok(m.counts.sports_courts>10);
 });
 test('parked cars stay within mapped parking polygons',()=>{
  const m=JSON.parse(read('knowledge/sources/bitgaram/district-street-detail-metrics.json'));
