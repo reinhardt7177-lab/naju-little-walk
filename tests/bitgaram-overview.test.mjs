@@ -19,13 +19,19 @@ test('district overview transports exact geometry and retains destination pins',
 });
 test('Blender roof and wall palette survives both GLB transport parts',()=>{
  const palette=JSON.parse(read('knowledge/sources/bitgaram/district-palette.json'));
+ const revision=JSON.parse(read('knowledge/sources/palette-v51/bitgaram-overview.json')).changes;
  const linear=h=>[1,3,5].map(i=>{const v=parseInt(h.slice(i,i+2),16)/255;return v<=.04045?v/12.92:((v+.055)/1.055)**2.4;});
  const used=[];
  for(const name of ['bitgaram-overview','bitgaram-overview-part2']){
   const raw=read(`public/models/${name}.glb`),g=JSON.parse(raw.subarray(20,20+raw.readUInt32LE(12)));
   for(const mesh of g.meshes)for(const p of mesh.primitives)used.push(g.materials[p.material].pbrMetallicRoughness.baseColorFactor);
  }
- const has=hex=>used.some(c=>c&&linear(hex).every((v,i)=>Math.abs(v-c[i])<.00001));
+ const has=hex=>{
+  const original=linear(hex);
+  // The broad palette families remain; compare against Blender's current colour revision.
+  const expected=revision.find(s=>original.every((v,i)=>Math.abs(v-s.before[i])<.00001))?.after??original;
+  return used.some(c=>c&&expected.slice(0,3).every((v,i)=>Math.abs(v-c[i])<.00001));
+ };
  assert.ok(palette.walls.filter(has).length>=4);assert.ok(palette.roofs.filter(has).length>=4);assert.ok(has(palette.water));
  const m=JSON.parse(read('knowledge/sources/bitgaram/district-color-metrics.json'));assert.ok(m.counts.building_shells>400&&m.counts.roof_faces>400);assert.ok(m.counts.sports_courts>10);
 });

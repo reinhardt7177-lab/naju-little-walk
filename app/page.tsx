@@ -45,7 +45,7 @@ function Explorer() {
   useEffect(() => {
     const selectedId = destinationFromSearch(window.location.search);
     const selected = destinations[selectedId];
-    const optimizedCampus=selectedId==='bitgaram-kepco'||selectedId==='naju-arboretum';
+    const optimizedCampus=selectedId==='bitgaram-kepco'||selectedId==='naju-arboretum'||selectedId==='deudeulgang';
     setDestinationId(selectedId);
     document.title = `나주 산책 — ${selected.area}`;
     const mount = host.current!;
@@ -59,7 +59,7 @@ function Explorer() {
       if (disposed) return;
       setWorld(data);
       // Keep centimeter-separated landscape layers stable at city overview distances.
-      renderer = new THREE.WebGLRenderer({ antialias: true, powerPreference: 'high-performance', logarithmicDepthBuffer: selectedId.startsWith('bitgaram') });
+      renderer = new THREE.WebGLRenderer({ antialias: true, powerPreference: 'high-performance', logarithmicDepthBuffer: selectedId.startsWith('bitgaram') || selectedId==='deudeulgang' });
       renderer.setPixelRatio(Math.min(window.devicePixelRatio, optimizedCampus?1.25:1.75));
       renderer.shadowMap.enabled = true;
       renderer.shadowMap.type = THREE.PCFShadowMap;
@@ -96,7 +96,8 @@ function Explorer() {
       if (disposed) { gltf.scene.traverse(disposeObject); return; }
       gltf.scene.traverse(o => { if (o instanceof THREE.Mesh) {
         const landscape=selectedId.startsWith('bitgaram')&&/^(context_ground|lake_osm_|estimated_hill|surrounding_park_lawn|surrounding_mapped_paths|surrounding_parking|surrounding_recreation)/.test(o.name);
-        o.castShadow = !o.name.startsWith('ground')&&!landscape;
+        const riverSurface=selectedId==='deudeulgang'&&/^(path_|road_|mapped_river_water|water_glint|pine_litter_patch|understory_moss|crop_row|satellite_field)/.test(o.name);
+        o.castShadow = !o.name.startsWith('ground')&&!landscape&&!riverSurface;
         o.receiveShadow = !(landscape && o.name!=='estimated_hill');
         if(o.userData.photo_panorama){
           o.castShadow=false;o.receiveShadow=false;o.renderOrder=-100;
@@ -269,7 +270,7 @@ function Explorer() {
           camera.position.set(center.x + Math.sin(orbit) * Math.cos(orbitElevation) * orbitRadius, Math.sin(orbitElevation) * orbitRadius, center.z + Math.cos(orbit) * Math.cos(orbitElevation) * orbitRadius); camera.lookAt(center);
         } else { camera.position.set(px, 1.72 + (data.verticalNavigation?elevation:floorHeight(px, pz, floors)), pz); camera.rotation.order = 'YXZ'; camera.rotation.set(pitch, yaw, 0); }
         if(localLights && now-lastLightUpdate>150){localLights.update(camera.position);lastLightUpdate=now;}
-        if(selectedId==='naju-arboretum' && updateVegetationDetail(gltf.scene,camera.position))renderer.shadowMap.needsUpdate=true;
+        if((selectedId==='naju-arboretum'||selectedId==='deudeulgang') && updateVegetationDetail(gltf.scene,camera.position))renderer.shadowMap.needsUpdate=true;
         if(optimizedCampus && shadowBird!==bird){renderer.shadowMap.needsUpdate=true;shadowBird=bird;}
         if (now - lastHud > 180) {
           const hud=fleet.hud([px,pz],elevation);if(fleet.vessels.length)setBoatHud(hud);

@@ -2,6 +2,12 @@
 
 금성관 주변의 실제 OpenStreetMap 건물 윤곽과 도로 좌표를 **Blender 4.5 LTS**에서 입체로 제작하고, Blender에서 내보낸 GLB를 **Three.js**로 불러와 탐험합니다.
 
+## 드들강 솔밭과 전체 맵 채색
+
+`/?place=deudeulgang`에서 소나무 숲길, 노래비, 강변과 남쪽 쉼터를 산책할 수 있습니다. OSM 보행로·시설 위치와 Esri 위성영상, 2025년 현장 사진을 참고했습니다. 소나무 280그루의 위치·수형과 세부 시설 치수는 추정입니다. Blender 편집본은 `outputs/deudeulgang/deudeulgang-pine-grove-v3.blend`입니다.
+
+기존 모든 맵과 두 황포돛배의 색감을 Blender에서 조정했습니다. `outputs/palette-v51`에 새 전체 장면 편집본을 보관하고, 기존 정점·이미지·애니메이션을 유지한 채 재질 값만 GLB에 반영합니다. [사진 근거, 제작 방법과 추정 범위](knowledge/deudeulgang-and-map-palette-2026-09-20.md)를 확인하세요.
+
 ## 빛가람 장소별 산책 초안
 
 `/?place=bitgaram`의 Blender 조감 화면에서 푯말을 누르면 전망대 주변 공원, 전망실, 한국전력 본사 입구·1층, KENTECH 입구·1층을 각각 불러옵니다. 공원 전체를 연결한 대형 보행 맵은 만들지 않았습니다. KENTECH는 2022년 완공 건물 외관을 대상으로 하며, 내부는 공개 자료가 부족한 추정 초안입니다.

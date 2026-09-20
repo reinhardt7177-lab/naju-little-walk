@@ -1,6 +1,6 @@
 import { hitsPolygon, solidCollider, reachableFloor, blocksWalking, worldFloors, worldObstacles, type Point, type Place, type World } from './world.ts';
 
-export const regionalBounds = [126.625, 126.84, 34.985, 35.044] as const;
+export const regionalBounds = [126.625, 126.87, 34.985, 35.044] as const;
 export const regionalSize = [1000, 400] as const;
 
 export function regionalPoint(lon: number, lat: number): Point {
