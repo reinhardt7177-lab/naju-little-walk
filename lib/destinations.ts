@@ -1,7 +1,7 @@
 export const destinations = {
   'naju-arboretum': {
     coordinates:{lat:35.00648,lon:126.8256689},
-    name:'나주수목원 · 산림연구원',area:'나주수목원 산책',worldUrl:'/naju-arboretum-world.json',modelUrl:'/models/naju-arboretum.glb.gz',
+    name:'나주수목원 · 산림연구원',area:'나주수목원 산책',worldUrl:'/naju-arboretum-world.json',modelUrl:'/models/naju-arboretum.glb.gz?v=reference-finish-20260920',
     heading:['나무가 만든 길,','나주수목원.'],introduction:['메타세쿼이아길과 정원을 걸어보세요.','공식 안내도와 항공사진을 참고한 기초 재현입니다.'],
     sourceUrl:'https://jnforest.jeonnam.go.kr/content/view.do?menuCd=FOREST007006',sourceLabel:'공식 안내 · 현장 사진 · Esri 위성영상 참고',
     limitation:'위성 윤곽 참고 · 촬영일 미확인 · 높이·개별 식재 추정',overview:{center:[-230,-40],radius:550,elevation:.9,angle:-.65},

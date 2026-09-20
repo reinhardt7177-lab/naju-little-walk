@@ -7,6 +7,18 @@ import {canTravelTo,regionalPoint,regionalSize} from '../lib/map-navigation.ts';
 import {destinations} from '../lib/destinations.ts';
 import {sceneArrival} from '../lib/scene-travel.ts';
 const w=JSON.parse(fs.readFileSync(new URL('../public/naju-arboretum-world.json',import.meta.url)));
+
+test('photo-informed plants export matching near and far instances with embedded materials',()=>{
+ const raw=fs.readFileSync(new URL('../public/models/naju-arboretum.glb',import.meta.url));
+ const g=JSON.parse(raw.subarray(20,20+raw.readUInt32LE(12)));
+ const plants=g.nodes.filter(n=>n.extras?.vegetation_lod);
+ const signature=n=>JSON.stringify([n.translation,n.rotation,n.scale,n.extras.vegetation_distance]);
+ const near=plants.filter(n=>n.extras.vegetation_lod==='near').map(signature).sort();
+ const far=plants.filter(n=>n.extras.vegetation_lod==='far').map(signature).sort();
+ assert.ok(near.length>6000);assert.deepEqual(near,far,'Distance switching must not shift or lose any plant');
+ for(const kind of ['column','oval','meta','broad'])assert.ok(g.nodes.some(n=>n.extras?.reference_habit===kind));
+ assert.ok(g.images.every(i=>i.bufferView!==undefined),'All authored image textures must be embedded');
+});
 test('arboretum main avenue is continuous, and trunks and pond block walking',()=>{
  const obstacles=w.solids.filter(s=>s.collision).map(solidCollider);
  assert.ok(canTravelTo([w.spawn.x,w.spawn.z],w));
