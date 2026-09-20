@@ -28,7 +28,7 @@ export default function BitgaramOrbit(){
       const resize=()=>{camera.aspect=mount.clientWidth/mount.clientHeight;camera.updateProjectionMatrix();renderer!.setSize(mount.clientWidth,mount.clientHeight);};resize();observer=new ResizeObserver(resize);observer.observe(mount);
       const loadModel=async()=>{
         const parts=await Promise.all(['bitgaram-overview','bitgaram-overview-part2'].map(async name=>{
-          const response=await fetch(`/models/${name}.glb.gz?v=district-color-v49-20260920`);
+          const response=await fetch(`/models/${name}.glb.gz?v=district-color-fix-v50-20260920`);
           if(!response.ok)throw new Error('3D 지도를 불러오지 못했습니다.');
           return new GLTFLoader().parseAsync(await unpackModel(await response.arrayBuffer()),'');
         }));

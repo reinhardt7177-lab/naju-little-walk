@@ -78,7 +78,19 @@ export function batchStaticScene(root: THREE.Object3D): { before: number; after:
   let after=before;
   for (const meshes of groups.values()) {
     if (meshes.length<12) continue;
-    const transformed=meshes.map(mesh=>mesh.geometry.clone().applyMatrix4(new THREE.Matrix4().multiplyMatrices(inverseRoot,mesh.matrixWorld)));
+    const transformed=meshes.map(mesh=>{
+      const geometry=mesh.geometry.clone();
+      // GLB quantization stores local coordinates in integer attributes. Applying
+      // world transforms to those arrays wraps negative positions and truncates
+      // fractional values; decode before baking the transform into a merged mesh.
+      for(const name of ['position','normal','tangent']){
+        const attribute=geometry.getAttribute(name);if(!attribute)continue;
+        const values=new Float32Array(attribute.count*attribute.itemSize);
+        for(let i=0;i<attribute.count;i++)for(let c=0;c<attribute.itemSize;c++)values[i*attribute.itemSize+c]=attribute.getComponent(i,c);
+        geometry.setAttribute(name,new THREE.BufferAttribute(values,attribute.itemSize));
+      }
+      return geometry.applyMatrix4(new THREE.Matrix4().multiplyMatrices(inverseRoot,mesh.matrixWorld));
+    });
     const merged=mergeGeometries(transformed,false);
     transformed.forEach(geometry=>geometry.dispose());
     if (!merged) continue;
