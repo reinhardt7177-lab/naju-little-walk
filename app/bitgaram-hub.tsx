@@ -14,6 +14,6 @@ export default function BitgaramHub(){
       {places.map(p=><a className="hub-place" key={p.id} href={`/?place=${p.id}`}><span>{p.n}</span><div><strong>{p.title}</strong><small>{p.detail}</small></div><ArrowUpRight size={20}/></a>)}
       <small className="hub-note">사진·영상 기반 제작 초안입니다. 건물 높이와 내부 치수·배치에는 추정이 포함됩니다.</small>
     </aside></div>
-    <footer><a href="https://www.openstreetmap.org/copyright">© OpenStreetMap 기여자 · ODbL</a><span>위성사진·현장 사진 참고 · 조감용 주변 건물은 산책 대상에서 제외</span></footer>
+    <footer><a href="https://www.openstreetmap.org/copyright">© OpenStreetMap 기여자 · ODbL</a><a href="https://server.arcgisonline.com/ArcGIS/rest/services/World_Imagery/MapServer">Esri 위성사진 참고</a><span>일부 건물 윤곽·높이·식재 추정 · 주변 건물은 전경용</span></footer>
   </main>;
 }

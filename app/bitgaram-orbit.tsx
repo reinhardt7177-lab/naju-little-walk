@@ -27,9 +27,13 @@ export default function BitgaramOrbit(){
       const restore=()=>{camera.position.set(1250,1950,2150);controls!.target.set(200,0,-50);controls!.update();};reset.current=restore;restore();
       const resize=()=>{camera.aspect=mount.clientWidth/mount.clientHeight;camera.updateProjectionMatrix();renderer!.setSize(mount.clientWidth,mount.clientHeight);};resize();observer=new ResizeObserver(resize);observer.observe(mount);
       const loadModel=async()=>{
-        const response=await fetch('/models/bitgaram-overview.glb.gz');
-        if(!response.ok)throw new Error('3D 지도를 불러오지 못했습니다.');
-        return new GLTFLoader().parseAsync(await unpackModel(await response.arrayBuffer()),'');
+        const parts=await Promise.all(['bitgaram-overview','bitgaram-overview-part2'].map(async name=>{
+          const response=await fetch(`/models/${name}.glb.gz?v=district-complete-20260920`);
+          if(!response.ok)throw new Error('3D 지도를 불러오지 못했습니다.');
+          return new GLTFLoader().parseAsync(await unpackModel(await response.arrayBuffer()),'');
+        }));
+        parts[0].scene.add(parts[1].scene);
+        return parts[0];
       };
       const [model,response]=await Promise.all([loadModel(),fetch('/bitgaram-orbit.json')]);
       if(disposed){dispose(model.scene);return;}
