@@ -12,10 +12,19 @@ test('district overview transports exact geometry and retains destination pins',
  for(const mesh of g.meshes)for(const p of mesh.primitives){const a=g.accessors[p.indices];assert.equal(a.componentType,5123);assert.ok(a.max[0]<g.accessors[p.attributes.POSITION].count);triangles+=a.count/3;}
  for(const a of g.accessors)for(const values of [a.min,a.max])if(values)assert.ok(values.every(Number.isFinite));
  }
- assert.equal(triangles,JSON.parse(read('knowledge/sources/bitgaram/district-block-infill-metrics.json')).triangles,'Both transport parts together keep every triangle');
+ assert.equal(triangles,JSON.parse(read('knowledge/sources/bitgaram/district-street-detail-metrics.json')).triangles,'Both transport parts together keep every triangle');
  const pins=JSON.parse(read('public/bitgaram-orbit.json')).pins;
  assert.deepEqual(pins.map(p=>p.id).sort(),['bitgaram-kentech','bitgaram-kepco','bitgaram-park']);
  for(const p of pins)assert.ok(p.position.every(Number.isFinite));
+});
+test('parked cars stay within mapped parking polygons',()=>{
+ const m=JSON.parse(read('knowledge/sources/bitgaram/district-street-detail-metrics.json'));
+ const sources=new Map(JSON.parse(read('knowledge/sources/bitgaram/district-2026-09-20.json')).ways.map(w=>[w.id,w]));
+ const old=JSON.parse(read('knowledge/sources/bitgaram/geometry.json')).ways;for(const w of old)if(!sources.has(w.id))sources.set(w.id,w);
+ const inside=([x,z],p)=>{let hit=false;for(let i=0,j=p.length-1;i<p.length;j=i++){const a=p[i],b=p[j];if((a[1]>z)!==(b[1]>z)&&x<(b[0]-a[0])*(z-a[1])/(b[1]-a[1])+a[0])hit=!hit;}return hit;};
+ const cars=m.placements.filter(p=>p.type==='car');assert.equal(cars.length,m.counts.parked_cars);assert.ok(cars.length>20);
+ for(const c of cars){const source=sources.get(c.source_id);assert.equal(source.tags.amenity,'parking');assert.ok(c.polygon.every(pt=>inside(pt,source.points)));}
+ assert.ok(m.counts.facades>100&&m.counts.window_panels>1000);
 });
 test('satellite block infill remains outside mapped buildings and water',()=>{
  const m=JSON.parse(read('knowledge/sources/bitgaram/district-block-infill-metrics.json'));
