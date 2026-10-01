@@ -2,9 +2,10 @@
 import bpy,math,sys
 from pathlib import Path
 from mathutils import Vector
-R=Path(__file__).resolve().parents[1];revision='v71' if '--fine' in sys.argv else 'v70';O=R/('outputs/quality-'+revision)
-for label,path in [('before',R/'outputs/deudeulgang/deudeulgang-pine-grove-v55-finished.blend'),('after',O/('deudeulgang-pine-crowns-'+revision+'.blend'))]:
-    if label=='before' and revision=='v71':continue
+R=Path(__file__).resolve().parents[1];revision='v72' if '--surfaces' in sys.argv else 'v71' if '--fine' in sys.argv else 'v70';O=R/('outputs/quality-'+revision)
+after=O/('deudeulgang-surfaces-v72.blend' if revision=='v72' else 'deudeulgang-pine-crowns-'+revision+'.blend')
+for label,path in [('before',R/'outputs/deudeulgang/deudeulgang-pine-grove-v55-finished.blend'),('after',after)]:
+    if label=='before' and revision!='v70':continue
     bpy.ops.wm.open_mainfile(filepath=str(path));scene=bpy.context.scene;cam=scene.camera
     scene.render.engine='BLENDER_EEVEE_NEXT';scene.eevee.taa_render_samples=16
     scene.render.resolution_x=1100;scene.render.resolution_y=720;scene.render.resolution_percentage=100

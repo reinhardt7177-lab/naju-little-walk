@@ -231,6 +231,8 @@ npm run build
 
 ## 출처
 
+드들강 수피·낮은 풀·숲 바닥 질감과 모든 탐험 장소의 제목 대비 보완은 [마감 기록](knowledge/deudeulgang-surfaces-quality-2026-10-01.md)에 있습니다. 현재 편집본은 `outputs/quality-v72/deudeulgang-surfaces-v72.blend`이며 이전 수정본을 보존했습니다.
+
 드들강의 현장 사진 대조, 소나무 수관·강 건너 숲 보완, 기존 뿌리·보행 정보 보존은 [제작 기록](knowledge/deudeulgang-pine-quality-2026-10-01.md)에 정리했습니다. 새 Blender 수정본은 `outputs/quality-v71/deudeulgang-pine-crowns-v71.blend`입니다.
 
 빛가람 전망대의 실제 모노레일 평면선·돌미끄럼틀 사진과 보행 연결을 대조한 내용은 [접근로 정정 기록](knowledge/bitgaram-access-correction-2026-10-01.md)에 있습니다. 경사와 세부 치수의 추정 여부도 함께 기록했습니다.

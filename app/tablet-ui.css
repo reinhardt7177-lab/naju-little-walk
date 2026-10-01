@@ -11,11 +11,11 @@ button:focus-visible,a:focus-visible { outline:3px solid #b97738; outline-offset
 .explorer { height:100%; min-height:0; }
 .vignette { background:linear-gradient(180deg,#f1f6f336,transparent 18%,transparent 85%,#edf2e844); }
 .topbar { top:max(16px,env(safe-area-inset-top)); left:max(var(--edge),env(safe-area-inset-left)); right:max(var(--edge),env(safe-area-inset-right)); padding:0; gap:16px; z-index:20; }
-.brand { gap:10px; min-width:0; }
+.brand { gap:10px; min-width:0; padding:8px 12px 8px 9px; background:var(--paper); border:1px solid var(--line); border-radius:9px; color:var(--ink); text-shadow:none; }
 .brand-mark { width:40px; height:40px; border-color:#2647395c; background:#f8f7f16b; flex:none; }
 .brand>div { min-width:0; }
-.brand strong { font-size:20px; letter-spacing:-.7px; }
-.brand div>span { font-size:12px; font-weight:400; letter-spacing:0; max-width:300px; white-space:nowrap; text-overflow:ellipsis; overflow:hidden; color:#40584b; }
+.brand strong { font-size:20px; line-height:1.2; letter-spacing:-.7px; }
+.brand div>span { font-size:12px; line-height:1.35; font-weight:400; letter-spacing:0; max-width:300px; white-space:nowrap; text-overflow:ellipsis; overflow:hidden; color:#40584b; }
 .topbar-tools { display:flex; align-items:center; gap:8px; flex:none; }
 .view-actions { border-radius:9px; padding:3px; background:#f8f7f1ef; border:1px solid #dbe3dc; backdrop-filter:none; }
 .view-actions button { min-height:42px; padding:9px 13px; border-radius:6px; font-size:13px; }
