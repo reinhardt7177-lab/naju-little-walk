@@ -1,5 +1,7 @@
 # 프로젝트 기록 안내
 
+- 드들강 솔잎 수관·강 건너 숲 보완과 실제 사진/추정 구분: `knowledge/deudeulgang-pine-quality-2026-10-01.md`
+
 - 수목원 향나무길 수형·지도 도로 정렬·보행 바닥 검증: `knowledge/naju-arboretum-juniper-quality-2026-10-01.md`
 
 - 작업 결정과 범위: `knowledge/MVP.md`
