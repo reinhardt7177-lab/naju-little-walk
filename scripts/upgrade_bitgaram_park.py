@@ -96,5 +96,3 @@ if '--render' in sys.argv:
  scene.render.resolution_x=1280;scene.render.resolution_y=800;scene.render.resolution_percentage=100
  for name,position,aim in [('park-entry',(0,-21,17.7),(0,-6,22)),('park-woodland',(0,-68,10),(18,-60,13)),('park-aerial',(-230,-260,200),(0,-25,10))]:
   camera.location=position;camera.rotation_euler=(Vector(aim)-camera.location).to_track_quat('-Z','Y').to_euler();scene.render.filepath=str(O/(name+'-v58.png'));bpy.ops.render.render(write_still=True)
-
-
