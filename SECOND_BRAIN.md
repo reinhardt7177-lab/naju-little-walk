@@ -8,6 +8,7 @@
 - 후속 퀄리티 업그레이드 실행·미완료 범위: `knowledge/QUALITY_UPGRADE_PLAN.md`
 - 앱 대기·복구 마감과 자연스러운 풍경 제작 기준: `knowledge/app-finish-review-2026-10-01.md`
 - 빛가람 아파트 유리 띠·창 배열 보완과 사진/추정 구분: `knowledge/bitgaram-facades-quality-2026-10-01.md`
+- 수목원 꽃밭·목재 놀이시설 보완과 원본 보존: `knowledge/naju-arboretum-garden-quality-2026-10-01.md`
 - 공원 원본 형상·나무 쌍 보존 검증: `knowledge/sources/bitgaram/park-quality-v58-verification.json`
 - 최종 3D 산출물: `outputs/`, `public/models/`
 

@@ -35,6 +35,31 @@ test('arboretum download is exact and regional destination stays inside the map'
  const d=destinations['naju-arboretum'],p=regionalPoint(d.coordinates.lon,d.coordinates.lat);
  assert.ok(p[0]>0&&p[0]<regionalSize[0]&&p[1]>0&&p[1]<regionalSize[1]);
 });
+test('garden flowers are rooted and rose petals have a raised cup',()=>{
+ const raw=fs.readFileSync(new URL('../public/models/naju-arboretum.glb',import.meta.url));
+ const g=JSON.parse(raw.subarray(20,20+raw.readUInt32LE(12)));
+ const rooted=g.nodes.filter(n=>n.name.startsWith('botanical_flower')&&n.extras?.vegetation_lod==='near');
+ assert.ok(rooted.length>2000);
+ for(const n of rooted)assert.ok(Math.abs(n.translation[1]-.052)<.00001,'Flower root sits on the retained soil surface');
+ const roses=g.nodes.filter(n=>n.extras?.garden_kind==='rose'&&n.extras?.vegetation_lod==='near');
+ assert.ok(roses.length>700);
+ for(const id of new Set(roses.map(n=>n.mesh))){
+  const petals=g.meshes[id].primitives.filter(p=>g.materials[p.material].name.startsWith('Garden_petals_'));
+  assert.ok(petals.length);
+  for(const p of petals){
+   const a=g.accessors[p.attributes.POSITION];assert.ok(a.max[1]-a.min[1]>.10,'Rose petals rise above their cupped base');
+   const normal=g.accessors[p.attributes.NORMAL],view=g.bufferViews[normal.bufferView],bin=28+raw.readUInt32LE(12);
+   let sum=0;for(let i=0;i<normal.count;i++){
+    const offset=bin+view.byteOffset+(normal.byteOffset??0)+i*(view.byteStride??(normal.componentType===5126?12:3));
+    sum+=normal.componentType===5126?raw.readFloatLE(offset+4):raw.readInt8(offset+1)/127;
+   }
+   assert.ok(sum/normal.count>.05,'Petal fronts face out of the cup towards daylight');
+  }
+ }
+ for(const n of g.nodes.filter(n=>n.name.startsWith('play_canopy'))){
+  for(const p of g.meshes[n.mesh].primitives){assert.ok(p.attributes.TEXCOORD_0!==undefined);assert.ok(g.materials[p.material].pbrMetallicRoughness.baseColorTexture);}
+ }
+});
 test('satellite revision replaces old building collisions and keeps garden arrival open',()=>{
  assert.ok(w.solids.filter(s=>s.name.startsWith('traced_building_')&&s.collision).length>=4);
  assert.ok(!w.solids.some(s=>s.name.startsWith('estimated_building_')||s.name==='estimated_greenhouse'));

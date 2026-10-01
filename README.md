@@ -231,6 +231,8 @@ npm run build
 
 ## 출처
 
+수목원 꽃밭·목재 놀이시설의 최근 보완, 새 Blender 수정본과 검증 범위는 [제작 기록](knowledge/naju-arboretum-garden-quality-2026-10-01.md)에 정리했습니다. 안드로이드 태블릿의 실제 조작·성능 검증은 화면 크기 검사와 구분합니다.
+
 © [OpenStreetMap 기여자](https://www.openstreetmap.org/copyright), ODbL 1.0. 지도 원본과 변경한 좌표 데이터는 `knowledge/sources` 및 `public/city-world.json`에 보관합니다. 공개 배포 시 같은 출처 표기를 유지하세요.
 
 [금성관 국가유산포털](https://www.heritage.go.kr/heri/cul/culSelectDetail.do?VdkVgwKey=12%2C20370000%2C36&pageNo=1_1_1_1)
