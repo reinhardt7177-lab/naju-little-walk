@@ -1,11 +1,14 @@
 # 프로젝트 기록 안내
 
+- 수목원 향나무길 수형·지도 도로 정렬·보행 바닥 검증: `knowledge/naju-arboretum-juniper-quality-2026-10-01.md`
+
 - 작업 결정과 범위: `knowledge/MVP.md`
 - 다시초등학교 모델 범위와 검증: `knowledge/DASI_MVP.md`
 - 원본 자료 및 출처: `knowledge/sources/`
 - 실행 방법: `README.md`
 - 태블릿 UI 수정·검증과 다음 제작 우선순위: `knowledge/tablet-ui-completion-2026-10-01.md`
 - 후속 퀄리티 업그레이드 실행·미완료 범위: `knowledge/QUALITY_UPGRADE_PLAN.md`
+- 전망대 실제 모노레일·돌미끄럼틀과 보행로 정정: `knowledge/bitgaram-access-correction-2026-10-01.md`
 - 앱 대기·복구 마감과 자연스러운 풍경 제작 기준: `knowledge/app-finish-review-2026-10-01.md`
 - 빛가람 아파트 유리 띠·창 배열 보완과 사진/추정 구분: `knowledge/bitgaram-facades-quality-2026-10-01.md`
 - 수목원 꽃밭·목재 놀이시설 보완과 원본 보존: `knowledge/naju-arboretum-garden-quality-2026-10-01.md`
