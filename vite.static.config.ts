@@ -26,5 +26,5 @@ export default defineConfig({
   // this site's entry, not unrelated HTML under work/, for dev dependencies.
   optimizeDeps: { entries: ['index.html'] },
   css: { postcss: { plugins: [tailwindcss()] } },
-  build: { outDir: 'dist/client', emptyOutDir: true, minify: false },
+  build: { outDir: 'dist/client', emptyOutDir: true, minify: true },
 });

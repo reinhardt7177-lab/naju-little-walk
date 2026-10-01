@@ -1,6 +1,14 @@
-# 나주 산책 MVP
+# 나주 산책
 
 금성관 주변의 실제 OpenStreetMap 건물 윤곽과 도로 좌표를 **Blender 4.5 LTS**에서 입체로 제작하고, Blender에서 내보낸 GLB를 **Three.js**로 불러와 탐험합니다.
+
+## 태블릿으로 이용하기
+
+[나주 산책 운영 사이트](https://naju-little-walk.reinhardt5559.chatgpt.site/?place=bitgaram)에서 장소를 골라 시작합니다. 터치 기기는 가로 화면으로 이용하며 세로에서는 회전 안내가 표시됩니다. 전체 화면 버튼은 가능한 브라우저에서 가로 잠금도 요청합니다. iPad 등 미지원 환경에서는 기기를 직접 돌려 주세요.
+
+왼손 이동 버튼과 오른손 시선 버튼, 드래그로 산책합니다. 전체 보기에서는 두 손가락 또는 확대·축소 버튼을 이용합니다. ‘산책 안내와 화면 설정’에서 이동 버튼 표시와 화질을 조절할 수 있습니다. 태블릿 기본값은 ‘편하게 걷기’입니다.
+
+[UI 수정·검증과 다음 제작 계획](knowledge/tablet-ui-completion-2026-10-01.md)에 완료 항목과 후속 작업을 구분했습니다. 전체 검사: `node --experimental-strip-types --test tests/*.mjs`.
 
 ## Vercel 배포
 
