@@ -31,6 +31,7 @@
 - 꽃밭 도착점의 뿌리 높이, 장미 꽃잎 높이·법선, 목재 지붕 UV·내장 재질, 꽃밭·놀이터 접근 및 보행 회귀 검사 합계 80개 통과. TypeScript와 프로덕션 빌드 성공.
 - 1024×768 꽃밭과 844×390 놀이터 화면에서 모델·UI 표시와 콘솔 오류 없음 확인. `outputs/quality-v61/web-flowers-after.png`, `web-playground-844.png`에 기록했다. 데스크톱 브라우저의 화면 크기 검사이며 Android 기기의 OS 회전·멀티터치·성능 검증은 아직 필요하다.
 - 최종 전후 렌더: `outputs/quality-v61/roses-before.png`, `roses-soft.png`, `blossom-before.png`, `blossom-soft.png`, `playground-before.png`, `playground-soft.png`.
+- 운영 버전 **60** 게시 성공: [수목원 꽃밭](https://naju-little-walk.reinhardt5559.chatgpt.site/?place=naju-arboretum&at=flowers). GitHub 구현 커밋 `0f67dbf`, Sites 게시 소스 `8ff4835187636b1ff7c427f9161ffd5923778e8a`. 동일 소스의 TypeScript·빌드 패키지를 저장·게시했다. 첫 소스 서버 접속은 실패했고 같은 절차 재시도로 성공했다. 공개 범위는 유지했다. 배포 ID `appgdep_6abde968f5b48191b4276688d9ff3a4a`.
 
 ## 남은 품질 작업
 
