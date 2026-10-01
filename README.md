@@ -10,6 +10,8 @@
 
 [UI 수정·검증과 다음 제작 계획](knowledge/tablet-ui-completion-2026-10-01.md)에 완료 항목과 후속 작업을 구분했습니다. 전체 검사: `node --experimental-strip-types --test tests/*.mjs`.
 
+[앱 마감 검토](knowledge/app-finish-review-2026-10-01.md): 가로 화면 준비 후 3D 코드 불러오기, 멈춘 장면의 렌더 중지, 모델 실패 재시도와 GPU 복구 안내를 보완했습니다. 안드로이드 태블릿을 주 대상으로 하며 실제 OS 회전·두 손 조작 검증은 별도로 남아 있습니다.
+
 [퀄리티 업그레이드 실행 계획](knowledge/QUALITY_UPGRADE_PLAN.md)에서 장소별 부족한 부분과 검증 기준을 관리합니다. 전망대 공원의 잎·가지와 거리별 수형을 새 Blender 수정본에 제작했고, 모델 정리 중 메뉴에 시간을 주는 로딩 분할과 식생 판정 캐시를 적용했습니다. 원본 지형·건축·산책 좌표는 유지했습니다. 큰 모델 검사 시 `node --experimental-strip-types --test --test-concurrency=1 tests/*.test.mjs`로 메모리 사용을 제한할 수 있습니다.
 
 ## Vercel 배포

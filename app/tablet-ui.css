@@ -151,6 +151,11 @@ button:focus-visible,a:focus-visible { outline:3px solid #b97738; outline-offset
 .hub-map-caption span { display:block; font-size:10px; color:#70806c; margin-top:2px; }
 .hub-status { top:16px; left:16px; max-width:calc(100% - 196px); font-size:12px; line-height:1.6; padding:12px; border:1px solid var(--line); border-radius:8px; }
 .hub-status button { display:block; background:#285444; color:white; padding:10px 14px; border:0; border-radius:6px; margin-top:8px; min-height:44px; }
+.scene-recovery { position:absolute; z-index:30; left:50%; top:50%; transform:translate(-50%,-50%); width:min(380px,calc(100vw - 40px)); max-height:calc(100dvh - 120px); overflow:auto; padding:20px; background:var(--paper); color:var(--ink); border:1px solid var(--line); border-radius:10px; box-shadow:0 8px 32px #18362626; }
+.scene-recovery strong { font-size:17px; }
+.scene-recovery p { font-size:13px; line-height:1.7; margin:12px 0; }
+.scene-recovery button { display:block; width:100%; min-height:46px; padding:10px 12px; border:1px solid var(--line); border-radius:7px; margin-top:8px; color:var(--ink); background:#edf1e8; }
+.scene-recovery button:first-of-type { color:white; background:#285444; border-color:#285444; }
 .bitgaram-hub footer { flex:none; gap:14px; padding:8px max(var(--edge),env(safe-area-inset-left)); padding-bottom:max(8px,env(safe-area-inset-bottom)); font-size:10px; line-height:1.4; background:var(--paper); border-top:1px solid var(--line); }
 .rotate-screen { position:absolute; inset:0; z-index:100; display:flex; flex-direction:column; align-items:center; justify-content:center; text-align:center; padding:32px max(24px,env(safe-area-inset-left)); background:var(--paper); overflow:auto; color:var(--ink); }
 .rotate-mark { position:relative; color:#476f52; margin-bottom:28px; }

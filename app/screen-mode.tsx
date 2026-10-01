@@ -5,7 +5,7 @@ import { Maximize, Minimize, RotateCw, Smartphone } from 'lucide-react';
 import { enterLandscape, needsLandscape, type GraphicsQuality } from '@/lib/display-mode';
 
 type ScreenMode = {
-  touch: boolean; portrait: boolean; fullscreen: boolean; quality: GraphicsQuality;
+  initialized: boolean; touch: boolean; touchControls: boolean; portrait: boolean; fullscreen: boolean; quality: GraphicsQuality;
   setQuality: (quality: GraphicsQuality) => void; setTouchControls: (show: boolean) => void; toggleFullscreen: () => Promise<void>;
 };
 const Context = createContext<ScreenMode | null>(null);
@@ -17,6 +17,7 @@ export function useScreenMode() {
 
 export default function ScreenMode({ children }: { children: ReactNode }) {
   const [touch, setTouch] = useState(false), [portrait, setPortrait] = useState(false);
+  const [initialized,setInitialized]=useState(false);
   const [controlOverride, setControlOverride] = useState<boolean|null>(null);
   const [fullscreen, setFullscreen] = useState(false);
   const [quality, updateQuality] = useState<GraphicsQuality>('balanced');
@@ -35,7 +36,7 @@ export default function ScreenMode({ children }: { children: ReactNode }) {
     try { saved = localStorage.getItem('naju-graphics'); } catch { /* private browsing */ }
     try { const savedControls=localStorage.getItem('naju-touch-controls'); if(savedControls==='true'||savedControls==='false')setControlOverride(savedControls==='true'); } catch { /* private browsing */ }
     updateQuality(saved === 'detail' || saved === 'balanced' ? saved : input.matches || navigator.maxTouchPoints > 0 ? 'balanced' : 'detail');
-    sync(); fullscreenChange();
+    sync(); fullscreenChange();setInitialized(true);
     window.addEventListener('resize', sync); input.addEventListener('change', sync);
     document.addEventListener('fullscreenchange', fullscreenChange);
     return () => {
@@ -67,7 +68,7 @@ export default function ScreenMode({ children }: { children: ReactNode }) {
     } else await requestLandscape();
   };
   const showTouch=controlOverride??touch;
-  return <Context.Provider value={{ touch:showTouch, portrait, fullscreen, quality, setQuality, setTouchControls, toggleFullscreen }}>
+  return <Context.Provider value={{ initialized,touch, touchControls:showTouch, portrait, fullscreen, quality, setQuality, setTouchControls, toggleFullscreen }}>
     <div className="app-shell" data-touch={showTouch} data-graphics={quality}>
       <div ref={content} className="app-content" inert={portrait} aria-hidden={portrait || undefined}>{children}</div>
       {portrait && <section className="rotate-screen" aria-labelledby="rotate-title">
