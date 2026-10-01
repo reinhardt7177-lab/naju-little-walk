@@ -6,7 +6,7 @@ import * as THREE from 'three';
 import { GLTFLoader } from 'three/addons/loaders/GLTFLoader.js';
 import { movePlayer, moveOnFloors, reachableFloor, worldObstacles, solidCollider, worldFloors, floorHeight, currentPlace, type World } from '@/lib/world';
 import { destinations, destinationFromSearch, type DestinationId } from '@/lib/destinations';
-import { batchStaticScene, updateVegetationDetail } from '@/lib/static-scene';
+import { batchStaticSceneInSlices, updateVegetationDetail } from '@/lib/static-scene';
 import { createLocalLights } from '@/lib/local-lights';
 import { unpackModel } from '@/lib/model-transport';
 import { sceneArrival, portalAt, portalHref } from '@/lib/scene-travel';
@@ -61,15 +61,16 @@ function Explorer() {
   useEffect(() => {
     const selectedId = destinationFromSearch(window.location.search);
     const selected = destinations[selectedId];
-    const optimizedCampus=selectedId==='bitgaram-kepco'||selectedId==='bitgaram-kentech'||selectedId==='naju-arboretum'||selectedId==='deudeulgang';
+    const optimizedCampus=selectedId==='bitgaram-park'||selectedId==='bitgaram-kepco'||selectedId==='bitgaram-kentech'||selectedId==='naju-arboretum'||selectedId==='deudeulgang';
     setDestinationId(selectedId);
     document.title = `나주 산책 — ${selected.area}`;
     const mount = host.current!;
     let disposed = false, renderer: THREE.WebGLRenderer | undefined, animation = 0;
+    const abort=new AbortController();
     const cleanups: (() => void)[] = [];
     const scene = new THREE.Scene();
     const setup = async () => {
-      const response = await fetch(selected.worldUrl);
+      const response = await fetch(selected.worldUrl,{signal:abort.signal});
       if (!response.ok) throw new Error('도시 자료를 불러오지 못했습니다.');
       const data: World = await response.json();
       if (disposed) return;
@@ -111,7 +112,7 @@ function Explorer() {
       setLoadStage('건물과 산책로를 불러오고 있습니다');
       const gltf = await (async()=>{
         if(!selected.modelUrl.split('?')[0].endsWith('.gz'))return loader.loadAsync(selected.modelUrl);
-        const response=await fetch(selected.modelUrl);
+        const response=await fetch(selected.modelUrl,{signal:abort.signal});
         if(!response.ok)throw new Error('도시 모델을 불러오지 못했습니다.');
         return loader.parseAsync(await unpackModel(await response.arrayBuffer()),'');
       })();
@@ -137,7 +138,10 @@ function Explorer() {
         }
       } });
       setLoadStage('산책 화면을 정리하고 있습니다');
-      batchStaticScene(gltf.scene);
+      try {
+        await batchStaticSceneInSlices(gltf.scene,{signal:abort.signal,onProgress:(done,total)=>setLoadStage(`산책 화면을 정리하고 있습니다${total?` · ${Math.round(done/total*100)}%`:''}`)});
+      } catch(error) {gltf.scene.traverse(disposeObject);throw error;}
+      if(disposed){gltf.scene.traverse(disposeObject);return;}
       const roofParts: THREE.Object3D[]=[];
       gltf.scene.traverse(o=>{if(o.userData.hide_in_overview)roofParts.push(o);});
       scene.add(gltf.scene);
@@ -219,11 +223,16 @@ function Explorer() {
         renderer.setPixelRatio(pixelRatioFor(event.detail, window.devicePixelRatio));
         resize();
       }) as EventListener);
+      const frameIntervals:number[]=[];
+      const renderDiagnostics=()=>{
+        const sorted=[...frameIntervals].sort((a,b)=>a-b);
+        return {sampleFrames:sorted.length,meanIntervalMs:sorted.length?frameIntervals.reduce((a,b)=>a+b,0)/sorted.length:null,p95IntervalMs:sorted.length?sorted[Math.ceil(sorted.length*.95)-1]:null,drawCalls:renderer?.info.render.calls,triangles:renderer?.info.render.triangles,pixelRatio:renderer?.getPixelRatio(),quality:qualityRef.current,scope:'Recent visible walking frame intervals in this browser; not a GPU-only measurement or hardware certification.'};
+      };
       const context = (document as Document & { modelContext?: { registerTool: (tool: { name: string; description: string; inputSchema: object; annotations: object; execute: (input: unknown) => unknown }, options: { signal: AbortSignal }) => void | Promise<void> } }).modelContext;
       if (context?.registerTool) {
         const lifecycle = new AbortController();
         cleanups.push(() => lifecycle.abort());
-        const state = () => ({ destination: selected.name, mode: bird ? 'overview' : playing ? 'walking' : 'paused', position: { x: px, z: pz }, source: data.source });
+        const state = () => ({ destination: selected.name, mode: bird ? 'overview' : playing ? 'walking' : 'paused', position: { x: px, z: pz }, source: data.source,renderDiagnostics:renderDiagnostics() });
         const registrations = [
           { name: 'get_naju_walk_state', description: 'Read the current Naju exploration view and position.', inputSchema: { type: 'object', properties: {}, additionalProperties: false }, annotations: { readOnlyHint: true }, execute: () => state() },
           { name: 'set_naju_walk_view', description: 'Switch the same exploration view as the visible overview, walk, or pause controls.', inputSchema: { type: 'object', properties: { view: { type: 'string', enum: ['overview', 'walk', 'pause'] } }, required: ['view'], additionalProperties: false }, annotations: { readOnlyHint: false }, execute: async (input: unknown) => {
@@ -277,7 +286,10 @@ function Explorer() {
       let shadowBird: boolean|undefined;
       const frame = (now: number) => {
         if (disposed || !renderer) return;
-        const dt = Math.min((now - last) / 1000, 0.06); last = now;
+        const interval=now-last;
+        if(playing&&!document.hidden&&interval>0&&interval<250){frameIntervals.push(interval);if(frameIntervals.length>120)frameIntervals.shift();}
+        else frameIntervals.length=0;
+        const dt = Math.min(interval / 1000, 0.06); last = now;
         if (playing) {
           const forward = Number(keys.has('KeyW') || keys.has('ArrowUp')) - Number(keys.has('KeyS') || keys.has('ArrowDown'));
           const side = Number(keys.has('KeyD')) - Number(keys.has('KeyA'));
@@ -302,7 +314,7 @@ function Explorer() {
           camera.position.set(center.x + Math.sin(orbit) * Math.cos(orbitElevation) * orbitRadius, Math.sin(orbitElevation) * orbitRadius, center.z + Math.cos(orbit) * Math.cos(orbitElevation) * orbitRadius); camera.lookAt(center);
         } else { camera.position.set(px, 1.72 + (data.verticalNavigation?elevation:floorHeight(px, pz, floors)), pz); camera.rotation.order = 'YXZ'; camera.rotation.set(pitch, yaw, 0); }
         if(localLights && now-lastLightUpdate>150){localLights.update(camera.position);lastLightUpdate=now;}
-        if((selectedId==='naju-arboretum'||selectedId==='deudeulgang') && updateVegetationDetail(gltf.scene,camera.position))renderer.shadowMap.needsUpdate=true;
+        if(updateVegetationDetail(gltf.scene,camera.position))renderer.shadowMap.needsUpdate=true;
         if(optimizedCampus && shadowBird!==bird){renderer.shadowMap.needsUpdate=true;shadowBird=bird;}
         if (now - lastHud > 180) {
           const hud=fleet.hud([px,pz],elevation);if(fleet.vessels.length)setBoatHud(hud);
@@ -322,7 +334,7 @@ function Explorer() {
     }
     setup().catch(e => { if (!disposed) setError(e instanceof Error ? e.message : '3D 화면을 열 수 없습니다.'); });
     return () => {
-      disposed = true; cancelAnimationFrame(animation); cleanups.forEach(fn => fn());
+      disposed = true; abort.abort(); cancelAnimationFrame(animation); cleanups.forEach(fn => fn());
       if (document.pointerLockElement === renderer?.domElement) document.exitPointerLock();
       scene.traverse(disposeObject); renderer?.dispose(); renderer?.domElement.remove(); engine.current = null;
     };

@@ -3,7 +3,7 @@ import {useEffect,useRef,useState} from 'react';
 import * as THREE from 'three';
 import {GLTFLoader} from 'three/addons/loaders/GLTFLoader.js';
 import {OrbitControls} from 'three/addons/controls/OrbitControls.js';
-import {batchStaticScene} from '@/lib/static-scene';
+import {batchStaticSceneInSlices} from '@/lib/static-scene';
 import {unpackModel} from '@/lib/model-transport';
 import { Plus, Minus, RotateCcw } from 'lucide-react';
 import { useScreenMode } from './screen-mode';
@@ -38,19 +38,31 @@ export default function BitgaramOrbit(){
       zoom.current=(scale)=>{const offset=camera.position.clone().sub(controls!.target);offset.setLength(THREE.MathUtils.clamp(offset.length()*scale,controls!.minDistance,controls!.maxDistance));camera.position.copy(controls!.target).add(offset);controls!.update();dirty=true;};
       const resize=()=>{camera.aspect=mount.clientWidth/mount.clientHeight;camera.updateProjectionMatrix();renderer!.setSize(mount.clientWidth,mount.clientHeight);dirty=true;};resize();observer=new ResizeObserver(resize);observer.observe(mount);
       const loadModel=async()=>{
-        const parts=await Promise.all(['bitgaram-overview','bitgaram-overview-part2'].map(async name=>{
+        const results=await Promise.allSettled(['bitgaram-overview','bitgaram-overview-part2'].map(async name=>{
           const response=await fetch(`/models/${name}.glb.gz?v=palette-v51-20260920`,{signal:abort.signal});
           if(!response.ok)throw new Error('3D 지도를 불러오지 못했습니다.');
           return new GLTFLoader().parseAsync(await unpackModel(await response.arrayBuffer()),'');
         }));
+        const failure=results.find(result=>result.status==='rejected');
+        if(failure?.status==='rejected'){
+          for(const result of results)if(result.status==='fulfilled')dispose(result.value.scene);
+          throw failure.reason;
+        }
+        const parts=results.map(result=>{if(result.status!=='fulfilled')throw new Error('Incomplete map');return result.value;});
         parts[0].scene.add(parts[1].scene);
         return parts[0];
       };
-      const [model,response]=await Promise.all([loadModel(),fetch('/bitgaram-orbit.json',{signal:abort.signal})]);
+      const [modelResult,responseResult]=await Promise.allSettled([loadModel(),fetch('/bitgaram-orbit.json',{signal:abort.signal})]);
+      if(modelResult.status==='rejected')throw modelResult.reason;
+      const model=modelResult.value;
+      if(responseResult.status==='rejected'){dispose(model.scene);throw responseResult.reason;}
+      const response=responseResult.value;
       if(disposed){dispose(model.scene);return;}
-      if(!response.ok)throw new Error('장소 정보를 불러오지 못했습니다.');
-      const data=await response.json() as {pins:Pin[]};if(disposed){dispose(model.scene);return;}
-      batchStaticScene(model.scene);scene.add(model.scene);setPins(data.pins);setStatus('');
+      if(!response.ok){dispose(model.scene);throw new Error('장소 정보를 불러오지 못했습니다.');}
+      const data=await response.json().catch(error=>{dispose(model.scene);throw error;}) as {pins:Pin[]};if(disposed){dispose(model.scene);return;}
+      try {await batchStaticSceneInSlices(model.scene,{signal:abort.signal,onProgress:(done,total)=>setStatus(`지도 화면을 정리하고 있습니다${total?` · ${Math.round(done/total*100)}%`:''}`)});} catch(error){dispose(model.scene);throw error;}
+      if(disposed){dispose(model.scene);return;}
+      scene.add(model.scene);setPins(data.pins);setStatus('');
       const point=new THREE.Vector3();
       const draw=()=>{if(disposed)return;frame=requestAnimationFrame(draw);if(document.hidden)return;const changed=controls!.update();if(!changed&&!dirty)return;camera.updateMatrixWorld();let missing=false;
         const placed:{x:number;y:number;width:number;height:number}[]=[];

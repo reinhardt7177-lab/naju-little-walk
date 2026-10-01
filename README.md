@@ -10,6 +10,8 @@
 
 [UI 수정·검증과 다음 제작 계획](knowledge/tablet-ui-completion-2026-10-01.md)에 완료 항목과 후속 작업을 구분했습니다. 전체 검사: `node --experimental-strip-types --test tests/*.mjs`.
 
+[퀄리티 업그레이드 실행 계획](knowledge/QUALITY_UPGRADE_PLAN.md)에서 장소별 부족한 부분과 검증 기준을 관리합니다. 전망대 공원의 잎·가지와 거리별 수형을 새 Blender 수정본에 제작했고, 모델 정리 중 메뉴에 시간을 주는 로딩 분할과 식생 판정 캐시를 적용했습니다. 원본 지형·건축·산책 좌표는 유지했습니다. 큰 모델 검사 시 `node --experimental-strip-types --test --test-concurrency=1 tests/*.test.mjs`로 메모리 사용을 제한할 수 있습니다.
+
 ## Vercel 배포
 
 [Vercel 운영 주소](https://naju-little-walk.vercel.app/) · [드들강 산책](https://naju-little-walk.vercel.app/?place=deudeulgang)

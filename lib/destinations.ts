@@ -29,14 +29,14 @@ export const destinations = {
   },
   bitgaram: {
     coordinates:{lat:35.016925,lon:126.790447},
-    name:'빛가람 · 장소 선택',area:'빛가람 안내 지도',worldUrl:'/bitgaram-park-world.json?v=palette-20260920',modelUrl:'/models/bitgaram-park.glb.gz?v=palette-20260920',
+    name:'빛가람 · 장소 선택',area:'빛가람 안내 지도',worldUrl:'/bitgaram-park-world.json?v=palette-20260920',modelUrl:'/models/bitgaram-park.glb.gz?v=leaf-sprays-20261001',
     heading:['빛가람에서,','머물고 싶은 곳.'],introduction:['푯말을 눌러 장소별 산책으로 들어가세요.','전망대 주변과 두 기관의 1층을 따로 둘러봅니다.'],
     sourceUrl:'https://www.openstreetmap.org/way/656235304',sourceLabel:'OpenStreetMap · 현장 사진 참고',
     limitation:'실제 지도 윤곽 · 높이와 실내 치수 추정',overview:{center:[0,0],radius:380,elevation:.9,angle:.25},
   },
   'bitgaram-park': {
     coordinates:{lat:35.016925,lon:126.790447},parent:'bitgaram',
-    name:'빛가람 전망대 주변',area:'전망대 앞 쉼터와 산책로',worldUrl:'/bitgaram-park-world.json?v=palette-20260920',modelUrl:'/models/bitgaram-park.glb.gz?v=palette-20260920',
+    name:'빛가람 전망대 주변',area:'전망대 앞 쉼터와 산책로',worldUrl:'/bitgaram-park-world.json?v=palette-20260920',modelUrl:'/models/bitgaram-park.glb.gz?v=leaf-sprays-20261001',
     heading:['나무 사이로,','빛가람 한 걸음.'],introduction:['전망대 주변의 쉼터와 접근 산책로를 걸어보세요.','전망실 푯말을 누르면 내부로 들어갑니다.'],
     sourceUrl:'https://www.youtube.com/watch?v=tQJsYaXqsIg',sourceLabel:'현장 탐방 영상 참고',
     limitation:'OSM·위성사진 참고 · 지형 높이·세부 추정',overview:{center:[0,35],radius:360,elevation:.8,angle:.4},
