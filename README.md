@@ -16,6 +16,8 @@
 
 ## Vercel 배포
 
+[빛가람 아파트 입면 제작 기록](knowledge/bitgaram-facades-quality-2026-10-01.md): 새 Blender 편집본에서 114동의 겹친 유리 띠를 개별 창 배열로 보완했다. 원본 건물·길·시설 형상은 보존했고, 창 치수·색과 위성 윤곽 추정은 구분해 기록했다.
+
 [Vercel 운영 주소](https://naju-little-walk.vercel.app/) · [드들강 산책](https://naju-little-walk.vercel.app/?place=deudeulgang)
 
 2026-09-21 첫 Vercel 배포는 검증한 `dist/client`의 정적 파일 45개를 직접 업로드했습니다. GitHub 자동 배포 연결은 설정하지 않았습니다.
