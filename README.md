@@ -20,7 +20,7 @@
 
 [Vercel 운영 주소](https://naju-little-walk.vercel.app/) · [드들강 산책](https://naju-little-walk.vercel.app/?place=deudeulgang)
 
-2026-09-21 첫 Vercel 배포는 검증한 `dist/client`의 정적 파일 45개를 직접 업로드했습니다. GitHub 자동 배포 연결은 설정하지 않았습니다.
+2026-09-21 첫 Vercel 배포는 검증한 정적 파일을 직접 업로드했습니다. 2026-10-02 기존 Vercel 프로젝트를 `reinhardt7177-lab/naju-little-walk` 저장소에 연결하고 운영 브랜치를 `codex/bitgaram-place-walks`로 설정했습니다. 이 브랜치에 push하면 Vercel이 자동으로 빌드하고 운영 주소에 반영합니다. [자동 배포 연결 기록](knowledge/vercel-auto-deployment-2026-10-02.md)을 참고하세요.
 
 `vercel.json`은 정적 웹 빌드(`npm run build`)와 배포 폴더(`dist/client`)를 지정합니다. GitHub `codex/bitgaram-place-walks` 브랜치의 최신 작업 또는 동일한 정적 빌드 결과를 배포합니다. GitHub 기본 `main` 브랜치는 변경하지 않습니다. 프레임워크 자동 감지 대신 일반 정적 프로젝트 설정을 사용합니다.
 

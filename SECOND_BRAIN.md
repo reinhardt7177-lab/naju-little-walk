@@ -1,5 +1,7 @@
 # 프로젝트 기록 안내
 
+- Vercel 깃허브 연결·운영 브랜치 자동 배포와 NPC 배치 상태: `knowledge/vercel-auto-deployment-2026-10-02.md`
+
 - 나주 NPC 4종 Meshy 형태 생성·Blender 채색 초안·비용·검증: `knowledge/naju-npc-meshy-production-2026-10-02.md`
 
 - 나주 안내 NPC 자료 분석·지역별 배치안·Blender 제작 계획: `knowledge/naju-npc-asset-analysis-2026-10-02.md`
