@@ -5,14 +5,15 @@ import { ArrowUpRight, Footprints, MapPin, Map, RotateCcw, Pause, MoveUpRight, A
 import * as THREE from 'three';
 import { GLTFLoader } from 'three/addons/loaders/GLTFLoader.js';
 import { movePlayer, moveOnFloors, reachableFloor, worldObstacles, solidCollider, worldFloors, floorHeight, currentPlace, type World } from '@/lib/world';
-import { destinations, destinationFromSearch, type DestinationId } from '@/lib/destinations';
+import { destinations, type DestinationId } from '@/lib/destinations';
+import { appDestinationFromSearch } from '@/lib/app-destination';
 import { batchStaticSceneInSlices, updateVegetationDetail } from '@/lib/static-scene';
 import { createLocalLights } from '@/lib/local-lights';
 import { unpackModel } from '@/lib/model-transport';
 import { sceneArrival, portalAt, portalHref } from '@/lib/scene-travel';
 import { canTravelTo, mapSolids, mapColor } from '@/lib/map-navigation';
 import type { Point } from '@/lib/world';
-import MapTravel from './map-travel';
+import MapTravel from './geumseonggwan-map';
 import { BoatFleet, type BoatHud } from '@/lib/boat-fleet';
 import { FullscreenButton, useScreenMode } from './screen-mode';
 import WalkGuide from './walk-guide';
@@ -62,13 +63,13 @@ export default function Explorer() {
   }, [quality]);
 
   useEffect(() => {
-    const selectedId = destinationFromSearch(window.location.search);
+    const selectedId = appDestinationFromSearch(window.location.search);
     setReady(false); setError(''); setActive(false); setStarted(false); setOverview(true);
     setBoatHud(null); setNpcHud(null);setNpcOpen(false);setWorld(null); setLoadStage('지도를 준비하고 있습니다');
     const selected = destinations[selectedId];
     const optimizedCampus=selectedId==='bitgaram-park'||selectedId==='bitgaram-kepco'||selectedId==='bitgaram-kentech'||selectedId==='naju-arboretum'||selectedId==='deudeulgang';
     setDestinationId(selectedId);
-    document.title = `나주 산책 — ${selected.area}`;
+    document.title = '금성관 산책';
     const mount = host.current!;
     let disposed = false, renderer: THREE.WebGLRenderer | undefined, animation = 0;
     const abort=new AbortController();
@@ -197,7 +198,7 @@ export default function Explorer() {
       let playing = false, bird = true;
       const gesture = new ViewGesture();
       let orbit: number = selected.overview.angle, orbitElevation: number = selected.overview.elevation, orbitRadius: number = selected.overview.radius;
-      const center = selectedId === 'geumseonggwan' ? new THREE.Vector3(data.spawn.x, 0, data.spawn.z - 3) : new THREE.Vector3(selected.overview.center[0], 0, selected.overview.center[1]);
+      const center = new THREE.Vector3(selected.overview.center[0], 0, selected.overview.center[1]);
       const keys = new Set<string>();
       const resize = () => {
         if (!renderer) return;
@@ -243,7 +244,7 @@ export default function Explorer() {
         npcGesture:(gesture)=>{npc?.setGesture(gesture);demand.invalidate();},
         reset: () => { npc?.setGesture('Idle');setNpcOpen(false);fleet.reset();px = data.spawn.x; pz = data.spawn.z; elevation=reachableFloor(px,pz,data.spawn.height??0,floors)??0; yaw = data.spawn.yaw; pitch = 0; start(); },
         overview: () => { pause(); npc?.setGesture('Idle');setNpcOpen(false);bird = true; setOverview(true); },
-        zoom: (scale) => { orbitRadius = THREE.MathUtils.clamp(orbitRadius * scale, 'parent' in selected ? 12 : 85, selectedId !== 'geumseonggwan' ? 1100 : 330); demand.invalidate(); },
+        zoom: (scale) => { orbitRadius = THREE.MathUtils.clamp(orbitRadius * scale, selectedId==='geumseonggwan'?35:'parent' in selected ? 12 : 85, selectedId !== 'geumseonggwan' ? 1100 : 260); demand.invalidate(); },
         key: (key, down) => { if (down) keys.add(key); else keys.delete(key); },
         travel: (point,height=0) => {
           if(!canTravelTo(point,data,height))return false;
@@ -398,16 +399,16 @@ export default function Explorer() {
     <main className="explorer">
       <div className="scene" ref={host} /><div className="vignette" />
       <header className="topbar">
-        <div className="brand"><span className="brand-mark"><Compass size={25} strokeWidth={1.4} /></span><div><strong>나주 산책</strong><span>{destination.name}</span></div></div>
+        <div className="brand"><span className="brand-mark"><Compass size={25} strokeWidth={1.4} /></span><div><strong>금성관 산책</strong><span>정청 · 익헌 · 망화루</span></div></div>
         <div className="topbar-tools"><div className="view-actions" role="group" aria-label="보기 방식"><button aria-pressed={overview} className={overview ? 'active' : ''} onClick={() => engine.current?.overview()} disabled={!ready || !!error}><MoveUpRight size={16} />전체 보기</button><button aria-pressed={!overview} className={!overview ? 'active' : ''} onClick={() => boatHud?.aboard?engine.current?.boatAction('deck'):engine.current?.start()} disabled={!ready || !!error}><Footprints size={16} />걷기</button></div><button className="screen-button" onClick={openGuide} aria-label="산책 안내와 화면 설정" title="산책 안내와 화면 설정"><CircleHelp size={19}/></button><FullscreenButton/></div>
       </header>
-      <nav className="destination-nav" aria-label="산책 장소">
-        <button onClick={openMap}><Map size={18}/><span>장소 선택</span></button>
+      <nav className="destination-nav" aria-label="금성관 경내 지도">
+        <button onClick={openMap}><Map size={18}/><span>경내 안내도</span></button>
       </nav>
       {active && !!world?.sceneLinks?.length && <nav className="scene-signposts" aria-label="장소 이동 푯말">{world.sceneLinks.filter(link=>Object.hasOwn(destinations,link.target)).map(link=><a key={link.target} href={`/?place=${encodeURIComponent(link.target)}`}><MapPin size={18}/><span>{link.label}</span><ArrowUpRight size={16}/></a>)}</nav>}
       {world && !minimapExpanded && <button className="minimap-toggle" aria-expanded={false} aria-controls="location-minimap" onClick={()=>setMinimapExpanded(true)}><Map size={17}/>미니맵 펼치기</button>}
       {world && minimapExpanded && <aside id="location-minimap" className="minimap" aria-label="현재 위치 지도">
-        <div className="map-heading"><span>{destinationId.startsWith('bitgaram')?'장소 지도':'parent' in destination?'실내 지도':'동네 지도'}</span><button className="panel-fold" aria-expanded={true} aria-controls="location-minimap" onClick={()=>setMinimapExpanded(false)}>접기 −</button></div>
+        <div className="map-heading"><span>금성관 경내</span><button className="panel-fold" aria-expanded={true} aria-controls="location-minimap" onClick={()=>setMinimapExpanded(false)}>접기 −</button></div>
         <svg viewBox={`${world.bounds[0]} ${world.bounds[2]} ${world.bounds[1] - world.bounds[0]} ${world.bounds[3] - world.bounds[2]}`} role="img" aria-label={`현재 위치: ${view.place}`} onClick={openMap}>
           <rect x={world.bounds[0]} y={world.bounds[2]} width={world.bounds[1] - world.bounds[0]} height={world.bounds[3] - world.bounds[2]} fill="#e5e8df" />
           {mapShapes}
@@ -429,7 +430,7 @@ export default function Explorer() {
         {!ready && !error && <div className="load-status" role="status"><span className="loading-line"/>{loadStage}</div>}
         {welcomeExpanded && <div className="welcome-help">{touch ? '왼쪽 버튼으로 이동 · 화면을 드래그해 둘러보기' : <><span><kbd>W A S D</kbd> 이동</span><span>드래그로 둘러보기</span></>}</div>}
       </section>}
-      {error&&<section className="scene-recovery" role="alert" aria-label="3D 화면 복구"><strong>화면을 다시 열어 주세요</strong><p>{error}</p><button onClick={()=>setAttempt(value=>value+1)}>출발 위치에서 다시 불러오기</button><button onClick={openMap}>다른 장소 선택</button></section>}
+      {error&&<section className="scene-recovery" role="alert" aria-label="3D 화면 복구"><strong>화면을 다시 열어 주세요</strong><p>{error}</p><button onClick={()=>setAttempt(value=>value+1)}>출발 위치에서 다시 불러오기</button></section>}
       {npcHud?.near&&!npcOpen&&!mapOpen&&!guideOpen&&<button className="npc-talk-button" onClick={()=>{engine.current?.pause();engine.current?.npcGesture('Greeting');setNpcOpen(true);}}><MessageCircle size={19}/>{npcHud.name}와 이야기</button>}
       {npcOpen&&npcHud&&<NpcConversation name={npcHud.name} destinationId={destinationId} onGesture={gesture=>engine.current?.npcGesture(gesture)} onClose={()=>{setNpcOpen(false);engine.current?.start();}}/>}
       {active && <><div className="crosshair" aria-hidden="true" />{!boatHud?.aboard&&<div className="place-card"><span className="place-icon"><MapPin size={18} /></span><div><span>{view.indoor ? '실내' : '현재 위치'}</span><strong>{view.place}</strong>{view.detail&&<p>{view.detail}</p>}</div></div>}

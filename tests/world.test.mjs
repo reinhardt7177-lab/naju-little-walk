@@ -771,8 +771,8 @@ test('neighborhood GLB contains the station and outward-facing roof surfaces',()
 const world = JSON.parse(fs.readFileSync(new URL('../public/city-world.json', import.meta.url), 'utf8'));
 const colliders = world.solids.filter(s => s.collision).map(solidCollider);
 
-test('mapped city has the five source buildings and an unblocked spawn', () => {
-  assert.equal(world.buildings.length, 5);
+test('dedicated precinct has the three historic source buildings and an unblocked spawn', () => {
+  assert.deepEqual(world.buildings.map(b=>b.osm_id).sort(), ['832423356','832423357','832423358']);
   assert.ok(world.buildings.some(b => b.osm_id === '832423358'));
   assert.equal(colliders.some(p => hitsPolygon(world.spawn.x, world.spawn.z, p)), false);
 });
@@ -807,31 +807,22 @@ test('both mapped historic gates retain a clear passage into the hall courtyard'
   }
 });
 
-test('the mapped western parking entrance connects to Manghwaru and the hall',()=>{
-  assert.equal(world.surroundings.parkingOsmId,'478611741');
-  for(const car of world.solids.filter(s=>s.name==='parked_vehicle_body')){
-    for(const [x,z] of solidCollider(car))assert.ok(hitsPolygon(x,z,world.surroundings.parkingOutline,0),'Parked car must remain inside the mapped car park');
-  }
-  const route=[...world.surroundings.entranceRoute,...world.walkRoute];
-  let p={x:route[0][0],z:route[0][1]};
-  for(const [x,z] of [...route.slice(1),...route.slice(0,-1).reverse()]){
-    p=movePlayer(p.x,p.z,x-p.x,z-p.z,colliders,world.bounds);
-    assert.ok(Math.hypot(p.x-x,p.z-z)<.045,`Entrance or parking route blocked at ${x},${z}: ${JSON.stringify(p)}`);
-  }
+test('dedicated precinct excludes the parking route and blocks relocation into perimeter walls',()=>{
+  assert.deepEqual(world.surroundings.entranceRoute,[]);
+  assert.equal(world.solids.some(s=>/^(parked_|parking_|vehicle_|street_|road_)/.test(s.name)),false);
   for(const s of world.solids.filter(s=>s.name.startsWith('hall-wall_boundary_'))){
     const fp=solidCollider(s),cx=fp.reduce((v,p)=>v+p[0],0)/fp.length,cz=fp.reduce((v,p)=>v+p[1],0)/fp.length;
     assert.equal(canTravelTo([cx,cz],world),false,'Map relocation cannot place a walker inside the new perimeter wall');
   }
 });
 
-test('imagery context buildings stay outside the historic precinct and remain collision solid',()=>{
-  const observations=world.surroundings.roofObservations;
-  assert.equal(observations.length,37);
-  assert.equal(mapSolids(world).filter(s=>/^context_.*_wall$/.test(s.name)).length,37,'Surrounding buildings must also appear on the travel map');
-  for(const b of observations){
-    const x=b.footprint.reduce((s,p)=>s+p[0],0)/b.footprint.length,z=b.footprint.reduce((s,p)=>s+p[1],0)/b.footprint.length;
-    assert.equal(hitsPolygon(x,z,world.surroundings.precinctBoundary,0),false,`${b.id} must remain outside the monument grounds`);
-    assert.equal(canTravelTo([x,z],world),false,`${b.id} must block map placement and walking`);
+test('the local map excludes exterior context and refuses courtyard bounding-box corners',()=>{
+  assert.deepEqual(world.surroundings.roofObservations,[]);
+  assert.equal(mapSolids(world).some(s=>s.name.startsWith('context_')),false);
+  assert.equal(world.requireFloor,true);
+  for(const [x,z] of [[world.bounds[0]+2,world.bounds[2]+2],[world.bounds[1]-2,world.bounds[3]-2]]){
+    assert.equal(hitsPolygon(x,z,world.surroundings.precinctBoundary,0),false);
+    assert.equal(canTravelTo([x,z],world),false,'Relocation must respect the irregular historic boundary');
   }
 });
 

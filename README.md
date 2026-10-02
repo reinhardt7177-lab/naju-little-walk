@@ -1,10 +1,10 @@
-# 나주 산책
+# 금성관 산책
 
-금성관 주변의 실제 OpenStreetMap 건물 윤곽과 도로 좌표를 **Blender 4.5 LTS**에서 입체로 제작하고, Blender에서 내보낸 GLB를 **Three.js**로 불러와 탐험합니다.
+현재 운영 앱은 **금성관 전용**입니다. 정청·동서 익헌·망화루·중문·박석길·담장을 **Blender 4.5 LTS**에서 제작하고, 내보낸 GLB를 **Three.js**로 불러와 탐험합니다. 공식 국가유산 설명·2009년 공개 사진·OSM 윤곽을 참고했으며 치수와 장식·조경은 추정입니다. 외부 주차장과 시가지는 운영 장면에서 제외했습니다. [수정 계획과 검증 기록](knowledge/geumseonggwan-exclusive-plan-2026-10-02.md)을 참고하세요.
 
 ## 태블릿으로 이용하기
 
-[나주 산책 운영 사이트](https://naju-little-walk.reinhardt5559.chatgpt.site/?place=bitgaram)에서 장소를 골라 시작합니다. 터치 기기는 가로 화면으로 이용하며 세로에서는 회전 안내가 표시됩니다. 전체 화면 버튼은 가능한 브라우저에서 가로 잠금도 요청합니다. iPad 등 미지원 환경에서는 기기를 직접 돌려 주세요.
+[금성관 산책 운영 사이트](https://naju-little-walk.vercel.app/)에서 시작합니다. 경내 안내도로 정청과 문루·마당에 이동합니다. 터치 기기는 가로 화면으로 이용하며 세로에서는 회전 안내가 표시됩니다. 전체 화면 버튼은 가능한 브라우저에서 가로 잠금도 요청합니다. iPad 등 미지원 환경에서는 기기를 직접 돌려 주세요.
 
 왼손 이동 버튼과 오른손 시선 버튼, 드래그로 산책합니다. 전체 보기에서는 두 손가락 또는 확대·축소 버튼을 이용합니다. ‘산책 안내와 화면 설정’에서 이동 버튼 표시와 화질을 조절할 수 있습니다. 태블릿 기본값은 ‘편하게 걷기’입니다.
 
@@ -16,23 +16,27 @@
 
 ## 지역 안내 캐릭터
 
-산책을 시작하면 금성관·복암리에는 버들낭자, 빛가람 공원·한전·KENTECH에는 배돌이, 영산포에는 홍돌이, 다시초등학교에는 선생님이 출발 지점 앞에서 맞이합니다. 기존 Blender 채색 초안 4종을 별도 GLB로 불러오며, 현재는 고정 자세입니다. [7곳 배치와 검증 기록](knowledge/naju-npc-start-placement-2026-10-02.md)을 참고하세요.
+금성관 출발 지점 앞에서 버들낭자가 맞이합니다. v6 리깅 모델의 인사·안내·대기 애니메이션을 사용하며, 대화에서 금성관의 구조와 산책 방법을 안내합니다. 다른 세 캐릭터와 지역별 배치 자료는 보관합니다. [기존 7곳 배치 기록](knowledge/naju-npc-start-placement-2026-10-02.md)과 [배치 사진](outputs/npc-placement-four-views-20261002/naju-npc-placement-four-views.pdf)은 전용 앱 전환 이전의 기록입니다.
 
 ## Vercel 배포
 
 [빛가람 아파트 입면 제작 기록](knowledge/bitgaram-facades-quality-2026-10-01.md): 새 Blender 편집본에서 114동의 겹친 유리 띠를 개별 창 배열로 보완했다. 원본 건물·길·시설 형상은 보존했고, 창 치수·색과 위성 윤곽 추정은 구분해 기록했다.
 
-[Vercel 운영 주소](https://naju-little-walk.vercel.app/) · [드들강 산책](https://naju-little-walk.vercel.app/?place=deudeulgang)
+[Vercel 운영 주소](https://naju-little-walk.vercel.app/)
 
 2026-09-21 첫 Vercel 배포는 검증한 정적 파일을 직접 업로드했습니다. 2026-10-02 기존 Vercel 프로젝트를 `reinhardt7177-lab/naju-little-walk` 저장소에 연결하고 운영 브랜치를 `codex/bitgaram-place-walks`로 설정했습니다. 이 브랜치에 push하면 Vercel이 자동으로 빌드하고 운영 주소에 반영합니다. [자동 배포 연결 기록](knowledge/vercel-auto-deployment-2026-10-02.md)을 참고하세요.
 
 `vercel.json`은 정적 웹 빌드(`npm run build`)와 배포 폴더(`dist/client`)를 지정합니다. GitHub `codex/bitgaram-place-walks` 브랜치의 최신 작업 또는 동일한 정적 빌드 결과를 배포합니다. GitHub 기본 `main` 브랜치는 변경하지 않습니다. 프레임워크 자동 감지 대신 일반 정적 프로젝트 설정을 사용합니다.
 
-`.vercelignore`는 Blender 원본·도구, 참고 자료와 임시 파일을 업로드에서 제외합니다. 지도 모델은 무손실 압축한 `.glb.gz`로 배포하며 중복된 지도 `.glb`는 포함하지 않습니다. 안내 캐릭터 4종은 별도의 작은 `.glb`로 배포합니다. 지도 모델 로더가 gzip 압축을 해제하므로 별도의 `Content-Encoding` 설정은 필요하지 않습니다. `/?place=deudeulgang` 등 기존 장소 주소를 그대로 사용할 수 있습니다.
+`.vercelignore`는 Blender 원본·도구, 참고 자료와 임시 파일을 업로드에서 제외합니다. 지도 모델은 gzip 압축한 `.glb.gz`로 배포하며 중복된 지도 `.glb`는 포함하지 않습니다. 지도 모델 로더가 gzip 압축을 해제하므로 별도의 `Content-Encoding` 설정은 필요하지 않습니다. 기존 `?place=` 지역 주소도 현재 앱에서는 금성관으로 연결합니다. 기존 지역 모델은 원본 보존을 위해 저장소에 남아 있으며 운영 UI에서는 선택할 수 없습니다.
 
 설정 근거: [Vercel 프로젝트 설정](https://vercel.com/docs/project-configuration).
 
-## 드들강 솔밭과 전체 맵 채색
+## 보관된 기존 지역 제작 기록
+
+아래 지역·주소 설명은 금성관 전용 전환 이전의 제작 기록입니다. 현재 운영 앱은 해당 지역으로 이동하지 않습니다.
+
+### 드들강 솔밭과 전체 맵 채색
 
 `/?place=deudeulgang`에서 소나무 숲길, 노래비, 강변과 남쪽 쉼터를 산책할 수 있습니다. OSM 보행로·시설 위치와 Esri 위성영상, 2025년 현장 사진을 참고했습니다. 소나무 280그루의 위치·수형과 세부 시설 치수는 추정입니다. Blender 편집본은 `outputs/deudeulgang/deudeulgang-pine-grove-v3.blend`입니다.
 

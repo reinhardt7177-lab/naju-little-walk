@@ -77,12 +77,12 @@ export const destinations = {
   },
   geumseonggwan: {
     coordinates: { lat: 35.0327357, lon: 126.7167886 },
-    name: '금성관', area: '금성관 주변', worldUrl: '/city-world.json?v=palette-20260920', modelUrl: '/models/geumseonggwan.glb.gz?v=palette-20260920',
-    heading: ['골목 안으로,', '나주 한 걸음.'],
-    introduction: ['망화루 앞 거리와 담장, 골목까지 걸어보세요.', '박석길을 따라 정청의 마루와 단청 천장으로 이어집니다.'],
-    sourceUrl: 'https://encykorea.aks.ac.kr/Article/E0011462', sourceLabel: '금성관 사진 참고',
-    limitation: '수리 전 사진·위성영상 참고 · 높이·세부 추정',
-    overview: { center: [0, -12], radius: 165, elevation: .62, angle: .25 },
+    name: '나주 금성관', area: '금성관 경내', worldUrl: '/city-world.json?v=exclusive-v76-20261002', modelUrl: '/models/geumseonggwan.glb.gz?v=exclusive-v76-20261002',
+    heading: ['박석길을 따라,', '금성관 산책.'],
+    introduction: ['망화루와 중문을 지나 정청과 동서 익헌을 둘러보세요.', '정청 마루에서 기둥과 단청 천장을 가까이 볼 수 있습니다.'],
+    sourceUrl: 'https://digital.khs.go.kr/heri/heriDetail.do?ctptNo=1123620370000&ctptUid=13898859673312200636', sourceLabel: '국가유산 공식 설명 · 공개 사진 참고',
+    limitation: 'OSM 경계·2009년 정측면 사진·공식 실내 사진 참고 · 치수·장식·수목 세부 추정',
+    overview: { center: [-10,-27], radius: 150, elevation: .85, angle: .18 },
   },
   dasi: {
     coordinates: { lat: 35.017517, lon: 126.6400205 },
