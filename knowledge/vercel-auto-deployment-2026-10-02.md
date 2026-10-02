@@ -13,6 +13,12 @@
 
 이 문서 커밋을 push하여 첫 자동 배포를 검증한다. 실제 빌드와 운영 반영 성공 여부는 Vercel 배포 화면 및 GitHub 커밋 상태로 별도 확인한다. 문서 작성 시점에는 새 자동 배포의 성공을 미리 보증하지 않는다.
 
+## 최초 자동 배포와 설치 오류 보완
+
+문서 커밋 `1a274fb`를 push하자 GitHub에 Vercel pending 상태와 운영 배포가 생성됐다. 최초 배포 `8GsxaqxVADvsK6uD8qnzuJUbJk4F`는 `npm ci`에서 실패했다. 로그에 `@emnapi/core@1.11.3`, `@emnapi/runtime@1.11.3`의 잠금 파일 누락이 표시됐다.
+
+별도 작업 폴더에서 npm으로 선택 의존성의 bundled 항목을 보완하고, 로그에 명시된 두 peer 패키지의 공식 npm 버전·다운로드 URL·integrity·의존성 정보를 조회해 잠금 파일에 추가했다. 기존 잠금 항목의 버전과 package.json은 변경하지 않았다. Linux x64/glibc 조건의 빈 작업 폴더에서 `npm ci --dry-run --ignore-scripts` 검증이 통과했다. 이 보완을 운영 브랜치에 push하여 실제 서버 설치·빌드·게시를 다시 검증한다.
+
 ## 캐릭터 배치 상태
 
 네 캐릭터는 `assets/npc/meshy-first-pass-20261002/`에 원본과 채색 초안으로 저장되어 있다. 지도에 NPC 로더·좌표·안내 기능을 연결하지 않았으므로 화면에는 아직 나타나지 않는다. 지역별 배치 계획은 다음과 같으며 실제 배치가 아니다.
