@@ -11,9 +11,9 @@ import { batchStaticSceneInSlices, updateVegetationDetail } from '@/lib/static-s
 import { createLocalLights } from '@/lib/local-lights';
 import { unpackModel } from '@/lib/model-transport';
 import { sceneArrival, portalAt, portalHref } from '@/lib/scene-travel';
-import { canTravelTo, mapSolids, mapColor } from '@/lib/map-navigation';
+import { canTravelTo } from '@/lib/map-navigation';
 import type { Point } from '@/lib/world';
-import MapTravel from './geumseonggwan-map';
+import MapTravel, { PrecinctMapShapes } from './geumseonggwan-map';
 import { BoatFleet, type BoatHud } from '@/lib/boat-fleet';
 import { FullscreenButton, useScreenMode } from './screen-mode';
 import WalkGuide from './walk-guide';
@@ -53,7 +53,7 @@ export default function Explorer() {
   const [destinationId, setDestinationId] = useState<DestinationId>('geumseonggwan');
   const destination = destinations[destinationId];
   const [view, setView] = useState<ViewState>({ x: 0, z: 0, yaw: 0, place: '금성관 주변', detail: '', indoor: false });
-  const mapShapes=useMemo(()=>world?mapSolids(world).map((s,i)=><polygon key={i} points={solidCollider(s).map(p=>p.join(',')).join(' ')} fill={mapColor(s.name)} stroke={s.kind==='building'?'#9aada2':'none'} strokeWidth="0.7"/>):[],[world]);
+  const mapShapes=useMemo(()=>world?<PrecinctMapShapes world={world}/>:null,[world]);
 
   useEffect(() => {
     if (portrait) { engine.current?.pause(); engine.current?.npcGesture('Idle');setNpcOpen(false);setMapOpen(false); setGuideOpen(false); }
