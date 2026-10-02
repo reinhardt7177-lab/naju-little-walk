@@ -39,7 +39,7 @@ button:focus-visible,a:focus-visible { outline:3px solid #b97738; outline-offset
 .start-button span,.welcome-compact .start-button span { font-size:15px; }
 .start-button:hover { transform:none; }
 .welcome-help { font-size:12px; line-height:1.6; margin-top:12px; gap:10px; }
-.architecture-views { display:grid; grid-template-columns:repeat(3,minmax(0,1fr)); gap:5px; margin:4px 0 9px; }
+.architecture-views { display:grid; grid-template-columns:repeat(2,minmax(0,1fr)); gap:5px; margin:4px 0 9px; }
 .architecture-views button { min-height:44px; padding:6px 3px; border:1px solid var(--line); border-radius:7px; background:#fffdf7; color:var(--ink); font-size:12px; white-space:nowrap; cursor:pointer; }
 .architecture-views button:hover { background:#e9eee4; }
 .architecture-views button:focus-visible { outline:2px solid #285849; outline-offset:2px; }

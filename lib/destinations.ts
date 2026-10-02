@@ -77,7 +77,7 @@ export const destinations = {
   },
   geumseonggwan: {
     coordinates: { lat: 35.0327357, lon: 126.7167886 },
-    name: '나주 금성관', area: '금성관 경내', worldUrl: '/city-world.json?v=detail-v77-20261003', modelUrl: '/models/geumseonggwan.glb.gz?v=detail-v77-20261003',
+    name: '나주 금성관', area: '금성관 경내', worldUrl: '/city-world.json?v=detail-v78-20261003', modelUrl: '/models/geumseonggwan.glb.gz?v=detail-v78-20261003',
     heading: ['박석길을 따라,', '금성관 산책.'],
     introduction: ['망화루와 중문을 지나 정청과 동서 익헌을 둘러보세요.', '정청 마루에서 기둥과 단청 천장을 가까이 볼 수 있습니다.'],
     sourceUrl: 'https://digital.khs.go.kr/heri/heriDetail.do?ctptNo=1123620370000&ctptUid=13898859673312200636', sourceLabel: '국가유산 공식 설명 · 공개 사진 참고',

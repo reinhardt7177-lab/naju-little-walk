@@ -4,7 +4,7 @@
 
 ## 태블릿으로 이용하기
 
-최신 [금성관 고도화 v77 기록](knowledge/geumseonggwan-detail-v77-2026-10-03.md): 곡선 공포, 기와 측면, 목재·한지·흙 재질과 문 철물을 보강했습니다. 전체 보기에서 **정청 정면 / 처마·공포 / 망화루** 버튼으로 가까이 살펴볼 수 있습니다. 새 Blender 편집본은 `outputs/geumseonggwan-v77/geumseonggwan-v77.blend`입니다.
+최신 [금성관 리서치·고도화 v78 기록](knowledge/geumseonggwan-research-v78-2026-10-03.md): 2015년 공식 기록 사진과 현장 사진을 비교해 잎형 공포, 서까래 채색, 연꽃 천장판, 문 하단을 보강했습니다. 전체 보기에서 **정청 정면 / 처마·공포 / 망화루 / 천장·단청**을 살펴볼 수 있습니다. 새 Blender 편집본은 `outputs/geumseonggwan-v78/geumseonggwan-v78.blend`입니다.
 
 [금성관 산책 운영 사이트](https://naju-little-walk.vercel.app/)에서 시작합니다. 경내 안내도로 정청과 문루·마당에 이동합니다. 터치 기기는 가로 화면으로 이용하며 세로에서는 회전 안내가 표시됩니다. 전체 화면 버튼은 가능한 브라우저에서 가로 잠금도 요청합니다. iPad 등 미지원 환경에서는 기기를 직접 돌려 주세요.
 

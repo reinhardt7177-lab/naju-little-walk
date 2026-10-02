@@ -205,6 +205,7 @@ export default function Explorer() {
       let playing = false, bird = true;
       const gesture = new ViewGesture();
       let orbit: number = selected.overview.angle, orbitElevation: number = selected.overview.elevation, orbitRadius: number = selected.overview.radius;
+      let inspectingCeiling = false;
       const center = new THREE.Vector3(selected.overview.center[0], 0, selected.overview.center[1]);
       const keys = new Set<string>();
       const resize = () => {
@@ -229,6 +230,7 @@ export default function Explorer() {
         if(contextLost)return;
         if (matchMedia('(orientation: portrait)').matches && (matchMedia('(any-pointer: coarse)').matches || navigator.maxTouchPoints > 0)) return;
         playing = true; bird = false; setActive(true); setStarted(true); setOverview(false);
+        inspectingCeiling=false;
         camera.fov=60;camera.updateProjectionMatrix();
         demand.invalidate();
         canvas.focus({ preventScroll: true });
@@ -253,6 +255,7 @@ export default function Explorer() {
         reset: () => { npc?.setGesture('Idle');setNpcOpen(false);fleet.reset();px = data.spawn.x; pz = data.spawn.z; elevation=reachableFloor(px,pz,data.spawn.height??0,floors)??0; yaw = data.spawn.yaw; pitch = 0; start(); },
         overview: () => {
           pause();npc?.setGesture('Idle');setNpcOpen(false);bird=true;setOverview(true);
+          inspectingCeiling=false;
           center.set(selected.overview.center[0],0,selected.overview.center[1]);
           orbit=selected.overview.angle;orbitElevation=selected.overview.elevation;orbitRadius=selected.overview.radius;demand.invalidate();
           camera.fov=60;camera.updateProjectionMatrix();
@@ -260,10 +263,11 @@ export default function Explorer() {
         inspect: (id) => {
           const view=data.architectureViews?.find(v=>v.id===id);if(!view)return;
           pause();npc?.setGesture('Idle');setNpcOpen(false);bird=true;setOverview(true);
+          inspectingCeiling=view.id==='ceiling';
           center.fromArray(view.center);orbit=view.angle;orbitElevation=view.elevation;orbitRadius=view.radius;demand.invalidate();
           camera.fov=view.fov??60;camera.updateProjectionMatrix();
         },
-        zoom: (scale) => { orbitRadius = THREE.MathUtils.clamp(orbitRadius * scale, selectedId==='geumseonggwan'?10:'parent' in selected ? 12 : 85, selectedId !== 'geumseonggwan' ? 1100 : 260); demand.invalidate(); },
+        zoom: (scale) => { orbitRadius = THREE.MathUtils.clamp(orbitRadius * scale, inspectingCeiling?3:selectedId==='geumseonggwan'?10:'parent' in selected ? 12 : 85, inspectingCeiling?6:selectedId !== 'geumseonggwan' ? 1100 : 260); demand.invalidate(); },
         key: (key, down) => { if (down) keys.add(key); else keys.delete(key); },
         travel: (point,height=0) => {
           if(!canTravelTo(point,data,height))return false;
@@ -332,7 +336,7 @@ export default function Explorer() {
         if (!delta) return;
         const { dx, dy, scale } = delta;
         if (bird && scale !== 1) { engine.current?.zoom(scale); return; }
-        if (bird) { orbit -= dx * 0.005; orbitElevation = THREE.MathUtils.clamp(orbitElevation + dy * 0.003, center.y>0?-.1:.3, 1.3); }
+        if (bird) { orbit -= dx * 0.005; orbitElevation = THREE.MathUtils.clamp(orbitElevation + dy * 0.003, inspectingCeiling?-1.3:center.y>0?-.1:.3, inspectingCeiling?-.25:1.3); }
         else if (playing) { yaw -= dx * 0.0028; pitch = THREE.MathUtils.clamp(pitch - dy * 0.0028, -1.15, 1.15); }
         demand.invalidate();
       }) as EventListener);
