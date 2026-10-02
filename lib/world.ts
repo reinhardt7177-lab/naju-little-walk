@@ -32,6 +32,7 @@ export type World = {
   boats?: import('./boat-navigation.ts').BoatDefinition[];
   navigationWater?: import('./boat-navigation.ts').NavigationWater;
   lighting?: { exposure: number; ambient: number; sun: number };
+  architectureViews?: { id: string; label: string; center: Vec3; radius: number; elevation: number; angle: number; fov?: number }[];
 };
 
 export function currentPlace(x: number, z: number, places: Place[], height?:number): Place | undefined {

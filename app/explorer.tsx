@@ -26,7 +26,7 @@ import type {NpcAnimation, GuideGesture} from '@/lib/npc-animation';
 import NpcConversation from './npc-conversation';
 
 type ViewState = { x: number; z: number; yaw: number; place: string; detail: string; indoor: boolean };
-type Engine = { start: () => void; pause: () => void; reset: () => void; overview: () => void; zoom: (scale: number) => void; key: (key: string, down: boolean) => void; travel: (point: Point, height?:number) => boolean; boatAction: (action:string,id?:string)=>void; npcGesture:(gesture:GuideGesture)=>void };
+type Engine = { start: () => void; pause: () => void; reset: () => void; overview: () => void; inspect: (id: string) => void; zoom: (scale: number) => void; key: (key: string, down: boolean) => void; travel: (point: Point, height?:number) => boolean; boatAction: (action:string,id?:string)=>void; npcGesture:(gesture:GuideGesture)=>void };
 
 export default function Explorer() {
   const { touch, portrait, quality } = useScreenMode();
@@ -119,6 +119,13 @@ export default function Explorer() {
       sun.shadow.camera.left = sun.shadow.camera.bottom = -165;
       sun.shadow.camera.right = sun.shadow.camera.top = 165;
       sun.shadow.camera.far = 420; sun.shadow.normalBias = 0.06;
+      if(selectedId==='geumseonggwan'){
+        sun.target.position.set(-10,0,-27);scene.add(sun.target);
+        sun.shadow.camera.left=sun.shadow.camera.bottom=-115;
+        sun.shadow.camera.right=sun.shadow.camera.top=115;
+        sun.shadow.normalBias=.018;sun.shadow.bias=-.00006;
+        sun.shadow.radius=2;
+      }
       if(selectedId==='bitgaram-kentech'){
         sun.position.set(-220,420,220);sun.target.position.set(30,0,20);scene.add(sun.target);
         sun.shadow.camera.left=sun.shadow.camera.bottom=-340;
@@ -222,6 +229,7 @@ export default function Explorer() {
         if(contextLost)return;
         if (matchMedia('(orientation: portrait)').matches && (matchMedia('(any-pointer: coarse)').matches || navigator.maxTouchPoints > 0)) return;
         playing = true; bird = false; setActive(true); setStarted(true); setOverview(false);
+        camera.fov=60;camera.updateProjectionMatrix();
         demand.invalidate();
         canvas.focus({ preventScroll: true });
         // Drag-look keeps the map, pause and settings buttons reachable while walking.
@@ -243,8 +251,19 @@ export default function Explorer() {
         start, pause, boatAction,
         npcGesture:(gesture)=>{npc?.setGesture(gesture);demand.invalidate();},
         reset: () => { npc?.setGesture('Idle');setNpcOpen(false);fleet.reset();px = data.spawn.x; pz = data.spawn.z; elevation=reachableFloor(px,pz,data.spawn.height??0,floors)??0; yaw = data.spawn.yaw; pitch = 0; start(); },
-        overview: () => { pause(); npc?.setGesture('Idle');setNpcOpen(false);bird = true; setOverview(true); },
-        zoom: (scale) => { orbitRadius = THREE.MathUtils.clamp(orbitRadius * scale, selectedId==='geumseonggwan'?35:'parent' in selected ? 12 : 85, selectedId !== 'geumseonggwan' ? 1100 : 260); demand.invalidate(); },
+        overview: () => {
+          pause();npc?.setGesture('Idle');setNpcOpen(false);bird=true;setOverview(true);
+          center.set(selected.overview.center[0],0,selected.overview.center[1]);
+          orbit=selected.overview.angle;orbitElevation=selected.overview.elevation;orbitRadius=selected.overview.radius;demand.invalidate();
+          camera.fov=60;camera.updateProjectionMatrix();
+        },
+        inspect: (id) => {
+          const view=data.architectureViews?.find(v=>v.id===id);if(!view)return;
+          pause();npc?.setGesture('Idle');setNpcOpen(false);bird=true;setOverview(true);
+          center.fromArray(view.center);orbit=view.angle;orbitElevation=view.elevation;orbitRadius=view.radius;demand.invalidate();
+          camera.fov=view.fov??60;camera.updateProjectionMatrix();
+        },
+        zoom: (scale) => { orbitRadius = THREE.MathUtils.clamp(orbitRadius * scale, selectedId==='geumseonggwan'?10:'parent' in selected ? 12 : 85, selectedId !== 'geumseonggwan' ? 1100 : 260); demand.invalidate(); },
         key: (key, down) => { if (down) keys.add(key); else keys.delete(key); },
         travel: (point,height=0) => {
           if(!canTravelTo(point,data,height))return false;
@@ -313,7 +332,7 @@ export default function Explorer() {
         if (!delta) return;
         const { dx, dy, scale } = delta;
         if (bird && scale !== 1) { engine.current?.zoom(scale); return; }
-        if (bird) { orbit -= dx * 0.005; orbitElevation = THREE.MathUtils.clamp(orbitElevation + dy * 0.003, 0.3, 1.3); }
+        if (bird) { orbit -= dx * 0.005; orbitElevation = THREE.MathUtils.clamp(orbitElevation + dy * 0.003, center.y>0?-.1:.3, 1.3); }
         else if (playing) { yaw -= dx * 0.0028; pitch = THREE.MathUtils.clamp(pitch - dy * 0.0028, -1.15, 1.15); }
         demand.invalidate();
       }) as EventListener);
@@ -355,7 +374,7 @@ export default function Explorer() {
         }
         roofParts.forEach(o=>{o.visible=!bird;});
         if (bird) {
-          camera.position.set(center.x + Math.sin(orbit) * Math.cos(orbitElevation) * orbitRadius, Math.sin(orbitElevation) * orbitRadius, center.z + Math.cos(orbit) * Math.cos(orbitElevation) * orbitRadius); camera.lookAt(center);
+          camera.position.set(center.x + Math.sin(orbit) * Math.cos(orbitElevation) * orbitRadius, center.y + Math.sin(orbitElevation) * orbitRadius, center.z + Math.cos(orbit) * Math.cos(orbitElevation) * orbitRadius); camera.lookAt(center);
         } else { camera.position.set(px, 1.72 + (data.verticalNavigation?elevation:floorHeight(px, pz, floors)), pz); camera.rotation.order = 'YXZ'; camera.rotation.set(pitch, yaw, 0); }
         if(localLights && now-lastLightUpdate>150){localLights.update(camera.position);lastLightUpdate=now;}
         if(updateVegetationDetail(gltf.scene,camera.position))renderer.shadowMap.needsUpdate=true;
@@ -426,6 +445,7 @@ export default function Explorer() {
         {welcomeExpanded && <div id="walk-introduction"><div className="eyebrow"><span />나주 · {destination.name}</div>
         <h1>{started ? '산책을 잠시 멈췄습니다' : destination.name}</h1>
         <p>{started ? '같은 위치에서 이어서 걸을 수 있습니다.' : destination.introduction[0]}</p></div>}
+        {overview && ready && !!world?.architectureViews?.length && <div className="architecture-views" role="group" aria-label="건축 자세히 보기">{world.architectureViews.map(v=><button key={v.id} onClick={()=>engine.current?.inspect(v.id)}>{v.label}</button>)}</div>}
         <button className="start-button" onClick={() => engine.current?.start()} disabled={!ready || !!error}><Footprints size={20} /><span>{error ? '화면을 열 수 없습니다' : !ready ? '산책 준비 중…' : started ? '이어서 걷기' : '산책 시작'}</span><ArrowUpRight size={21} /></button>
         {!ready && !error && <div className="load-status" role="status"><span className="loading-line"/>{loadStage}</div>}
         {welcomeExpanded && <div className="welcome-help">{touch ? '왼쪽 버튼으로 이동 · 화면을 드래그해 둘러보기' : <><span><kbd>W A S D</kbd> 이동</span><span>드래그로 둘러보기</span></>}</div>}
