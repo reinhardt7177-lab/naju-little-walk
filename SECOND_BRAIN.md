@@ -1,6 +1,7 @@
 # 프로젝트 기록 안내
 
 - 드들강 수피·숲 바닥·풀 표현과 제목 대비: `knowledge/deudeulgang-surfaces-quality-2026-10-01.md`
+- 수목원 메타세쿼이아·활엽수의 사진 대조·수관·수피 보완: `knowledge/naju-arboretum-tree-quality-2026-10-02.md`
 
 - 드들강 솔잎 수관·강 건너 숲 보완과 실제 사진/추정 구분: `knowledge/deudeulgang-pine-quality-2026-10-01.md`
 
