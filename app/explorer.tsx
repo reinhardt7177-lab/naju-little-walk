@@ -13,7 +13,8 @@ import { unpackModel } from '@/lib/model-transport';
 import { sceneArrival, portalAt, portalHref } from '@/lib/scene-travel';
 import { canTravelTo } from '@/lib/map-navigation';
 import type { Point } from '@/lib/world';
-import MapTravel, { PrecinctMapShapes } from './geumseonggwan-map';
+import MapTravel from './map-travel';
+import { PrecinctMapShapes } from './geumseonggwan-map';
 import { BoatFleet, type BoatHud } from '@/lib/boat-fleet';
 import { FullscreenButton, useScreenMode } from './screen-mode';
 import WalkGuide from './walk-guide';
@@ -69,7 +70,7 @@ export default function Explorer() {
     const selected = destinations[selectedId];
     const optimizedCampus=selectedId==='bitgaram-park'||selectedId==='bitgaram-kepco'||selectedId==='bitgaram-kentech'||selectedId==='naju-arboretum'||selectedId==='deudeulgang';
     setDestinationId(selectedId);
-    document.title = '금성관 산책';
+    document.title = `나주 산책 — ${selected.name}`;
     const mount = host.current!;
     let disposed = false, renderer: THREE.WebGLRenderer | undefined, animation = 0;
     const abort=new AbortController();
@@ -422,16 +423,16 @@ export default function Explorer() {
     <main className="explorer">
       <div className="scene" ref={host} /><div className="vignette" />
       <header className="topbar">
-        <div className="brand"><span className="brand-mark"><Compass size={25} strokeWidth={1.4} /></span><div><strong>금성관 산책</strong><span>정청 · 익헌 · 망화루</span></div></div>
+        <div className="brand"><span className="brand-mark"><Compass size={25} strokeWidth={1.4} /></span><div><strong>나주 산책</strong><span>{destination.area}</span></div></div>
         <div className="topbar-tools"><div className="view-actions" role="group" aria-label="보기 방식"><button aria-pressed={overview} className={overview ? 'active' : ''} onClick={() => engine.current?.overview()} disabled={!ready || !!error}><MoveUpRight size={16} />전체 보기</button><button aria-pressed={!overview} className={!overview ? 'active' : ''} onClick={() => boatHud?.aboard?engine.current?.boatAction('deck'):engine.current?.start()} disabled={!ready || !!error}><Footprints size={16} />걷기</button></div><button className="screen-button" onClick={openGuide} aria-label="산책 안내와 화면 설정" title="산책 안내와 화면 설정"><CircleHelp size={19}/></button><FullscreenButton/></div>
       </header>
-      <nav className="destination-nav" aria-label="금성관 경내 지도">
-        <button onClick={openMap}><Map size={18}/><span>경내 안내도</span></button>
+      <nav className="destination-nav" aria-label="나주 전체 지도와 장소 선택">
+        <button onClick={openMap}><Map size={18}/><span>나주 전체 · 장소 선택</span></button>
       </nav>
       {active && !!world?.sceneLinks?.length && <nav className="scene-signposts" aria-label="장소 이동 푯말">{world.sceneLinks.filter(link=>Object.hasOwn(destinations,link.target)).map(link=><a key={link.target} href={`/?place=${encodeURIComponent(link.target)}`}><MapPin size={18}/><span>{link.label}</span><ArrowUpRight size={16}/></a>)}</nav>}
       {world && !minimapExpanded && <button className="minimap-toggle" aria-expanded={false} aria-controls="location-minimap" onClick={()=>setMinimapExpanded(true)}><Map size={17}/>미니맵 펼치기</button>}
       {world && minimapExpanded && <aside id="location-minimap" className="minimap" aria-label="현재 위치 지도">
-        <div className="map-heading"><span>금성관 경내</span><button className="panel-fold" aria-expanded={true} aria-controls="location-minimap" onClick={()=>setMinimapExpanded(false)}>접기 −</button></div>
+        <div className="map-heading"><span>{destination.name}</span><button className="panel-fold" aria-expanded={true} aria-controls="location-minimap" onClick={()=>setMinimapExpanded(false)}>접기 −</button></div>
         <svg viewBox={`${world.bounds[0]} ${world.bounds[2]} ${world.bounds[1] - world.bounds[0]} ${world.bounds[3] - world.bounds[2]}`} role="img" aria-label={`현재 위치: ${view.place}`} onClick={openMap}>
           <rect x={world.bounds[0]} y={world.bounds[2]} width={world.bounds[1] - world.bounds[0]} height={world.bounds[3] - world.bounds[2]} fill="#e5e8df" />
           {mapShapes}

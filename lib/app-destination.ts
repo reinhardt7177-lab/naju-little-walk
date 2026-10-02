@@ -1,7 +1,7 @@
-import type {DestinationId} from './destinations.ts';
+import {destinationFromSearch, type DestinationId} from './destinations.ts';
 
-/** This published edition is dedicated to Geumseonggwan; old regional URLs resolve here. */
+/** Preserve the detailed default precinct and all regional/deep-link entrances. */
 export const activeDestinationId: DestinationId = 'geumseonggwan';
-export function appDestinationFromSearch(_search: string): DestinationId {
-  return activeDestinationId;
+export function appDestinationFromSearch(search: string): DestinationId {
+  return destinationFromSearch(search);
 }

@@ -16,13 +16,13 @@ export default function WalkGuide({ destinationId, onClose }: { destinationId: D
   }, []);
   useEffect(() => { if (portrait) onClose(); }, [portrait, onClose]);
   return <dialog ref={dialog} className="guide-dialog" aria-labelledby="guide-title" onCancel={e => { e.preventDefault(); onClose(); }} onClick={e => { if (e.target === e.currentTarget) onClose(); }}>
-    <header><div><span className="dialog-eyebrow">금성관 산책 안내</span><h2 id="guide-title">{destination.name}</h2></div><button className="map-close" aria-label="안내 닫기" onClick={onClose}><X size={20}/></button></header>
+    <header><div><span className="dialog-eyebrow">나주 산책 안내</span><h2 id="guide-title">{destination.name}</h2></div><button className="map-close" aria-label="안내 닫기" onClick={onClose}><X size={20}/></button></header>
     <div className="guide-content">
       <section><h3><Footprints size={18}/>산책 방법</h3><dl className="control-list">
         <div><dt>{touch ? <Hand size={17}/> : <MousePointer2 size={17}/>}둘러보기</dt><dd>{touch ? '화면을 한 손가락으로 드래그' : '마우스 버튼을 누른 채 화면을 드래그'}</dd></div>
         <div><dt><Footprints size={17}/>걷기</dt><dd>{touch ? '왼쪽 방향 버튼을 누른 채 이동 · 오른쪽에서 시선 회전' : 'W A S D로 이동 · ← →로 회전 · Shift로 빠르게'}</dd></div>
         <div><dt><Map size={17}/>전체 보기</dt><dd>{touch ? '한 손가락으로 회전 · 두 손가락으로 확대·축소' : '드래그로 회전 · 마우스 휠로 확대·축소'}</dd></div>
-      </dl><label className="touch-preference"><input type="checkbox" checked={touchControls} onChange={e=>setTouchControls(e.target.checked)}/>화면에 이동 버튼 표시</label><p className="guide-tip">경내 안내도에서 정청·문루·마당으로 바로 이동할 수 있습니다. 전체 보기의 ‘정청 정면’, ‘처마·공포’, ‘망화루’를 눌러 건축을 가까이 살펴보세요.</p></section>
+      </dl><label className="touch-preference"><input type="checkbox" checked={touchControls} onChange={e=>setTouchControls(e.target.checked)}/>화면에 이동 버튼 표시</label><p className="guide-tip">나주 전체 지도에서 산책할 장소를 고르세요. ‘현재 장소 안에서’ 탭에서는 열린 길과 입구로 바로 이동할 수 있습니다.</p></section>
       <section><h3><Settings2 size={18}/>화면 품질</h3><div className="quality-options" role="group" aria-label="화면 품질">
         <button aria-pressed={quality === 'balanced'} onClick={() => setQuality('balanced')}><strong>편하게 걷기</strong><span>태블릿 권장 · 화면 부담 줄이기</span></button>
         <button aria-pressed={quality === 'detail'} onClick={() => setQuality('detail')}><strong>선명하게 보기</strong><span>높은 해상도로 풍경 감상</span></button>

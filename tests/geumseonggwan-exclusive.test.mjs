@@ -2,13 +2,19 @@ import test from 'node:test';
 import assert from 'node:assert/strict';
 import fs from 'node:fs';
 import {appDestinationFromSearch} from '../lib/app-destination.ts';
+import {destinations} from '../lib/destinations.ts';
 import {mapArrival,canTravelTo} from '../lib/map-navigation.ts';
 import {moveOnFloors,worldFloors,worldObstacles,floorHeight} from '../lib/world.ts';
 const world=JSON.parse(fs.readFileSync(new URL('../public/city-world.json',import.meta.url),'utf8'));
-test('published app directs existing regional links to the dedicated Geumseonggwan scene',()=>{
-  for(const search of ['', '?place=bitgaram','?place=dasi','?place=deudeulgang','?place=bogam-museum','?place=geumseonggwan'])assert.equal(appDestinationFromSearch(search),'geumseonggwan');
+test('all regional and indoor deep links remain reachable while the default precinct is preserved',()=>{
+  for(const id of Object.keys(destinations))assert.equal(appDestinationFromSearch('?place='+id),id);
+  for(const search of ['', '?place=unknown','?place=__proto__'])assert.equal(appDestinationFromSearch(search),'geumseonggwan');
   assert.deepEqual(world.sceneLinks,[]);assert.deepEqual(world.portals,[]);
+  const page=fs.readFileSync(new URL('../app/page.tsx',import.meta.url),'utf8');
+  assert.ok(page.includes("selected==='bitgaram'?<BitgaramHub/>:<Explorer/>"));
+  assert.ok(!page.includes("searchParams.delete('place')"));
 });
+
 test('every precinct destination has a safe local arrival including the elevated hall',()=>{
   for(const place of world.places){
     const p=mapArrival(place,world);assert.ok(p,place.id);

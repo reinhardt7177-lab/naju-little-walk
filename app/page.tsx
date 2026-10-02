@@ -6,7 +6,8 @@ import { appDestinationFromSearch } from '@/lib/app-destination';
 import ScreenMode, { useScreenMode } from './screen-mode';
 
 const Explorer=lazy(()=>import('./explorer'));
-const waiting=<div className="initial-loading" role="status">금성관 산책을 준비하고 있습니다</div>;
+const BitgaramHub=lazy(()=>import('./bitgaram-hub'));
+const waiting=<div className="initial-loading" role="status">나주 산책을 준비하고 있습니다</div>;
 
 export default function Home() {
   return <ScreenMode><DestinationApp/></ScreenMode>;
@@ -18,13 +19,11 @@ function DestinationApp() {
   const { initialized,portrait }=useScreenMode();
   useEffect(()=>{
     setSelected(appDestinationFromSearch(window.location.search));
-    const url=new URL(window.location.href);
-    if(url.searchParams.has('place')){url.searchParams.delete('place');window.history.replaceState(null,'',url.pathname+url.search+url.hash);}
   },[]);
   useEffect(()=>{if(initialized&&!portrait)setOpened(true);},[initialized,portrait]);
   // Mount once after a usable orientation; later rotations keep the scene and position.
   if(!initialized||!selected||!opened)return waiting;
-  return <SceneCodeBoundary><Suspense fallback={waiting}><Explorer/></Suspense></SceneCodeBoundary>;
+  return <SceneCodeBoundary><Suspense fallback={waiting}>{selected==='bitgaram'?<BitgaramHub/>:<Explorer/>}</Suspense></SceneCodeBoundary>;
 }
 
 class SceneCodeBoundary extends Component<{children:ReactNode},{failed:boolean}> {
