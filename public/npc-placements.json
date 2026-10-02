@@ -1,0 +1,164 @@
+{
+  "version": 1,
+  "source": "사용자 지정 지역의 창작 안내 캐릭터. 실제 현장 시설이 아님. Blender 채색 초안 v4, 고정 자세.",
+  "assets": {
+    "baedoli": {
+      "name": "배돌이",
+      "modelUrl": "/models/npc/baedoli-v4.glb",
+      "height": 1.2000000476837158,
+      "width": 1.248279094696045,
+      "depth": 1.2202622890472412,
+      "front": "+Z",
+      "bottom": 0
+    },
+    "beodeuri": {
+      "name": "버들낭자",
+      "modelUrl": "/models/npc/beodeuri-v4.glb",
+      "height": 1.649999976158142,
+      "width": 0.9543747901916504,
+      "depth": 0.6139718294143677,
+      "front": "+Z",
+      "bottom": 0
+    },
+    "hongdoli": {
+      "name": "홍돌이",
+      "modelUrl": "/models/npc/hongdoli-v4.glb",
+      "height": 1.0499999523162842,
+      "width": 1.3421852588653564,
+      "depth": 0.3281898498535156,
+      "front": "+Z",
+      "bottom": 0
+    },
+    "teacher": {
+      "name": "선생님",
+      "modelUrl": "/models/npc/teacher-v4.glb",
+      "height": 1.7200000286102295,
+      "width": 0.9529184103012085,
+      "depth": 0.3296714872121811,
+      "front": "+Z",
+      "bottom": 0
+    }
+  },
+  "placements": {
+    "geumseonggwan": {
+      "character": "beodeuri",
+      "position": [
+        -19.38819904712108,
+        0.125,
+        -40.21091680568082
+      ],
+      "yaw": -0.042026691043586764,
+      "collisionRadius": 0.3,
+      "height": 1.649999976158142,
+      "spawn": {
+        "x": -19.5862019804352,
+        "z": -35.502329455062906,
+        "yaw": 0.25959235522265356
+      },
+      "distanceFromStart": 4.71274866717927
+    },
+    "bogam": {
+      "character": "beodeuri",
+      "position": [
+        53.3911784921565,
+        0.07,
+        63.57036193849879
+      ],
+      "yaw": 0.34838095373376055,
+      "collisionRadius": 0.3,
+      "height": 1.649999976158142,
+      "spawn": {
+        "x": 55,
+        "z": 68,
+        "yaw": 0.65
+      },
+      "distanceFromStart": 4.712748667179274
+    },
+    "bitgaram-park": {
+      "character": "baedoli",
+      "position": [
+        -1.4,
+        16,
+        16.5
+      ],
+      "yaw": 0.3016190462662397,
+      "collisionRadius": 0.3,
+      "height": 1.2000000476837158,
+      "spawn": {
+        "x": 0,
+        "z": 21,
+        "yaw": 0,
+        "height": 16
+      },
+      "distanceFromStart": 4.712748667179271
+    },
+    "bitgaram-kepco": {
+      "character": "baedoli",
+      "position": [
+        12.312170407699872,
+        0,
+        32.06070281953816
+      ],
+      "yaw": -0.3016190462662397,
+      "collisionRadius": 0.3,
+      "height": 1.2000000476837158,
+      "spawn": {
+        "x": 10.912170407699872,
+        "z": 36.56070281953816,
+        "yaw": 0
+      },
+      "distanceFromStart": 4.712748667179271
+    },
+    "bitgaram-kentech": {
+      "character": "baedoli",
+      "position": [
+        -3.6,
+        0,
+        22.5
+      ],
+      "yaw": -0.3016190462662397,
+      "collisionRadius": 0.3,
+      "height": 1.2000000476837158,
+      "spawn": {
+        "x": -5,
+        "z": 27,
+        "yaw": 0
+      },
+      "distanceFromStart": 4.712748667179271
+    },
+    "yeongsanpo": {
+      "character": "hongdoli",
+      "position": [
+        -141.6,
+        0.112,
+        133.77
+      ],
+      "yaw": -0.3016190462662408,
+      "collisionRadius": 0.3,
+      "height": 1.0499999523162842,
+      "spawn": {
+        "x": -143,
+        "z": 138.27,
+        "yaw": 0
+      },
+      "distanceFromStart": 4.712748667179273
+    },
+    "dasi": {
+      "character": "teacher",
+      "position": [
+        -18.86780208330725,
+        0.08,
+        -3.40433940886086
+      ],
+      "yaw": -0.46776176150127213,
+      "collisionRadius": 0.3,
+      "height": 1.7200000286102295,
+      "spawn": {
+        "x": -20.992731492652652,
+        "z": 0.802164484552172,
+        "yaw": -0.16614271523503266
+      },
+      "distanceFromStart": 4.71274866717927
+    }
+  }
+}

@@ -14,6 +14,10 @@
 
 [퀄리티 업그레이드 실행 계획](knowledge/QUALITY_UPGRADE_PLAN.md)에서 장소별 부족한 부분과 검증 기준을 관리합니다. 전망대 공원의 잎·가지와 거리별 수형을 새 Blender 수정본에 제작했고, 모델 정리 중 메뉴에 시간을 주는 로딩 분할과 식생 판정 캐시를 적용했습니다. 원본 지형·건축·산책 좌표는 유지했습니다. 큰 모델 검사 시 `node --experimental-strip-types --test --test-concurrency=1 tests/*.test.mjs`로 메모리 사용을 제한할 수 있습니다.
 
+## 지역 안내 캐릭터
+
+산책을 시작하면 금성관·복암리에는 버들낭자, 빛가람 공원·한전·KENTECH에는 배돌이, 영산포에는 홍돌이, 다시초등학교에는 선생님이 출발 지점 앞에서 맞이합니다. 기존 Blender 채색 초안 4종을 별도 GLB로 불러오며, 현재는 고정 자세입니다. [7곳 배치와 검증 기록](knowledge/naju-npc-start-placement-2026-10-02.md)을 참고하세요.
+
 ## Vercel 배포
 
 [빛가람 아파트 입면 제작 기록](knowledge/bitgaram-facades-quality-2026-10-01.md): 새 Blender 편집본에서 114동의 겹친 유리 띠를 개별 창 배열로 보완했다. 원본 건물·길·시설 형상은 보존했고, 창 치수·색과 위성 윤곽 추정은 구분해 기록했다.
@@ -24,7 +28,7 @@
 
 `vercel.json`은 정적 웹 빌드(`npm run build`)와 배포 폴더(`dist/client`)를 지정합니다. GitHub `codex/bitgaram-place-walks` 브랜치의 최신 작업 또는 동일한 정적 빌드 결과를 배포합니다. GitHub 기본 `main` 브랜치는 변경하지 않습니다. 프레임워크 자동 감지 대신 일반 정적 프로젝트 설정을 사용합니다.
 
-`.vercelignore`는 Blender 원본·도구, 참고 자료와 임시 파일을 업로드에서 제외합니다. 완성된 빌드에는 무손실 압축한 `.glb.gz`만 들어가며, 중복된 `.glb`는 포함하지 않습니다. 모델 로더가 gzip 압축을 해제하므로 별도의 `Content-Encoding` 설정은 필요하지 않습니다. `/?place=deudeulgang` 등 기존 장소 주소를 그대로 사용할 수 있습니다.
+`.vercelignore`는 Blender 원본·도구, 참고 자료와 임시 파일을 업로드에서 제외합니다. 지도 모델은 무손실 압축한 `.glb.gz`로 배포하며 중복된 지도 `.glb`는 포함하지 않습니다. 안내 캐릭터 4종은 별도의 작은 `.glb`로 배포합니다. 지도 모델 로더가 gzip 압축을 해제하므로 별도의 `Content-Encoding` 설정은 필요하지 않습니다. `/?place=deudeulgang` 등 기존 장소 주소를 그대로 사용할 수 있습니다.
 
 설정 근거: [Vercel 프로젝트 설정](https://vercel.com/docs/project-configuration).
 

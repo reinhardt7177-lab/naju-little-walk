@@ -19,6 +19,8 @@ import WalkGuide from './walk-guide';
 import { pixelRatioFor, type GraphicsQuality } from '@/lib/display-mode';
 import { ViewGesture } from '@/lib/view-gesture';
 import { RenderDemand } from '@/lib/render-demand';
+import { withNpcObstacle, type NpcManifest } from '@/lib/npc-placement';
+import { loadNpcGuide } from '@/lib/npc-scene';
 
 type ViewState = { x: number; z: number; yaw: number; place: string; detail: string; indoor: boolean };
 type Engine = { start: () => void; pause: () => void; reset: () => void; overview: () => void; zoom: (scale: number) => void; key: (key: string, down: boolean) => void; travel: (point: Point, height?:number) => boolean; boatAction: (action:string,id?:string)=>void };
@@ -72,7 +74,12 @@ export default function Explorer() {
     const setup = async () => {
       const response = await fetch(selected.worldUrl,{signal:abort.signal});
       if (!response.ok) throw new Error('도시 자료를 불러오지 못했습니다.');
-      const data: World = await response.json();
+      let data: World = await response.json();
+      const npcResponse=await fetch('/npc-placements.json?v=start-guides-20261002',{signal:abort.signal});
+      if(!npcResponse.ok)throw new Error('지역 안내 캐릭터 자료를 불러오지 못했습니다.');
+      const npcManifest:NpcManifest=await npcResponse.json();
+      const npcPlacement=npcManifest.placements[selectedId];
+      if(npcPlacement)data=withNpcObstacle(data,npcPlacement);
       if (disposed) return;
       setWorld(data);
       // Keep centimeter-separated landscape layers stable at city overview distances.
@@ -155,6 +162,11 @@ export default function Explorer() {
       const roofParts: THREE.Object3D[]=[];
       gltf.scene.traverse(o=>{if(o.userData.hide_in_overview)roofParts.push(o);});
       scene.add(gltf.scene);
+      if(npcPlacement){
+        setLoadStage(`${npcManifest.assets[npcPlacement.character].name} 안내 캐릭터를 준비하고 있습니다`);
+        scene.add(await loadNpcGuide(npcPlacement,npcManifest,abort.signal));
+        if(disposed){scene.traverse(disposeObject);return;}
+      }
       if(optimizedCampus){
         gltf.scene.traverse(o=>{o.updateMatrix();o.matrixAutoUpdate=false;});
         renderer.shadowMap.autoUpdate=false;
@@ -246,7 +258,7 @@ export default function Explorer() {
       if (context?.registerTool) {
         const lifecycle = new AbortController();
         cleanups.push(() => lifecycle.abort());
-        const state = () => ({ destination: selected.name, mode: bird ? 'overview' : playing ? 'walking' : 'paused', position: { x: px, z: pz }, source: data.source,renderDiagnostics:renderDiagnostics() });
+        const state = () => ({ destination: selected.name, mode: bird ? 'overview' : playing ? 'walking' : 'paused', position: { x: px, z: pz }, guide:npcPlacement?{character:npcPlacement.character,name:npcManifest.assets[npcPlacement.character].name,position:npcPlacement.position}:null, source: data.source,renderDiagnostics:renderDiagnostics() });
         const registrations = [
           { name: 'get_naju_walk_state', description: 'Read the current Naju exploration view and position.', inputSchema: { type: 'object', properties: {}, additionalProperties: false }, annotations: { readOnlyHint: true }, execute: () => state() },
           { name: 'set_naju_walk_view', description: 'Switch the same exploration view as the visible overview, walk, or pause controls.', inputSchema: { type: 'object', properties: { view: { type: 'string', enum: ['overview', 'walk', 'pause'] } }, required: ['view'], additionalProperties: false }, annotations: { readOnlyHint: false }, execute: async (input: unknown) => {
