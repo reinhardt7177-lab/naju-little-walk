@@ -128,7 +128,7 @@ export default function Explorer() {
       })();
       if (disposed) { gltf.scene.traverse(disposeObject); return; }
       gltf.scene.traverse(o => { if (o instanceof THREE.Mesh) {
-        const landscape=selectedId.startsWith('bitgaram')&&/^(context_ground|lake_osm_|estimated_hill|surrounding_park_lawn|surrounding_mapped_paths|surrounding_parking|surrounding_recreation)/.test(o.name);
+        const landscape=selectedId.startsWith('bitgaram')&&/^(context_ground|lake_osm_|estimated_hill|surrounding_park_lawn|mapped_park_lawn_shore|surrounding_mapped_paths|surrounding_parking|surrounding_recreation)/.test(o.name);
         const riverSurface=selectedId==='deudeulgang'&&/^(path_|road_|mapped_river_water|water_glint|pine_litter_patch|understory_moss|crop_row|satellite_field)/.test(o.name);
         o.castShadow = !o.name.startsWith('ground')&&!landscape&&!riverSurface&&!o.userData.no_shadow;
         o.receiveShadow = !o.userData.no_receive_shadow && !(landscape && o.name!=='estimated_hill');

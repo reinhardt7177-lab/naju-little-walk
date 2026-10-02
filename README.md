@@ -235,7 +235,9 @@ npm run build
 
 수목원 메타세쿼이아·활엽수의 사진 대조, 수형·수피 보완과 보호 검사는 [수형 제작 기록](knowledge/naju-arboretum-tree-quality-2026-10-02.md)에 정리합니다. 새 편집본은 `outputs/quality-v74/naju-arboretum-tree-crowns-v74.blend`이며, 첫 v73 후보는 잎 밀도 문제로 게시하지 않았습니다.
 
-수목원 메타세쿼이아·활엽수의 사진 대조, 수형·수피 보완과 보호 검사는 [수형 제작 기록](knowledge/naju-arboretum-tree-quality-2026-10-02.md)에 정리합니다. 새 편집본은 `outputs/quality-v74/naju-arboretum-tree-crowns-v74.blend`이며, 첫 v73 후보는 잎 밀도 문제로 게시하지 않았습니다.
+빛가람 호수공원의 사각 셀 잔디를 지도 윤곽과 연결되는 면으로 교체한 내용은 [물가 경계 기록](knowledge/bitgaram-shore-quality-2026-10-02.md)에 있습니다. 새 편집본은 `outputs/quality-v75/bitgaram-shore-v75.blend`이며 기존 물·지형·산책로는 보존했습니다.
+
+나주 안내 캐릭터 4종의 Meshy 생성·Blender 채색 초안은 [NPC 제작 파일](assets/npc/meshy-first-pass-20261002/README.md)에 보관합니다. 앱 배치와 애니메이션은 아직 연결하지 않았으며, 조형 보정과 리깅이 남아 있습니다. [제작·비용·검증 기록](knowledge/naju-npc-meshy-production-2026-10-02.md)을 함께 확인하세요.
 
 드들강의 현장 사진 대조, 소나무 수관·강 건너 숲 보완, 기존 뿌리·보행 정보 보존은 [제작 기록](knowledge/deudeulgang-pine-quality-2026-10-01.md)에 정리했습니다. 새 Blender 수정본은 `outputs/quality-v71/deudeulgang-pine-crowns-v71.blend`입니다.
 

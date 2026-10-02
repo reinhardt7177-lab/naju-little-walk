@@ -1,5 +1,9 @@
 # 프로젝트 기록 안내
 
+- 나주 NPC 4종 Meshy 형태 생성·Blender 채색 초안·비용·검증: `knowledge/naju-npc-meshy-production-2026-10-02.md`
+
+- 나주 안내 NPC 자료 분석·지역별 배치안·Blender 제작 계획: `knowledge/naju-npc-asset-analysis-2026-10-02.md`
+
 - 드들강 수피·숲 바닥·풀 표현과 제목 대비: `knowledge/deudeulgang-surfaces-quality-2026-10-01.md`
 - 수목원 메타세쿼이아·활엽수의 사진 대조·수관·수피 보완: `knowledge/naju-arboretum-tree-quality-2026-10-02.md`
 
