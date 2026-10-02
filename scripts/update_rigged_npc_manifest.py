@@ -4,7 +4,7 @@ import json,struct
 root=Path(__file__).resolve().parents[1]
 path=root/'public/npc-placements.json'
 manifest=json.loads(path.read_text(encoding='utf-8'))
-versions={'baedoli':'v6','beodeuri':'v6','hongdoli':'v5','teacher':'v5'}
+versions={'baedoli':'v6','beodeuri':'v6','hongdoli':'v6','teacher':'v6'}
 manifest['version']=3
 manifest['source']='사용자 지정 지역의 창작 안내 캐릭터. 실제 현장 인물이 아님. Meshy 7.1 채색 모델, Blender 맞춤 리깅과 다섯 가지 안내 동작. 배돌이 손 분리 참조 재생성, 버들낭자 팔과 치마 보정 v6.'
 for character,version in versions.items():

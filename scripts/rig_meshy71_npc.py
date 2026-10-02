@@ -48,7 +48,7 @@ if original_triangles > budget:
     modifier.ratio = budget / original_triangles
     bpy.ops.object.modifier_apply(modifier=modifier.name)
 for face in mesh.data.polygons: face.use_smooth = True
-if clean: mesh.data.normals_split_custom_set([(0,0,0)]*len(mesh.data.loops))
+if version=='v6': mesh.data.normals_split_custom_set([(0,0,0)]*len(mesh.data.loops))
 mesh.data.calc_loop_triangles()
 triangles = len(mesh.data.loop_triangles)
 
@@ -71,6 +71,9 @@ else:
     if character=='beodeuri' and version=='v6':
         shoulder,elbow,hand=(.105,.70),(.16,.56),(.215,.47)
         arm_limit=.115
+    if character=='teacher' and version=='v6':
+        shoulder,elbow,hand=(.10,.70),(.145,.56),(.18,.45)
+        arm_limit=.10
 
 bpy.ops.object.armature_add(enter_editmode=True, location=(0, 0, 0))
 rig = bpy.context.object
@@ -148,6 +151,10 @@ for suffix, sign in [('R', -1), ('L', 1)]:
         glove=(x*sign>.18)&(z>.37)&(z<.50)
         for w in weights.values():w[glove]=0
         weights['Hand.'+suffix][glove]=1
+    if character=='teacher' and version=='v6':
+        glove=(x*sign>.14)&(z>.35)&(z<.50)
+        for w in weights.values():w[glove]=0
+        weights['Hand.'+suffix][glove]=1
     if clean:
         # Finger silhouettes are rigid; the blend ends at the wrist.
         glove=mask&(x*sign>.30)&(z<.265)
@@ -156,6 +163,7 @@ for suffix, sign in [('R', -1), ('L', 1)]:
     if character != 'beodeuri':
         leg = (x * sign >= 0) & (z < (hip if not mascot else .19))
         if clean:leg &= np.abs(x)<.22
+        if character=='teacher' and version=='v6':leg &= np.abs(x)<.115
         for w in weights.values(): w[leg] = 0
         foot = leg & (z < .09)
         weights['Foot.' + suffix][foot] = 1
@@ -169,6 +177,10 @@ if character=='beodeuri' and version=='v6':
     skirt=(z<.38)|((z<.515)&(np.abs(x)<.15))
     for w in weights.values():w[skirt]=0
     weights['Hips'][skirt]=1
+if character=='teacher' and version=='v6':
+    pants=(z>.26)&(z<.49)&(np.abs(x)<.115)
+    for w in weights.values():w[pants]=0
+    weights['Hips'][pants]=1
 if character == 'hongdoli':
     mask = (y > .13) & (z > .42)
     for w in weights.values(): w[mask] = 0
@@ -207,7 +219,7 @@ for clip, duration in CLIPS.items():
             rest = 0 if mascot else (-.17 if suffix == 'R' else .17)
             rotate('UpperArm.' + suffix, (.01 * pulse, rest, .006 * pulse))
         if clip == 'Greeting':
-            amplitude = .12 if mascot else .48
+            amplitude = .12 if mascot else .20 if character=='teacher' and version=='v6' else .48
             rotate('UpperArm.R', (-.10 * envelope, amplitude * envelope, .04 * envelope))
             rotate('Forearm.R', (-.10 * envelope, .16 * envelope, .10 * math.sin(8 * math.pi * t) * envelope))
             rotate('Hand.R', (0, 0, .12 * math.sin(8 * math.pi * t) * envelope))

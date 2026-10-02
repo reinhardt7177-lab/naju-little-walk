@@ -45,10 +45,22 @@ elif character == 'baedoli':
 elif character == 'hongdoli':
     # The ray's face is its body: nod the whole upper silhouette, not only its tip.
     assign(z>.34,'Head')
+    if version=='v6':assign((z>.10)&(z<.34)&(np.abs(x)>.30),'Chest')
     for sign,suffix,center in [(-1,'R',(-.46,-.06,.28)),(1,'L',(.48,-.06,.47))]:
         distance = np.linalg.norm(coords-np.array(center),axis=1)
         pale = (r>.55)&(g>.5)&(b>.5)&(np.abs(r-b)<.14)
-        assign((distance<.17)&(x*sign>.33)&pale,'Hand.'+suffix)
+        if version=='v6':
+            # Texture shadows do not divide one glove into different bones.
+            mask=distance<.23
+            influence=np.clip((.23-distance)/.08,0,1)
+            influence=influence*influence*(3-2*influence)
+            for index in np.flatnonzero(mask):
+                previous={g.group:g.weight for g in data.vertices[int(index)].groups}
+                for group in mesh.vertex_groups:group.remove([int(index)])
+                for group,weight in previous.items():mesh.vertex_groups[group].add([int(index)],float(weight*(1-influence[index])),'REPLACE')
+                group=mesh.vertex_groups['Hand.'+suffix]
+                group.add([int(index)],float(influence[index]),'ADD')
+        else:assign((distance<.17)&(x*sign>.33)&pale,'Hand.'+suffix)
     assign((y>.12)&(z>.42)&(r>g*1.15),'Tail')
 elif character == 'beodeuri' and version=='v6':
     # The corrected rest bones align with the actual wrist and shoulder.
@@ -137,7 +149,7 @@ elif character == 'beodeuri':
     assign((z<.63)&(np.abs(x)<.21)&(b>g*1.15)&(b>r*.95),'Hips')
     assign((np.max(colors,axis=1)<.32)&(np.abs(x)<.19)&(z>.53),'Head')
 elif character == 'teacher':
-    assign((z>.26)&(z<.49),'Hips')
+    assign((z>.26)&(z<.49)&((np.abs(x)<.115) if version=='v6' else True),'Hips')
 # Remove normals tied to the old high density triangulation after decimation.
 data.normals_split_custom_set([(0,0,0)]*len(data.loops))
 for pb in rig.pose.bones: pb.rotation_quaternion=(1,0,0,0)

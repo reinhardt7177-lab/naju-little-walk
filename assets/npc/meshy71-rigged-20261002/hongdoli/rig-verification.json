@@ -39,8 +39,8 @@
   "facial_lipsync": false,
   "feet_animated": false,
   "original_preserved": true,
-  "web_texture_resolution": 2048,
-  "web_texture_format": "WebP, quality 95",
   "semantic_skin_refinement": true,
-  "auto_smooth_normals": true
+  "auto_smooth_normals": true,
+  "web_texture_resolution": 2048,
+  "web_texture_format": "WebP, quality 95"
 }

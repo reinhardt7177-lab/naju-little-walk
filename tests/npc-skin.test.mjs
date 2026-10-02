@@ -21,7 +21,7 @@ async function geometryOnly(character){
   output.writeUInt32LE(bin.length,20+size);output.writeUInt32LE(0x004e4942,24+size);bin.copy(output,28+size);
   return new GLTFLoader().parseAsync(output.buffer.slice(output.byteOffset,output.byteOffset+output.byteLength),'');
 }
-for(const character of ['baedoli','beodeuri']){
+for(const character of ['baedoli','beodeuri','hongdoli','teacher']){
   test(`${character}: greeting and nod do not tear adjacent surface vertices`,async()=>{
     const gltf=await geometryOnly(character),controller=new NpcAnimation(gltf.scene,gltf.animations);
     let skin;gltf.scene.traverse(o=>{if(o.isSkinnedMesh)skin=o;});

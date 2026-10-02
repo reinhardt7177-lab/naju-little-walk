@@ -42,7 +42,7 @@
     },
     "hongdoli": {
       "name": "홍돌이",
-      "modelUrl": "/models/npc/hongdoli-v5.glb",
+      "modelUrl": "/models/npc/hongdoli-v6.glb",
       "height": 1.0500306449102936,
       "width": 1.2644405961036682,
       "depth": 0.665136069059372,
@@ -57,11 +57,11 @@
       ],
       "rigged": true,
       "webBytes": 2933104,
-      "authoredExport": "assets/npc/meshy71-rigged-20261002/hongdoli/hongdoli-rigged-v5.glb"
+      "authoredExport": "assets/npc/meshy71-rigged-20261002/hongdoli/hongdoli-rigged-v6.glb"
     },
     "teacher": {
       "name": "선생님",
-      "modelUrl": "/models/npc/teacher-v5.glb",
+      "modelUrl": "/models/npc/teacher-v6.glb",
       "height": 1.719932379968668,
       "width": 0.6350504755973816,
       "depth": 0.335068017244339,
@@ -75,8 +75,8 @@
         "Listen"
       ],
       "rigged": true,
-      "webBytes": 4235264,
-      "authoredExport": "assets/npc/meshy71-rigged-20261002/teacher/teacher-rigged-v5.glb"
+      "webBytes": 4235364,
+      "authoredExport": "assets/npc/meshy71-rigged-20261002/teacher/teacher-rigged-v6.glb"
     }
   },
   "placements": {
