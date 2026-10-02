@@ -41,14 +41,17 @@ for(const [id,character] of Object.entries(expected)){
     scene.traverse(o=>o.geometry?.dispose());
   });
 }
-test('public guides preserve all four original Blender exports and embedded colors',()=>{
+test('public guides match their rigged Blender exports and preserve embedded materials',()=>{
   for(const character of Object.keys(manifest.assets)){
     const raw=fs.readFileSync(new URL('../public'+manifest.assets[character].modelUrl,import.meta.url));
-    const source=fs.readFileSync(new URL(`../assets/npc/meshy-first-pass-20261002/${character}/${character}-colored-v4.glb`,import.meta.url));
+    const source=fs.readFileSync(new URL('../'+manifest.assets[character].authoredExport,import.meta.url));
     assert.ok(raw.equals(source),'Deployment GLB must match authored GLB exactly');
     const gltf=JSON.parse(raw.subarray(20,20+raw.readUInt32LE(12)).toString());
     assert.ok(gltf.images.every(i=>i.bufferView!==undefined),'Colors need no external atlas request');
-    assert.ok(gltf.nodes.some(n=>n.extras?.npc_character===character));
-    assert.equal(gltf.animations?.length??0,0,'Static draft does not need an animation loop');
+    assert.ok(gltf.nodes.some(n=>n.skin!==undefined),'Character has deforming skin');
+    assert.ok(gltf.skins[0].joints.length>=18,'Skeleton is inside the model');
+    assert.deepEqual(gltf.animations.map(a=>a.name).sort(),['Idle','Greeting','Explain','Nod','Listen'].sort());
+    assert.ok(raw.length<5000000,'Download stays under 5MB per region guide');
+    assert.ok(gltf.meshes.every(m=>m.primitives.every(p=>p.attributes.JOINTS_0!==undefined&&p.attributes.WEIGHTS_0!==undefined)));
   }
 });

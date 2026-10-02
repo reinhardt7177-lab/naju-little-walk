@@ -1,5 +1,13 @@
 # 프로젝트 기록 안내
 
+- 지역 NPC 네 모델·리깅·대화 동작 및 배돌이 손·모자, 버들낭자 보정: `knowledge/naju-npc-rigging-repair-2026-10-02.md`
+
+- 배돌이 Meshy 7.1 Ultra·4K 채색 제작 완료, 실제 35크레딧 및 Blender 검증: `knowledge/naju-baedoli-meshy71-ultra-2026-10-02.md`
+
+- 배돌이 사진 기반 Meshy 비교 샘플·실제 5크레딧 차감·Blender 렌더: `knowledge/naju-baedoli-photo-sample-2026-10-02.md`
+
+- NPC 힉스필드 재제작 견적·품질 기준·기존 캐릭터 교체 계획: `knowledge/naju-npc-higgsfield-rebuild-2026-10-02.md`
+
 - 지역 대표 NPC 4종, 산책 시작 위치 7곳 배치·접지·시야·통로 검증: `knowledge/naju-npc-start-placement-2026-10-02.md`
 
 - Vercel 깃허브 연결·운영 브랜치 자동 배포와 NPC 배치 상태: `knowledge/vercel-auto-deployment-2026-10-02.md`

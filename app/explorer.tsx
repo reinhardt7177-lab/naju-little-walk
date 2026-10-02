@@ -1,7 +1,7 @@
 'use client';
 
 import { useEffect, useMemo, useRef, useState } from 'react';
-import { ArrowUpRight, Footprints, MapPin, Map, RotateCcw, Pause, MoveUpRight, ArrowUp, ArrowDown, ArrowLeft, ArrowRight, Compass, CircleHelp, Plus, Minus } from 'lucide-react';
+import { ArrowUpRight, Footprints, MapPin, Map, RotateCcw, Pause, MoveUpRight, ArrowUp, ArrowDown, ArrowLeft, ArrowRight, Compass, CircleHelp, Plus, Minus, MessageCircle } from 'lucide-react';
 import * as THREE from 'three';
 import { GLTFLoader } from 'three/addons/loaders/GLTFLoader.js';
 import { movePlayer, moveOnFloors, reachableFloor, worldObstacles, solidCollider, worldFloors, floorHeight, currentPlace, type World } from '@/lib/world';
@@ -21,9 +21,11 @@ import { ViewGesture } from '@/lib/view-gesture';
 import { RenderDemand } from '@/lib/render-demand';
 import { withNpcObstacle, type NpcManifest } from '@/lib/npc-placement';
 import { loadNpcGuide } from '@/lib/npc-scene';
+import type {NpcAnimation, GuideGesture} from '@/lib/npc-animation';
+import NpcConversation from './npc-conversation';
 
 type ViewState = { x: number; z: number; yaw: number; place: string; detail: string; indoor: boolean };
-type Engine = { start: () => void; pause: () => void; reset: () => void; overview: () => void; zoom: (scale: number) => void; key: (key: string, down: boolean) => void; travel: (point: Point, height?:number) => boolean; boatAction: (action:string,id?:string)=>void };
+type Engine = { start: () => void; pause: () => void; reset: () => void; overview: () => void; zoom: (scale: number) => void; key: (key: string, down: boolean) => void; travel: (point: Point, height?:number) => boolean; boatAction: (action:string,id?:string)=>void; npcGesture:(gesture:GuideGesture)=>void };
 
 export default function Explorer() {
   const { touch, portrait, quality } = useScreenMode();
@@ -41,6 +43,9 @@ export default function Explorer() {
   const [welcomeExpanded,setWelcomeExpanded] = useState(false);
   const [minimapExpanded,setMinimapExpanded] = useState(false);
   const [guideOpen, setGuideOpen] = useState(false);
+  const [npcOpen,setNpcOpen]=useState(false);
+  const npcOpenRef=useRef(false);npcOpenRef.current=npcOpen;
+  const [npcHud,setNpcHud]=useState<{name:string;near:boolean}|null>(null);
   const [loadStage, setLoadStage] = useState('지도를 준비하고 있습니다');
   const [error, setError] = useState('');
   const [boatHud,setBoatHud] = useState<BoatHud|null>(null);
@@ -50,7 +55,7 @@ export default function Explorer() {
   const mapShapes=useMemo(()=>world?mapSolids(world).map((s,i)=><polygon key={i} points={solidCollider(s).map(p=>p.join(',')).join(' ')} fill={mapColor(s.name)} stroke={s.kind==='building'?'#9aada2':'none'} strokeWidth="0.7"/>):[],[world]);
 
   useEffect(() => {
-    if (portrait) { engine.current?.pause(); setMapOpen(false); setGuideOpen(false); }
+    if (portrait) { engine.current?.pause(); engine.current?.npcGesture('Idle');setNpcOpen(false);setMapOpen(false); setGuideOpen(false); }
   }, [portrait]);
   useEffect(() => {
     window.dispatchEvent(new CustomEvent('naju:quality', { detail: quality }));
@@ -59,7 +64,7 @@ export default function Explorer() {
   useEffect(() => {
     const selectedId = destinationFromSearch(window.location.search);
     setReady(false); setError(''); setActive(false); setStarted(false); setOverview(true);
-    setBoatHud(null); setWorld(null); setLoadStage('지도를 준비하고 있습니다');
+    setBoatHud(null); setNpcHud(null);setNpcOpen(false);setWorld(null); setLoadStage('지도를 준비하고 있습니다');
     const selected = destinations[selectedId];
     const optimizedCampus=selectedId==='bitgaram-park'||selectedId==='bitgaram-kepco'||selectedId==='bitgaram-kentech'||selectedId==='naju-arboretum'||selectedId==='deudeulgang';
     setDestinationId(selectedId);
@@ -75,7 +80,7 @@ export default function Explorer() {
       const response = await fetch(selected.worldUrl,{signal:abort.signal});
       if (!response.ok) throw new Error('도시 자료를 불러오지 못했습니다.');
       let data: World = await response.json();
-      const npcResponse=await fetch('/npc-placements.json?v=start-guides-20261002',{signal:abort.signal});
+      const npcResponse=await fetch('/npc-placements.json?v=rigged-guides-v6-repaired-20261002',{signal:abort.signal,cache:'no-store'});
       if(!npcResponse.ok)throw new Error('지역 안내 캐릭터 자료를 불러오지 못했습니다.');
       const npcManifest:NpcManifest=await npcResponse.json();
       const npcPlacement=npcManifest.placements[selectedId];
@@ -162,10 +167,17 @@ export default function Explorer() {
       const roofParts: THREE.Object3D[]=[];
       gltf.scene.traverse(o=>{if(o.userData.hide_in_overview)roofParts.push(o);});
       scene.add(gltf.scene);
+      let npc:NpcAnimation|undefined;
       if(npcPlacement){
         setLoadStage(`${npcManifest.assets[npcPlacement.character].name} 안내 캐릭터를 준비하고 있습니다`);
-        scene.add(await loadNpcGuide(npcPlacement,npcManifest,abort.signal));
+        npc=await loadNpcGuide(npcPlacement,npcManifest,abort.signal);
+        scene.add(npc.root);cleanups.push(()=>npc?.dispose());
         if(disposed){scene.traverse(disposeObject);return;}
+        const motion=matchMedia('(prefers-reduced-motion: reduce)');
+        const motionChanged=()=>{if(npc)npc.reducedMotion=motion.matches;demand.invalidate();};
+        motionChanged();motion.addEventListener('change',motionChanged);
+        cleanups.push(()=>motion.removeEventListener('change',motionChanged));
+        setNpcHud({name:npcManifest.assets[npcPlacement.character].name,near:false});
       }
       if(optimizedCampus){
         gltf.scene.traverse(o=>{o.updateMatrix();o.matrixAutoUpdate=false;});
@@ -228,8 +240,9 @@ export default function Explorer() {
       };
       engine.current = {
         start, pause, boatAction,
-        reset: () => { fleet.reset();px = data.spawn.x; pz = data.spawn.z; elevation=reachableFloor(px,pz,data.spawn.height??0,floors)??0; yaw = data.spawn.yaw; pitch = 0; start(); },
-        overview: () => { pause(); bird = true; setOverview(true); },
+        npcGesture:(gesture)=>{npc?.setGesture(gesture);demand.invalidate();},
+        reset: () => { npc?.setGesture('Idle');setNpcOpen(false);fleet.reset();px = data.spawn.x; pz = data.spawn.z; elevation=reachableFloor(px,pz,data.spawn.height??0,floors)??0; yaw = data.spawn.yaw; pitch = 0; start(); },
+        overview: () => { pause(); npc?.setGesture('Idle');setNpcOpen(false);bird = true; setOverview(true); },
         zoom: (scale) => { orbitRadius = THREE.MathUtils.clamp(orbitRadius * scale, 'parent' in selected ? 12 : 85, selectedId !== 'geumseonggwan' ? 1100 : 330); demand.invalidate(); },
         key: (key, down) => { if (down) keys.add(key); else keys.delete(key); },
         travel: (point,height=0) => {
@@ -258,7 +271,7 @@ export default function Explorer() {
       if (context?.registerTool) {
         const lifecycle = new AbortController();
         cleanups.push(() => lifecycle.abort());
-        const state = () => ({ destination: selected.name, mode: bird ? 'overview' : playing ? 'walking' : 'paused', position: { x: px, z: pz }, guide:npcPlacement?{character:npcPlacement.character,name:npcManifest.assets[npcPlacement.character].name,position:npcPlacement.position}:null, source: data.source,renderDiagnostics:renderDiagnostics() });
+        const state = () => ({ destination: selected.name, mode: bird ? 'overview' : playing ? 'walking' : 'paused', position: { x: px, z: pz }, guide:npcPlacement?{character:npcPlacement.character,name:npcManifest.assets[npcPlacement.character].name,position:npcPlacement.position,modelUrl:npcManifest.assets[npcPlacement.character].modelUrl,gesture:npc?.gesture}:null, source: data.source,renderDiagnostics:renderDiagnostics() });
         const registrations = [
           { name: 'get_naju_walk_state', description: 'Read the current Naju exploration view and position.', inputSchema: { type: 'object', properties: {}, additionalProperties: false }, annotations: { readOnlyHint: true }, execute: () => state() },
           { name: 'set_naju_walk_view', description: 'Switch the same exploration view as the visible overview, walk, or pause controls.', inputSchema: { type: 'object', properties: { view: { type: 'string', enum: ['overview', 'walk', 'pause'] } }, required: ['view'], additionalProperties: false }, annotations: { readOnlyHint: false }, execute: async (input: unknown) => {
@@ -317,7 +330,9 @@ export default function Explorer() {
         if(playing&&!document.hidden&&interval>0&&interval<250){frameIntervals.push(interval);if(frameIntervals.length>120)frameIntervals.shift();}
         else frameIntervals.length=0;
         const dt = Math.min(interval / 1000, 0.06); last = now;
-        if(!demand.take(playing,document.hidden||portraitRef.current||contextLost))return;
+        const npcMoving=!!npc&&!bird&&!npc.reducedMotion&&(playing||npcOpenRef.current)&&npc.root.position.distanceTo(new THREE.Vector3(px,elevation,pz))<18;
+        if(!demand.take(playing||npcMoving,document.hidden||portraitRef.current||contextLost))return;
+        if(npcMoving)npc?.update(dt);
         if (playing) {
           const forward = Number(keys.has('KeyW') || keys.has('ArrowUp')) - Number(keys.has('KeyS') || keys.has('ArrowDown'));
           const side = Number(keys.has('KeyD')) - Number(keys.has('KeyA'));
@@ -345,6 +360,11 @@ export default function Explorer() {
         if(updateVegetationDetail(gltf.scene,camera.position))renderer.shadowMap.needsUpdate=true;
         if(optimizedCampus && shadowBird!==bird){renderer.shadowMap.needsUpdate=true;shadowBird=bird;}
         if (now - lastHud > 180) {
+          if(npc&&npcPlacement){
+            const near=!bird&&!fleet.passenger&&Math.hypot(px-npcPlacement.position[0],pz-npcPlacement.position[2])<6&&Math.abs(elevation-npcPlacement.position[1])<2;
+            if(!near&&npcOpenRef.current){npc.setGesture('Idle');setNpcOpen(false);}
+            setNpcHud(current=>current?.near===near?current:{name:npcManifest.assets[npcPlacement.character].name,near});
+          }
           const hud=fleet.hud([px,pz],elevation);if(fleet.vessels.length)setBoatHud(hud);
           const place = currentPlace(px, pz, data.places, data.verticalNavigation?elevation:undefined);
           const doorway=data.portals?.find(p=>Math.hypot(p.position[0]-px,p.position[1]-pz)<4 && Math.abs((p.height??0)-elevation)<.6);
@@ -372,8 +392,8 @@ export default function Explorer() {
     onPointerDown: (e: React.PointerEvent<HTMLButtonElement>) => { e.preventDefault(); e.currentTarget.setPointerCapture(e.pointerId); engine.current?.key(key, true); },
     onPointerUp: () => engine.current?.key(key, false), onPointerCancel: () => engine.current?.key(key, false), onLostPointerCapture: () => engine.current?.key(key, false),
   });
-  const openMap=()=>{engine.current?.pause();setMapOpen(true);};
-  const openGuide = () => { engine.current?.pause(); setGuideOpen(true); };
+  const openMap=()=>{engine.current?.pause();engine.current?.npcGesture('Idle');setNpcOpen(false);setMapOpen(true);};
+  const openGuide = () => { setNpcOpen(false); engine.current?.npcGesture('Idle'); engine.current?.pause(); setGuideOpen(true); };
   return (
     <main className="explorer">
       <div className="scene" ref={host} /><div className="vignette" />
@@ -400,7 +420,7 @@ export default function Explorer() {
         <button className="minimap-travel" onClick={openMap}>지도 열고 이동하기 <ArrowUpRight size={14}/></button>
       </aside>}
       {overview && ready && !error && <div className="overview-zoom" role="group" aria-label="전체 보기 확대 축소"><button aria-label="확대" onClick={() => engine.current?.zoom(.8)}><Plus size={19}/></button><button aria-label="축소" onClick={() => engine.current?.zoom(1.25)}><Minus size={19}/></button></div>}
-      {!active && !boatHud?.aboard && !error && <section className={`welcome${welcomeExpanded?'':' welcome-compact'}`} aria-label="산책 시작">
+      {!active && !npcOpen && !boatHud?.aboard && !error && <section className={`welcome${welcomeExpanded?'':' welcome-compact'}`} aria-label="산책 시작">
         <button className="welcome-fold panel-fold" aria-expanded={welcomeExpanded} aria-controls="walk-introduction" onClick={()=>setWelcomeExpanded(v=>!v)}>{welcomeExpanded?'안내 접기 −':'이용 안내 +'}</button>
         {welcomeExpanded && <div id="walk-introduction"><div className="eyebrow"><span />나주 · {destination.name}</div>
         <h1>{started ? '산책을 잠시 멈췄습니다' : destination.name}</h1>
@@ -410,6 +430,8 @@ export default function Explorer() {
         {welcomeExpanded && <div className="welcome-help">{touch ? '왼쪽 버튼으로 이동 · 화면을 드래그해 둘러보기' : <><span><kbd>W A S D</kbd> 이동</span><span>드래그로 둘러보기</span></>}</div>}
       </section>}
       {error&&<section className="scene-recovery" role="alert" aria-label="3D 화면 복구"><strong>화면을 다시 열어 주세요</strong><p>{error}</p><button onClick={()=>setAttempt(value=>value+1)}>출발 위치에서 다시 불러오기</button><button onClick={openMap}>다른 장소 선택</button></section>}
+      {npcHud?.near&&!npcOpen&&!mapOpen&&!guideOpen&&<button className="npc-talk-button" onClick={()=>{engine.current?.pause();engine.current?.npcGesture('Greeting');setNpcOpen(true);}}><MessageCircle size={19}/>{npcHud.name}와 이야기</button>}
+      {npcOpen&&npcHud&&<NpcConversation name={npcHud.name} destinationId={destinationId} onGesture={gesture=>engine.current?.npcGesture(gesture)} onClose={()=>{setNpcOpen(false);engine.current?.start();}}/>}
       {active && <><div className="crosshair" aria-hidden="true" />{!boatHud?.aboard&&<div className="place-card"><span className="place-icon"><MapPin size={18} /></span><div><span>{view.indoor ? '실내' : '현재 위치'}</span><strong>{view.place}</strong>{view.detail&&<p>{view.detail}</p>}</div></div>}
         <div className="touch-controls" aria-label="이동 버튼"><span className="touch-label">{boatHud?.mode==='helm'?'조종':'이동'}</span><button aria-label="앞으로" {...press('KeyW')}><ArrowUp /></button><div><button aria-label="왼쪽으로" {...press('KeyA')}><ArrowLeft /></button><button aria-label="뒤로" {...press('KeyS')}><ArrowDown /></button><button aria-label="오른쪽으로" {...press('KeyD')}><ArrowRight /></button></div></div><div className="turn-controls" aria-label="시선 버튼"><span className="touch-label">시선</span><div><button aria-label="왼쪽 보기" {...press('KeyQ')}>↶</button><button aria-label="오른쪽 보기" {...press('KeyE')}>↷</button></div></div></>}
       {boatHud&&(active||!!boatHud.aboard)&&!mapOpen&&<aside className={`boat-panel ${boatHud.aboard?'aboard':'at-shore'}`} aria-label="황포돛배 승선과 조종">
