@@ -1,4 +1,11 @@
 export const destinations = {
+  neureoji: {
+    coordinates:{lat:34.9159348,lon:126.5419381},
+    name:'느러지 전망대',area:'느러지 전망대와 한반도 지형',worldUrl:'/neureoji-world.json?v=neureoji-v92e',modelUrl:'/models/neureoji.glb.gz?v=neureoji-v92e',
+    heading:['계단을 올라,','굽이치는 영산강.'],introduction:['흰 철골 계단을 올라 원형 전망대에 도착해 보세요.','정상에서 영산강이 감싼 한반도 모양의 들판을 바라볼 수 있습니다.'],
+    sourceUrl:'https://korean.visitkorea.or.kr/detail/ms_detail.do?cotid=89a5b9c9-c938-4408-ad19-08060e5d9086',sourceLabel:'한국관광공사 · 방문 사진 · OSM · Copernicus 표고 참고',
+    limitation:'현재 4층 전망대 · 강 윤곽은 실제 지도 기반 · 30m 표면 표고에서 지면 추정 · 계단 치수·식재 추정',overview:{center:[.7,1],radius:29,elevation:.35,angle:-.6},
+  },
   deudeulgang: {
     coordinates:{lat:35.0185,lon:126.85475},
     name:'드들강 솔밭유원지',area:'드들강 노송과 강변 산책',worldUrl:'/deudeulgang-world.json?v=river-trim-v82',modelUrl:'/models/deudeulgang.glb.gz?v=river-trim-v82',
@@ -59,11 +66,11 @@ export const destinations = {
   },
   'yeongsanpo-history': {
     coordinates:{lat:35.000721,lon:126.711504},parent:'yeongsanpo',
-    name:'영산포 역사갤러리',area:'영산포 역사갤러리 실내',worldUrl:'/yeongsanpo-history-world.json?v=quality-v79-20261003',modelUrl:'/models/yeongsanpo-history.glb.gz?v=quality-v79-20261003',
+    name:'영산포 역사갤러리',area:'영산포 역사갤러리 실내',worldUrl:'/yeongsanpo-history-world.json?v=history-complete-v91c',modelUrl:'/models/yeongsanpo-history.glb.gz?v=history-complete-v91c',
     heading:['옛 포구 안으로,','영산포의 기억.'],
-    introduction:['배 모형과 홍어, 포구의 생활 전시를 둘러보세요.','들어온 문을 지나면 홍어거리로 돌아갑니다.'],
+    introduction:['배 모형과 홍어 음식, 영산강 8경과 네 공방의 전시를 둘러보세요.','들어온 문을 지나면 홍어거리로 돌아갑니다.'],
     sourceUrl:'https://korean.visitkorea.or.kr/detail/ms_detail.do?cotid=b6fd947a-7ff4-461c-bffd-8952bcc6b105',sourceLabel:'한국관광공사 사진 참고',
-    limitation:'공개 실내 사진 참고 · 치수·패널 콘텐츠 재구성',
+    limitation:'공개 사진에서 확인한 1층 전시 · 치수·위치 일부 추정 · 패널·공예 자체 재구성 · 2층 현황 미확인',
     overview:{center:[0,0],radius:28,elevation:1.05,angle:.4},
   },
   'yeongsanpo-literature': {

@@ -1,6 +1,8 @@
 # 프로젝트 기록 안내
 
 - 원본 보존·중복 배포 모델/압축 파일/캐시 4.82 GB 정리: `knowledge/workspace-cleanup-v91-2026-10-04.md`
+- 역사갤러리 사진 대조·1층 전시 보강: `knowledge/history-gallery-v91-2026-10-04.md`
+- 느러지 전망대와 정상 조망 제작·검증: `knowledge/neureoji-v92-2026-10-04.md`
 
 - 영산포 사용자 지정 강 건너편 배경 축소·교량 끝/수면/이동 경계 정리와 원본 보존: `knowledge/yeongsanpo-map-crop-2026-10-04.md`
 

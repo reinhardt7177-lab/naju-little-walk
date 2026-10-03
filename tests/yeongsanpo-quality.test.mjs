@@ -38,7 +38,7 @@ test('scene refinements retain navigation baselines and record the deliberate no
     const reference=refs.navigation.find(n=>n.scene===id);
     assert.ok(reference?.unchanged);
     const nav=Object.fromEntries(reference.navigationKeys.map(k=>[k,w[k]??null]));
-    const crop=id==='yeongsanpo'&&w.mapCrop?.revision==='north-crop-v90'?read('knowledge/sources/yeongsanpo-crop-v90.json'):null;
+    const crop=id==='yeongsanpo'&&w.mapCrop?.revision==='north-crop-v90'?read('knowledge/sources/yeongsanpo-crop-v90.json'):id==='yeongsanpo-history'&&w.galleryRevision?.startsWith('history-complete-v91')?read('knowledge/sources/history-gallery-v91.json'):null;
     if(crop)assert.equal(crop.legacyNavigationSha256,reference.navigationSha256,'Crop starts from the preserved navigation baseline');
     assert.equal(createHash('sha256').update(JSON.stringify(canonical(nav))).digest('hex'),crop?.navigationSha256??reference.navigationSha256,id+' floor, wall and doorway envelopes');
     assert.equal(appDestinationFromSearch('?place='+id),id);

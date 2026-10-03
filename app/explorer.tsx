@@ -96,7 +96,7 @@ export default function Explorer() {
       const panoramaRoom=data.viewMode==='panorama';
       if(panoramaRoom)setOverview(false);
       // Keep centimeter-separated landscape layers stable at city overview distances.
-      renderer = new THREE.WebGLRenderer({ antialias: true, powerPreference: 'high-performance', logarithmicDepthBuffer: selectedId.startsWith('bitgaram') || selectedId==='deudeulgang' || selectedId==='dasi' });
+      renderer = new THREE.WebGLRenderer({ antialias: true, powerPreference: 'high-performance', logarithmicDepthBuffer: selectedId.startsWith('bitgaram') || selectedId==='deudeulgang' || selectedId==='dasi' || selectedId==='neureoji' });
       renderer.setPixelRatio(pixelRatioFor(qualityRef.current, window.devicePixelRatio));
       renderer.shadowMap.enabled = true;
       renderer.shadowMap.type = THREE.PCFShadowMap;
@@ -118,10 +118,10 @@ export default function Explorer() {
       canvas.addEventListener('webglcontextlost',lost);canvas.addEventListener('webglcontextrestored',restored);
       cleanups.push(()=>{canvas.removeEventListener('webglcontextlost',lost);canvas.removeEventListener('webglcontextrestored',restored);});
       scene.background = new THREE.Color('#bbd9e6');
-      scene.fog = new THREE.Fog('#bbd9e6', selectedId !== 'geumseonggwan' ? 650 : 260, selectedId !== 'geumseonggwan' ? 1350 : 690);
+      scene.fog = new THREE.Fog('#bbd9e6', selectedId==='neureoji'?2300:selectedId !== 'geumseonggwan' ? 650 : 260, selectedId==='neureoji'?5700:selectedId !== 'geumseonggwan' ? 1350 : 690);
       // One small prefiltered daylight map gives the authored water and glazing
       // real sky reflections without fetching a panorama or rendering probes per frame.
-      if(selectedId==='yeongsanpo'){
+      if(selectedId==='yeongsanpo'||selectedId==='neureoji'){
         const sky=new Sky();sky.scale.setScalar(900);
         sky.material.uniforms.turbidity.value=6;sky.material.uniforms.rayleigh.value=1.4;
         sky.material.uniforms.mieCoefficient.value=.004;sky.material.uniforms.mieDirectionalG.value=.75;
@@ -141,6 +141,12 @@ export default function Explorer() {
       sun.shadow.camera.left = sun.shadow.camera.bottom = -165;
       sun.shadow.camera.right = sun.shadow.camera.top = 165;
       sun.shadow.camera.far = 420; sun.shadow.normalBias = 0.06;
+      if(selectedId==='neureoji'){
+        sun.target.position.set(0,data.spawn.height??0,0);scene.add(sun.target);
+        sun.shadow.camera.left=sun.shadow.camera.bottom=-65;
+        sun.shadow.camera.right=sun.shadow.camera.top=65;
+        sun.shadow.normalBias=.025;
+      }
       if(selectedId==='geumseonggwan'){
         sun.target.position.set(-10,0,-27);scene.add(sun.target);
         sun.shadow.camera.left=sun.shadow.camera.bottom=-115;
@@ -235,7 +241,7 @@ export default function Explorer() {
       const rail=data.monorail?new MonorailScene(data.monorail):undefined;
       if(rail)await rail.load(scene,abort.signal);
       if(disposed){scene.traverse(disposeObject);return;}
-      const camera = new THREE.PerspectiveCamera(60, 1, 0.12, selectedId !== 'geumseonggwan' ? 1800 : 1000);
+      const camera = new THREE.PerspectiveCamera(60, 1, 0.12, selectedId==='neureoji'?7000:selectedId !== 'geumseonggwan' ? 1800 : 1000);
       const colliders = data.solids.filter(s => s.collision).map(solidCollider);
       const floors = worldFloors(data.solids);
       const obstacles=data.verticalNavigation?worldObstacles(data.solids):[];
@@ -247,7 +253,7 @@ export default function Explorer() {
       let orbit: number = selected.overview.angle, orbitElevation: number = selected.overview.elevation, orbitRadius: number = selected.overview.radius;
       let inspectingCeiling = false;
       let inspectingArchitecture = false;
-      const center = new THREE.Vector3(selected.overview.center[0], 0, selected.overview.center[1]);
+      const center = new THREE.Vector3(selected.overview.center[0], selectedId==='neureoji'?(data.spawn.height??0)+7:0, selected.overview.center[1]);
       const keys = new Set<string>();
       const resize = () => {
         if (!renderer) return;
@@ -318,7 +324,7 @@ export default function Explorer() {
           if(panoramaRoom){start();return;}
           pause();npc?.setGesture('Idle');setNpcOpen(false);bird=true;setOverview(true);
           inspectingCeiling=false;inspectingArchitecture=false;
-          center.set(selected.overview.center[0],0,selected.overview.center[1]);
+          center.set(selected.overview.center[0],selectedId==='neureoji'?(data.spawn.height??0)+7:0,selected.overview.center[1]);
           orbit=selected.overview.angle;orbitElevation=selected.overview.elevation;orbitRadius=selected.overview.radius;demand.invalidate();
           camera.fov=60;camera.updateProjectionMatrix();
         },
@@ -329,7 +335,7 @@ export default function Explorer() {
           center.fromArray(view.center);orbit=view.angle;orbitElevation=view.elevation;orbitRadius=view.radius;demand.invalidate();
           camera.fov=view.fov??60;camera.updateProjectionMatrix();
         },
-        zoom: (scale) => { orbitRadius = THREE.MathUtils.clamp(orbitRadius * scale, inspectingCeiling?3:inspectingArchitecture?6:selectedId==='geumseonggwan'?10:'parent' in selected ? 12 : 85, inspectingCeiling?6:selectedId !== 'geumseonggwan' ? 1100 : 260); demand.invalidate(); },
+        zoom: (scale) => { orbitRadius = THREE.MathUtils.clamp(orbitRadius * scale, inspectingCeiling?3:inspectingArchitecture?6:selectedId==='geumseonggwan'?10:selectedId==='neureoji'?12:'parent' in selected ? 12 : 85, inspectingCeiling?6:selectedId==='neureoji'?150:selectedId !== 'geumseonggwan' ? 1100 : 260); demand.invalidate(); },
         key: (key, down) => { if (down) keys.add(key); else keys.delete(key); },
         travel: (point,height=0) => {
           if(rail?.state.aboard)return false;
@@ -406,7 +412,7 @@ export default function Explorer() {
       listen(canvas, 'wheel', ((e: WheelEvent) => { if (bird) { e.preventDefault(); engine.current?.zoom(Math.exp(e.deltaY * .001)); } }) as EventListener, { passive: false });
       modelReady=true;setReady(!contextLost);if(!contextLost)setError('');
       // A panorama is authored for an interior eye point, including direct links without an arrival.
-      if(panoramaRoom){setStarted(true);start();}
+      if(panoramaRoom || selectedId==='neureoji'&&arrival.entered){setStarted(true);start();}
       else if(arrival.entered)start();
       let changingScene=false;
       let last = performance.now(), lastHud = 0, lastLightUpdate=-Infinity;
