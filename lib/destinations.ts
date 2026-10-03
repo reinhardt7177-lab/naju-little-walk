@@ -1,10 +1,10 @@
 export const destinations = {
   deudeulgang: {
     coordinates:{lat:35.0185,lon:126.85475},
-    name:'드들강 솔밭유원지',area:'드들강 노송과 강변 산책',worldUrl:'/deudeulgang-world.json?v=grove-river-v81',modelUrl:'/models/deudeulgang.glb.gz?v=grove-river-v81',
+    name:'드들강 솔밭유원지',area:'드들강 노송과 강변 산책',worldUrl:'/deudeulgang-world.json?v=river-trim-v82',modelUrl:'/models/deudeulgang.glb.gz?v=river-trim-v82',
     heading:['솔향기 따라서,','드들강 한 걸음.'],introduction:['소나무 숲길과 노래비, 강변을 걸어보세요.','위성사진과 현장 사진을 참고해 만들었습니다.'],
     sourceUrl:'https://www.ohmynews.com/NWS_Web/View/at_pg.aspx?CNTN_CD=A0003156492',sourceLabel:'현장 사진 · Esri 위성사진 · OSM 참고',
-    limitation:'솔밭과 인접 강 구간만 표시 · 실제 보행로·노래비 위치 참고 · 수형·시설 추정',overview:{center:[-80,42],radius:360,elevation:1.02,angle:1.35},
+    limitation:'솔밭과 인접 강 구간만 표시 · 실제 보행로·노래비 위치 참고 · 수형·시설 추정',overview:{center:[-36,42],radius:340,elevation:1.02,angle:1.35},
   },
   'naju-arboretum': {
     coordinates:{lat:35.00648,lon:126.8256689},

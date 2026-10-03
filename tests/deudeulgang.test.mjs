@@ -10,6 +10,25 @@ const world=JSON.parse(fs.readFileSync(new URL('public/deudeulgang-world.json',r
 const osm=JSON.parse(fs.readFileSync(new URL('knowledge/sources/deudeulgang/geometry.json',root)));
 const geo=([lon,lat])=>[(lon-126.85475)*91175,(35.0185-lat)*111195];
 
+test('far water is cropped in both the authored GLB and navigation footprint',()=>{
+ const report=JSON.parse(fs.readFileSync(new URL('knowledge/sources/deudeulgang/river-trim-v82.json',root)));
+ const river=world.solids.find(s=>s.name==='mapped_river_water').footprint;
+ assert.deepEqual(river,world.solids.find(s=>s.name==='river_no_walking').footprint);
+ assert.deepEqual(river,report.riverFootprint);
+ assert.equal(world.bounds[0],report.cutMinimumX);
+ assert.ok(river.every(p=>p[0]>=report.cutMinimumX));
+ const area=p=>Math.abs(p.reduce((sum,a,i)=>{const b=p[(i+1)%p.length];return sum+a[0]*b[1]-b[0]*a[1]},0))/2;
+ assert.ok(Math.abs(area(river)-report.riverAreaAfter)<.001);
+ assert.ok(report.removedPercent>45&&report.removedPercent<60);
+ assert.ok(report.sourceUnchanged&&report.allNonWaterMeshesUnchanged);
+ assert.ok(report.protectedMeshObjects>=560);
+ const raw=fs.readFileSync(new URL('public/models/deudeulgang.glb',root));
+ const d=JSON.parse(raw.subarray(20,20+raw.readUInt32LE(12)));
+ const water=d.nodes.find(n=>n.name==='mapped_river_water');
+ for(const p of d.meshes[water.mesh].primitives)
+  assert.ok(d.accessors[p.attributes.POSITION].min[0]>=report.cutMinimumX-.001);
+});
+
 test('Drdeulgang is selectable and its geographic pin is inside the regional map',()=>{
  assert.equal(destinationFromSearch('?place=deudeulgang'),'deudeulgang');
  const {lon,lat}=destinations.deudeulgang.coordinates,p=regionalPoint(lon,lat);

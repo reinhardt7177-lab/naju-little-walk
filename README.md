@@ -252,7 +252,7 @@ npm run build
 
 ## 출처
 
-드들강 수피·낮은 풀·숲 바닥 질감과 모든 탐험 장소의 제목 대비 보완은 [마감 기록](knowledge/deudeulgang-surfaces-quality-2026-10-01.md)에 있습니다. 기반 편집본 `outputs/quality-v72/deudeulgang-surfaces-v72.blend`를 보존하고 v81에서 표시 범위를 솔밭·강으로 축소했습니다.
+드들강 수피·낮은 풀·숲 바닥 질감과 모든 탐험 장소의 제목 대비 보완은 [마감 기록](knowledge/deudeulgang-surfaces-quality-2026-10-01.md)에 있습니다. 기반 편집본 `outputs/quality-v72/deudeulgang-surfaces-v72.blend`를 보존하고 v81에서 표시 범위를 솔밭·강으로 축소했습니다. v82에서는 [강의 먼 쪽 물 면을 추가로 잘랐습니다](knowledge/deudeulgang-river-trim-v82-2026-10-03.md). 최신 편집본은 `outputs/deudeulgang-v82/deudeulgang-river-trim-v82.blend`입니다.
 
 수목원 메타세쿼이아·활엽수의 사진 대조, 수형·수피 보완과 보호 검사는 [수형 제작 기록](knowledge/naju-arboretum-tree-quality-2026-10-02.md)에 정리합니다. 새 편집본은 `outputs/quality-v74/naju-arboretum-tree-crowns-v74.blend`이며, 첫 v73 후보는 잎 밀도 문제로 게시하지 않았습니다.
 
