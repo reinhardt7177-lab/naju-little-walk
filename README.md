@@ -38,11 +38,13 @@
 
 ## 보관된 기존 지역 제작 기록
 
-아래 지역·주소 설명은 금성관 전용 전환 이전의 제작 기록입니다. 현재 운영 앱은 해당 지역으로 이동하지 않습니다.
+아래에는 각 지역의 제작 과정과 보존한 이전 편집본을 기록합니다. 현재 운영 앱의 나주 전체 지도에서 각 지역으로 이동할 수 있습니다.
 
 ### 드들강 솔밭과 전체 맵 채색
 
 `/?place=deudeulgang`에서 소나무 숲길, 노래비, 강변과 남쪽 쉼터를 산책할 수 있습니다. OSM 보행로·시설 위치와 Esri 위성영상, 2025년 현장 사진을 참고했습니다. 소나무 280그루의 위치·수형과 세부 시설 치수는 추정입니다. Blender 편집본은 `outputs/deudeulgang/deudeulgang-pine-grove-v3.blend`입니다.
+
+2026-10-03 v81에서는 **솔밭유원지와 바로 옆 강 구간만** 남겼습니다. 산 배경·농경지·외부 도로·교량을 제거하고 카메라·미니맵·이동 범위를 맞췄습니다. 현재 편집본은 `outputs/deudeulgang-v81/deudeulgang-grove-river-v81-finished.blend`이며 원본과 소나무·솔밭 안 숲길 위치는 보존했습니다. 압축 전송량은 약 46% 감소했습니다. 사용되지 않는 UI·과거 공개 자산 76개는 복구용 로컬 보관함으로 옮겨 배포에서 제외했습니다. [범위·정리 목록·검증 기록](knowledge/deudeulgang-crop-and-cleanup-v81-2026-10-03.md).
 
 기존 모든 맵과 두 황포돛배의 색감을 Blender에서 조정했습니다. `outputs/palette-v51`에 새 전체 장면 편집본을 보관하고, 기존 정점·이미지·애니메이션을 유지한 채 재질 값만 GLB에 반영합니다. [사진 근거, 제작 방법과 추정 범위](knowledge/deudeulgang-and-map-palette-2026-09-20.md)를 확인하세요.
 
@@ -250,7 +252,7 @@ npm run build
 
 ## 출처
 
-드들강 수피·낮은 풀·숲 바닥 질감과 모든 탐험 장소의 제목 대비 보완은 [마감 기록](knowledge/deudeulgang-surfaces-quality-2026-10-01.md)에 있습니다. 현재 편집본은 `outputs/quality-v72/deudeulgang-surfaces-v72.blend`이며 이전 수정본을 보존했습니다.
+드들강 수피·낮은 풀·숲 바닥 질감과 모든 탐험 장소의 제목 대비 보완은 [마감 기록](knowledge/deudeulgang-surfaces-quality-2026-10-01.md)에 있습니다. 기반 편집본 `outputs/quality-v72/deudeulgang-surfaces-v72.blend`를 보존하고 v81에서 표시 범위를 솔밭·강으로 축소했습니다.
 
 수목원 메타세쿼이아·활엽수의 사진 대조, 수형·수피 보완과 보호 검사는 [수형 제작 기록](knowledge/naju-arboretum-tree-quality-2026-10-02.md)에 정리합니다. 새 편집본은 `outputs/quality-v74/naju-arboretum-tree-crowns-v74.blend`이며, 첫 v73 후보는 잎 밀도 문제로 게시하지 않았습니다.
 
