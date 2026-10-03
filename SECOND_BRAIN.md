@@ -1,5 +1,7 @@
 # 프로젝트 기록 안내
 
+- 원본 보존·중복 배포 모델/압축 파일/캐시 4.82 GB 정리: `knowledge/workspace-cleanup-v91-2026-10-04.md`
+
 - 영산포 사용자 지정 강 건너편 배경 축소·교량 끝/수면/이동 경계 정리와 원본 보존: `knowledge/yeongsanpo-map-crop-2026-10-04.md`
 
 - 지역 NPC 네 모델·리깅·대화 동작 및 배돌이 손·모자, 버들낭자 보정: `knowledge/naju-npc-rigging-repair-2026-10-02.md`
