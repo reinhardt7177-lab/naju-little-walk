@@ -77,6 +77,9 @@ kbd { font-family:inherit; font-size:12px; border:1px solid #6a7f652b; border-ra
 .minimap svg { cursor:pointer; }
 .boat-panel { position:absolute; left:36px; width:340px; max-width:calc(100% - 260px); padding:17px 20px; color:#f2eadb; background:#163c3aef; border:1px solid #a9c9b65c; border-radius:14px; box-shadow:0 10px 32px #12323130; backdrop-filter:blur(12px); }
 .boat-panel.at-shore { top:172px; }
+.monorail-panel { position:absolute;left:50%;bottom:100px;transform:translateX(-50%);width:360px;max-width:calc(100% - 260px);padding:16px 18px;background:#f8f9f0f2;border:1px solid #cbd5ca;border-radius:12px;color:#244b40;box-shadow:0 5px 20px #12323120; }
+.monorail-panel strong { font-size:18px; }.monorail-panel p { font-size:14px;margin:8px 0 12px; }.monorail-panel small { display:block;margin-top:9px;font-size:12px; }.monorail-panel progress { width:100%;accent-color:#285b48;margin-bottom:8px; }.monorail-panel button:disabled { opacity:.55;cursor:default; }
+@media (max-height:650px) { .monorail-panel { bottom:85px;padding:12px;width:320px; }.monorail-panel p {margin:6px 0 9px;} }
 .boat-panel.aboard { bottom:126px; }
 .boat-panel-title { display:flex; justify-content:space-between; gap:12px; font-size:18px; font-weight:700; }
 .boat-panel-title strong { color:#edbc6d; white-space:nowrap; }

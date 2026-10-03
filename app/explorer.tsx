@@ -17,6 +17,7 @@ import type { Point } from '@/lib/world';
 import MapTravel from './map-travel';
 import { PrecinctMapShapes } from './geumseonggwan-map';
 import { BoatFleet, type BoatHud } from '@/lib/boat-fleet';
+import { MonorailScene, type RailHud } from '@/lib/monorail-scene';
 import { FullscreenButton, useScreenMode } from './screen-mode';
 import WalkGuide from './walk-guide';
 import { pixelRatioFor, type GraphicsQuality } from '@/lib/display-mode';
@@ -28,7 +29,7 @@ import type {NpcAnimation, GuideGesture} from '@/lib/npc-animation';
 import NpcConversation from './npc-conversation';
 
 type ViewState = { x: number; z: number; yaw: number; place: string; detail: string; indoor: boolean };
-type Engine = { start: () => void; pause: () => void; reset: () => void; overview: () => void; inspect: (id: string) => void; zoom: (scale: number) => void; key: (key: string, down: boolean) => void; travel: (point: Point, height?:number) => boolean; boatAction: (action:string,id?:string)=>void; npcGesture:(gesture:GuideGesture)=>void };
+type Engine = { start: () => void; pause: () => void; reset: () => void; overview: () => void; inspect: (id: string) => void; zoom: (scale: number) => void; key: (key: string, down: boolean) => void; travel: (point: Point, height?:number) => boolean; boatAction: (action:string,id?:string)=>void; railAction:(action:string,id?:string)=>void; npcGesture:(gesture:GuideGesture)=>void };
 
 export default function Explorer() {
   const { touch, portrait, quality } = useScreenMode();
@@ -52,6 +53,7 @@ export default function Explorer() {
   const [loadStage, setLoadStage] = useState('지도를 준비하고 있습니다');
   const [error, setError] = useState('');
   const [boatHud,setBoatHud] = useState<BoatHud|null>(null);
+  const [railHud,setRailHud] = useState<RailHud|null>(null);
   const [destinationId, setDestinationId] = useState<DestinationId>('geumseonggwan');
   const destination = destinations[destinationId];
   const [view, setView] = useState<ViewState>({ x: 0, z: 0, yaw: 0, place: '금성관 주변', detail: '', indoor: false });
@@ -67,7 +69,7 @@ export default function Explorer() {
   useEffect(() => {
     const selectedId = appDestinationFromSearch(window.location.search);
     setReady(false); setError(''); setActive(false); setStarted(false); setOverview(true);
-    setBoatHud(null); setNpcHud(null);setNpcOpen(false);setWorld(null); setLoadStage('지도를 준비하고 있습니다');
+    setBoatHud(null);setRailHud(null); setNpcHud(null);setNpcOpen(false);setWorld(null); setLoadStage('지도를 준비하고 있습니다');
     const selected = destinations[selectedId];
     const optimizedCampus=selectedId==='bitgaram-park'||selectedId==='bitgaram-kepco'||selectedId==='bitgaram-kentech'||selectedId==='naju-arboretum'||selectedId==='deudeulgang'||selectedId==='dasi';
     setDestinationId(selectedId);
@@ -223,6 +225,8 @@ export default function Explorer() {
       }
       const fleet=new BoatFleet(data);
       await fleet.load(scene);
+      const rail=data.monorail?new MonorailScene(data.monorail):undefined;
+      if(rail)await rail.load(scene,abort.signal);
       if(disposed){scene.traverse(disposeObject);return;}
       const camera = new THREE.PerspectiveCamera(60, 1, 0.12, selectedId !== 'geumseonggwan' ? 1800 : 1000);
       const colliders = data.solids.filter(s => s.collision).map(solidCollider);
@@ -279,10 +283,30 @@ export default function Explorer() {
         else if(action==='leave'){const p=fleet.leave();if(p){px=p.position[0];pz=p.position[1];elevation=p.height;}}
         start();
       };
+      const railAction=(action:string,id?:string)=>{
+        if(!rail)return;
+        keys.clear();
+        if(action==='station'&&id){
+          if(rail.state.aboard)return;
+          const station=rail.definition.stations.find(s=>s.id===id);
+          if(station)engine.current?.travel(station.arrival,station.height);
+        }else if(action==='call'&&id){
+          if(rail.hud([px,pz],elevation).near===id&&!rail.state.aboard)rail.request(id);
+        }else if(action==='board'){
+          if(rail.board([px,pz],elevation)){
+            const p=rail.eye()!;px=p.x;pz=p.z;elevation=p.height;
+            yaw=(rail.root?.rotation.y??0)+(rail.state.station==='upper'?Math.PI:0);pitch=0;
+          }
+        }else if(action==='depart'&&id&&rail.state.aboard)rail.request(id);
+        else if(action==='leave'){
+          const station=rail.leave();if(station){px=station.arrival[0];pz=station.arrival[1];elevation=station.height;pitch=0;}
+        }
+        setRailHud(rail.hud([px,pz],elevation));start();
+      };
       engine.current = {
-        start, pause, boatAction,
+        start, pause, boatAction,railAction,
         npcGesture:(gesture)=>{npc?.setGesture(gesture);demand.invalidate();},
-        reset: () => { npc?.setGesture('Idle');setNpcOpen(false);fleet.reset();px = data.spawn.x; pz = data.spawn.z; elevation=reachableFloor(px,pz,data.spawn.height??0,floors)??0; yaw = data.spawn.yaw; pitch = 0; start(); },
+        reset: () => { npc?.setGesture('Idle');setNpcOpen(false);fleet.reset();rail?.reset();if(rail)setRailHud(rail.hud([data.spawn.x,data.spawn.z],data.spawn.height??0));px = data.spawn.x; pz = data.spawn.z; elevation=reachableFloor(px,pz,data.spawn.height??0,floors)??0; yaw = data.spawn.yaw; pitch = 0; start(); },
         overview: () => {
           pause();npc?.setGesture('Idle');setNpcOpen(false);bird=true;setOverview(true);
           inspectingCeiling=false;inspectingArchitecture=false;
@@ -300,6 +324,7 @@ export default function Explorer() {
         zoom: (scale) => { orbitRadius = THREE.MathUtils.clamp(orbitRadius * scale, inspectingCeiling?3:inspectingArchitecture?6:selectedId==='geumseonggwan'?10:'parent' in selected ? 12 : 85, inspectingCeiling?6:selectedId !== 'geumseonggwan' ? 1100 : 260); demand.invalidate(); },
         key: (key, down) => { if (down) keys.add(key); else keys.delete(key); },
         travel: (point,height=0) => {
+          if(rail?.state.aboard)return false;
           if(!canTravelTo(point,data,height))return false;
           fleet.leaveForTravel();
           px=point[0];pz=point[1];pitch=0;keys.clear();
@@ -325,7 +350,7 @@ export default function Explorer() {
       if (context?.registerTool) {
         const lifecycle = new AbortController();
         cleanups.push(() => lifecycle.abort());
-        const state = () => ({ destination: selected.name, mode: bird ? 'overview' : playing ? 'walking' : 'paused', position: { x: px, z: pz }, guide:npcPlacement?{character:npcPlacement.character,name:npcManifest.assets[npcPlacement.character].name,position:npcPlacement.position,modelUrl:npcManifest.assets[npcPlacement.character].modelUrl,gesture:npc?.gesture}:null, source: data.source,renderDiagnostics:renderDiagnostics() });
+        const state = () => ({ destination: selected.name, mode: bird ? 'overview' : playing ? 'walking' : 'paused', position: { x: px, z: pz },monorail:rail?.hud([px,pz],elevation)??null, guide:npcPlacement?{character:npcPlacement.character,name:npcManifest.assets[npcPlacement.character].name,position:npcPlacement.position,modelUrl:npcManifest.assets[npcPlacement.character].modelUrl,gesture:npc?.gesture}:null, source: data.source,renderDiagnostics:renderDiagnostics() });
         const registrations = [
           { name: 'get_naju_walk_state', description: 'Read the current Naju exploration view and position.', inputSchema: { type: 'object', properties: {}, additionalProperties: false }, annotations: { readOnlyHint: true }, execute: () => state() },
           { name: 'set_naju_walk_view', description: 'Switch the same exploration view as the visible overview, walk, or pause controls.', inputSchema: { type: 'object', properties: { view: { type: 'string', enum: ['overview', 'walk', 'pause'] } }, required: ['view'], additionalProperties: false }, annotations: { readOnlyHint: false }, execute: async (input: unknown) => {
@@ -394,14 +419,15 @@ export default function Explorer() {
           const len = Math.hypot(forward, side) || 1;
           const speed = (keys.has('ShiftLeft') || keys.has('ShiftRight') ? 9 : 4.5) * dt / len;
           const dx=(-Math.sin(yaw) * forward + Math.cos(yaw) * side) * speed, dz=(-Math.cos(yaw) * forward - Math.sin(yaw) * side) * speed;
-          const passenger=fleet.update(dt,keys,yaw);
+          const railPassenger=rail?.update(dt);
+          const passenger=railPassenger?{...railPassenger,yawDelta:0}:fleet.update(dt,keys,yaw);
           if(passenger){px=passenger.x;pz=passenger.z;elevation=passenger.height;yaw+=passenger.yawDelta;}
           else{
-            const next=data.verticalNavigation?moveOnFloors(px,pz,elevation,dx,dz,obstacles,floors,data.bounds,data.requireFloor):movePlayer(px,pz,dx,dz,colliders,data.bounds);
+            const next=data.verticalNavigation?moveOnFloors(px,pz,elevation,dx,dz,rail?[...obstacles,rail.obstacle()]:obstacles,floors,data.bounds,data.requireFloor):movePlayer(px,pz,dx,dz,colliders,data.bounds);
             px = next.x; pz = next.z;
             if('height' in next)elevation=next.height as number;
           }
-          if(!fleet.passenger && !changingScene && (forward || side)){
+          if(!fleet.passenger && !rail?.state.aboard && !changingScene && (forward || side)){
             const portal=portalAt(data,px,pz,elevation),href=portal&&portalHref(portal);
             if(href){changingScene=true;keys.clear();playing=false;window.location.assign(href);}
           }
@@ -415,11 +441,12 @@ export default function Explorer() {
         if(optimizedCampus && shadowBird!==bird){renderer.shadowMap.needsUpdate=true;shadowBird=bird;}
         if (now - lastHud > 180) {
           if(npc&&npcPlacement){
-            const near=!bird&&!fleet.passenger&&Math.hypot(px-npcPlacement.position[0],pz-npcPlacement.position[2])<6&&Math.abs(elevation-npcPlacement.position[1])<2;
+            const near=!bird&&!fleet.passenger&&!rail?.state.aboard&&Math.hypot(px-npcPlacement.position[0],pz-npcPlacement.position[2])<6&&Math.abs(elevation-npcPlacement.position[1])<2;
             if(!near&&npcOpenRef.current){npc.setGesture('Idle');setNpcOpen(false);}
             setNpcHud(current=>current?.near===near?current:{name:npcManifest.assets[npcPlacement.character].name,near});
           }
           const hud=fleet.hud([px,pz],elevation);if(fleet.vessels.length)setBoatHud(hud);
+          if(rail)setRailHud(rail.hud([px,pz],elevation));
           const place = currentPlace(px, pz, data.places, data.verticalNavigation?elevation:undefined);
           const doorway=data.portals?.find(p=>Math.hypot(p.position[0]-px,p.position[1]-pz)<4 && Math.abs((p.height??0)-elevation)<.6);
           const nextView={ x: px, z: pz, yaw, place: fleet.passenger?.vessel.definition.name ?? place?.name ?? selected.area, detail: hud.aboard?(hud.mode==='helm'?'방향 버튼으로 조종 · 제동 버튼으로 정지':'갑판과 객실을 걸어서 둘러보세요.'):doorway?doorway.label:place?.description ?? '', indoor: !!hud.aboard || (place?.indoor ?? place?.id === 'interior') };
@@ -458,7 +485,7 @@ export default function Explorer() {
       <nav className="destination-nav" aria-label="나주 전체 지도와 장소 선택">
         <button onClick={openMap}><Map size={18}/><span>나주 전체 · 장소 선택</span></button>
       </nav>
-      {active && !!world?.sceneLinks?.length && <nav className="scene-signposts" aria-label="장소 이동 푯말">{world.sceneLinks.filter(link=>Object.hasOwn(destinations,link.target)).map(link=><a key={link.target} href={`/?place=${encodeURIComponent(link.target)}`}><MapPin size={18}/><span>{link.label}</span><ArrowUpRight size={16}/></a>)}</nav>}
+      {active && !railHud?.aboard && !!world?.sceneLinks?.length && <nav className="scene-signposts" aria-label="장소 이동 푯말">{world.sceneLinks.filter(link=>Object.hasOwn(destinations,link.target)).map(link=><a key={link.target} href={`/?place=${encodeURIComponent(link.target)}`}><MapPin size={18}/><span>{link.label}</span><ArrowUpRight size={16}/></a>)}</nav>}
       {world && !minimapExpanded && <button className="minimap-toggle" aria-expanded={false} aria-controls="location-minimap" onClick={()=>setMinimapExpanded(true)}><Map size={17}/>미니맵 펼치기</button>}
       {world && minimapExpanded && <aside id="location-minimap" className="minimap" aria-label="현재 위치 지도">
         <div className="map-heading"><span>{destination.name}</span><button className="panel-fold" aria-expanded={true} aria-controls="location-minimap" onClick={()=>setMinimapExpanded(false)}>접기 −</button></div>
@@ -474,12 +501,13 @@ export default function Explorer() {
         <button className="minimap-travel" onClick={openMap}>지도 열고 이동하기 <ArrowUpRight size={14}/></button>
       </aside>}
       {overview && ready && !error && <div className="overview-zoom" role="group" aria-label="전체 보기 확대 축소"><button aria-label="확대" onClick={() => engine.current?.zoom(.8)}><Plus size={19}/></button><button aria-label="축소" onClick={() => engine.current?.zoom(1.25)}><Minus size={19}/></button></div>}
-      {!active && !npcOpen && !boatHud?.aboard && !error && <section className={`welcome${welcomeExpanded?'':' welcome-compact'}`} aria-label="산책 시작">
+      {!active && !npcOpen && !boatHud?.aboard && !railHud?.aboard && !error && <section className={`welcome${welcomeExpanded?'':' welcome-compact'}`} aria-label="산책 시작">
         <button className="welcome-fold panel-fold" aria-expanded={welcomeExpanded} aria-controls="walk-introduction" onClick={()=>setWelcomeExpanded(v=>!v)}>{welcomeExpanded?'안내 접기 −':'이용 안내 +'}</button>
         {welcomeExpanded && <div id="walk-introduction"><div className="eyebrow"><span />나주 · {destination.name}</div>
         <h1>{started ? '산책을 잠시 멈췄습니다' : destination.name}</h1>
         <p>{started ? '같은 위치에서 이어서 걸을 수 있습니다.' : destination.introduction[0]}</p></div>}
         {overview && ready && !!world?.architectureViews?.length && <div className="architecture-views" role="group" aria-label="건축 자세히 보기">{world.architectureViews.map(v=><button key={v.id} onClick={()=>engine.current?.inspect(v.id)}>{v.label}</button>)}</div>}
+        {ready&&world?.monorail&&<div className="architecture-views" role="group" aria-label="모노레일 승강장으로 이동">{world.monorail.stations.map(s=><button key={s.id} onClick={()=>engine.current?.railAction('station',s.id)}>{s.id==='lower'?'모노레일 하부':'모노레일 상부'}</button>)}</div>}
         <button className="start-button" onClick={() => engine.current?.start()} disabled={!ready || !!error}><Footprints size={20} /><span>{error ? '화면을 열 수 없습니다' : !ready ? '산책 준비 중…' : started ? '이어서 걷기' : '산책 시작'}</span><ArrowUpRight size={21} /></button>
         {!ready && !error && <div className="load-status" role="status"><span className="loading-line"/>{loadStage}</div>}
         {welcomeExpanded && <div className="welcome-help">{touch ? '왼쪽 버튼으로 이동 · 화면을 드래그해 둘러보기' : <><span><kbd>W A S D</kbd> 이동</span><span>드래그로 둘러보기</span></>}</div>}
@@ -487,8 +515,17 @@ export default function Explorer() {
       {error&&<section className="scene-recovery" role="alert" aria-label="3D 화면 복구"><strong>화면을 다시 열어 주세요</strong><p>{error}</p><button onClick={()=>setAttempt(value=>value+1)}>출발 위치에서 다시 불러오기</button></section>}
       {npcHud?.near&&!npcOpen&&!mapOpen&&!guideOpen&&<button className="npc-talk-button" onClick={()=>{engine.current?.pause();engine.current?.npcGesture('Greeting');setNpcOpen(true);}}><MessageCircle size={19}/>{npcHud.name}와 이야기</button>}
       {npcOpen&&npcHud&&<NpcConversation name={npcHud.name} destinationId={destinationId} onGesture={gesture=>engine.current?.npcGesture(gesture)} onClose={()=>{setNpcOpen(false);engine.current?.start();}}/>}
-      {active && <><div className="crosshair" aria-hidden="true" />{!boatHud?.aboard&&<div className="place-card"><span className="place-icon"><MapPin size={18} /></span><div><span>{view.indoor ? '실내' : '현재 위치'}</span><strong>{view.place}</strong>{view.detail&&<p>{view.detail}</p>}</div></div>}
-        <div className="touch-controls" aria-label="이동 버튼"><span className="touch-label">{boatHud?.mode==='helm'?'조종':'이동'}</span><button aria-label="앞으로" {...press('KeyW')}><ArrowUp /></button><div><button aria-label="왼쪽으로" {...press('KeyA')}><ArrowLeft /></button><button aria-label="뒤로" {...press('KeyS')}><ArrowDown /></button><button aria-label="오른쪽으로" {...press('KeyD')}><ArrowRight /></button></div></div><div className="turn-controls" aria-label="시선 버튼"><span className="touch-label">시선</span><div><button aria-label="왼쪽 보기" {...press('KeyQ')}>↶</button><button aria-label="오른쪽 보기" {...press('KeyE')}>↷</button></div></div></>}
+      {active && <><div className="crosshair" aria-hidden="true" />{!boatHud?.aboard&&!railHud?.aboard&&<div className="place-card"><span className="place-icon"><MapPin size={18} /></span><div><span>{view.indoor ? '실내' : '현재 위치'}</span><strong>{view.place}</strong>{view.detail&&<p>{view.detail}</p>}</div></div>}
+        {!railHud?.aboard&&<div className="touch-controls" aria-label="이동 버튼"><span className="touch-label">{boatHud?.mode==='helm'?'조종':'이동'}</span><button aria-label="앞으로" {...press('KeyW')}><ArrowUp /></button><div><button aria-label="왼쪽으로" {...press('KeyA')}><ArrowLeft /></button><button aria-label="뒤로" {...press('KeyS')}><ArrowDown /></button><button aria-label="오른쪽으로" {...press('KeyD')}><ArrowRight /></button></div></div>}<div className="turn-controls" aria-label="시선 버튼"><span className="touch-label">시선</span><div><button aria-label="왼쪽 보기" {...press('KeyQ')}>↶</button><button aria-label="오른쪽 보기" {...press('KeyE')}>↷</button></div></div></>}
+      {railHud&&(railHud.near||railHud.aboard)&&!overview&&!mapOpen&&<aside className="monorail-panel" aria-label="모노레일 탑승과 운행">
+        <strong>{railHud.aboard?'빛가람 모노레일':railHud.stations.find(s=>s.id===railHud.near)?.name}</strong>
+        <p>{!active&&railHud.target?'운행을 잠시 멈췄습니다':railHud.target?`${railHud.stations.find(s=>s.id===railHud.target)?.name}으로 ${railHud.speed>0?'운행 중':'출발 준비 중'}`:railHud.door<.98?'문을 열고 있습니다':railHud.station===railHud.near||railHud.aboard?'정차 중 · 탑승문이 열렸습니다':'다른 승강장에 정차 중입니다'}</p>
+        {railHud.aboard&&<progress aria-label="모노레일 위치" max={1} value={railHud.progress}/>}
+        <div className="boat-actions">
+          {!active&&<button onClick={()=>engine.current?.start()}>운행 이어가기</button>}
+          {railHud.aboard?railHud.target?<button onClick={()=>engine.current?.pause()} disabled={!active}>운행 잠시 멈추기</button>:<><button disabled={railHud.door<.98} onClick={()=>engine.current?.railAction('depart',railHud.stations.find(s=>s.id!==railHud.station)?.id)}>{railHud.station==='lower'?'전망대로 올라가기':'전시동으로 내려가기'}</button><button disabled={railHud.door<.98} onClick={()=>engine.current?.railAction('leave')}>승강장에 내리기</button></>:railHud.station===railHud.near?<button disabled={railHud.door<.98} onClick={()=>engine.current?.railAction('board')}>모노레일 탑승</button>:<button disabled={!!railHud.target} onClick={()=>engine.current?.railAction('call',railHud.near??undefined)}>모노레일 호출</button>}
+        </div><small>화면을 드래그해 창밖을 둘러보세요.</small>
+      </aside>}
       {boatHud&&(active||!!boatHud.aboard)&&!mapOpen&&<aside className={`boat-panel ${boatHud.aboard?'aboard':'at-shore'}`} aria-label="황포돛배 승선과 조종">
         <div className="boat-panel-title"><span>{boatHud.aboard?view.place:'영산강 황포돛배'}</span>{boatHud.aboard&&<strong>{boatHud.speed.toFixed(1)} <small>km/h</small></strong>}</div>
         {boatHud.aboard?<>

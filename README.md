@@ -262,7 +262,7 @@ npm run build
 
 드들강의 현장 사진 대조, 소나무 수관·강 건너 숲 보완, 기존 뿌리·보행 정보 보존은 [제작 기록](knowledge/deudeulgang-pine-quality-2026-10-01.md)에 정리했습니다. 새 Blender 수정본은 `outputs/quality-v71/deudeulgang-pine-crowns-v71.blend`입니다.
 
-빛가람 전망대의 실제 모노레일 평면선·돌미끄럼틀 사진과 보행 연결을 대조한 내용은 [접근로 정정 기록](knowledge/bitgaram-access-correction-2026-10-01.md)에 있습니다. 경사와 세부 치수의 추정 여부도 함께 기록했습니다.
+빛가람 전망대의 실제 모노레일 평면선·돌미끄럼틀 사진과 보행 연결을 대조한 내용은 [접근로 정정 기록](knowledge/bitgaram-access-correction-2026-10-01.md)에 있습니다. 경사와 세부 치수의 추정 여부도 함께 기록했습니다. [v83 운행 보완](knowledge/bitgaram-monorail-v83-2026-10-03.md)에서 별도 차량 모델과 호출·탑승·왕복·하차를 연결했습니다. 전체 보기의 ‘모노레일 하부/상부’ 버튼으로 승강장에 이동한 뒤 탑승할 수 있습니다.
 
 수목원 꽃밭·목재 놀이시설의 최근 보완, 새 Blender 수정본과 검증 범위는 [제작 기록](knowledge/naju-arboretum-garden-quality-2026-10-01.md)에 정리했습니다. [향나무길 제작 기록](knowledge/naju-arboretum-juniper-quality-2026-10-01.md)에는 수형 보강과 지도 도로 정렬, 교차로·보행 바닥 갱신을 기록했습니다. 안드로이드 태블릿의 실제 조작·성능 검증은 화면 크기 검사와 구분합니다.
 

@@ -30,6 +30,7 @@ export type World = {
   portals?: Portal[];
   sceneLinks?: {label:string;target:string}[];
   boats?: import('./boat-navigation.ts').BoatDefinition[];
+  monorail?: import('./monorail.ts').MonorailDefinition;
   navigationWater?: import('./boat-navigation.ts').NavigationWater;
   lighting?: { exposure: number; ambient: number; sun: number };
   architectureViews?: { id: string; label: string; center: Vec3; radius: number; elevation: number; angle: number; fov?: number }[];
