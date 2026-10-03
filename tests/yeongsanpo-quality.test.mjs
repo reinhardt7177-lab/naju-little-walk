@@ -29,7 +29,7 @@ test('river has physically shaded ripples and leaves use clipped silhouettes',()
   assert.equal(leaf.alphaMode,'MASK');assert.equal(leaf.doubleSided,true);
   assert.ok(gltf.nodes.some(n=>n.name==='yeongsanpo_lighthouse'));
 });
-test('three scene refinements preserve the exact previous walking envelopes',()=>{
+test('scene refinements retain navigation baselines and record the deliberate northern crop',()=>{
   const refs=read('knowledge/sources/yeongsanpo-v79-verification.json');
   const canonical=v=>Array.isArray(v)?v.map(canonical):v&&typeof v==='object'?Object.fromEntries(Object.keys(v).sort().map(k=>[k,canonical(v[k])])):v;
   for(const id of ['yeongsanpo','yeongsanpo-history','yeongsanpo-literature']){
@@ -38,7 +38,9 @@ test('three scene refinements preserve the exact previous walking envelopes',()=
     const reference=refs.navigation.find(n=>n.scene===id);
     assert.ok(reference?.unchanged);
     const nav=Object.fromEntries(reference.navigationKeys.map(k=>[k,w[k]??null]));
-    assert.equal(createHash('sha256').update(JSON.stringify(canonical(nav))).digest('hex'),reference.navigationSha256,id+' floor, wall and doorway envelopes');
+    const crop=id==='yeongsanpo'&&w.mapCrop?.revision==='north-crop-v90'?read('knowledge/sources/yeongsanpo-crop-v90.json'):null;
+    if(crop)assert.equal(crop.legacyNavigationSha256,reference.navigationSha256,'Crop starts from the preserved navigation baseline');
+    assert.equal(createHash('sha256').update(JSON.stringify(canonical(nav))).digest('hex'),crop?.navigationSha256??reference.navigationSha256,id+' floor, wall and doorway envelopes');
     assert.equal(appDestinationFromSearch('?place='+id),id);
     for(const p of w.portals??[])assert.equal(appDestinationFromSearch('?place='+p.target),p.target);
   }

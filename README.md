@@ -4,6 +4,8 @@
 
 [영산포 고도화 v79·지도 복원 기록](knowledge/yeongsanpo-quality-v79-2026-10-03.md): 사진을 비교해 강변·등대·상점·두 전시관·황포돛배 표면을 보강했습니다. [영산포 산책](https://naju-little-walk.vercel.app/?place=yeongsanpo&v=quality-v79-20261003)에서 선착장 전경·등대·홍어거리·문학관 마당을 가까이 볼 수 있습니다.
 
+[영산포 북측 배경 축소 v90](knowledge/yeongsanpo-map-crop-2026-10-04.md): 사용자가 표시한 강 건너편 배경과 불필요한 도로·교량 끝을 잘라 맵 범위를 줄였습니다. 선착장·홍어거리·두 전시관과 황포돛배를 유지하고 이동·수면 경계도 맞췄습니다. [축소된 영산포 맵](https://naju-little-walk.vercel.app/?place=yeongsanpo&v=north-crop-v90)에서 확인합니다.
+
 ## 태블릿으로 이용하기
 
 최신 [금성관 리서치·고도화 v78 기록](knowledge/geumseonggwan-research-v78-2026-10-03.md): 2015년 공식 기록 사진과 현장 사진을 비교해 잎형 공포, 서까래 채색, 연꽃 천장판, 문 하단을 보강했습니다. 전체 보기에서 **정청 정면 / 처마·공포 / 망화루 / 천장·단청**을 살펴볼 수 있습니다. 새 Blender 편집본은 `outputs/geumseonggwan-v78/geumseonggwan-v78.blend`입니다.
