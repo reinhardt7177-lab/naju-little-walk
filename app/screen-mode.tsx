@@ -73,7 +73,7 @@ export default function ScreenMode({ children }: { children: ReactNode }) {
       <div ref={content} className="app-content" inert={portrait} aria-hidden={portrait || undefined}>{children}</div>
       {portrait && <section className="rotate-screen" aria-labelledby="rotate-title">
         <div className="rotate-mark"><Smartphone size={54} strokeWidth={1.3}/><RotateCw size={22}/></div>
-        <span className="rotate-brand">금성관 산책</span>
+        <span className="rotate-brand">나주 산책</span>
         <h1 id="rotate-title">가로로 돌려 주세요</h1>
         <p>넓은 화면으로 풍경을 보고<br/>양손으로 편하게 걸을 수 있어요.</p>
         <button onClick={requestLandscape} disabled={busy}><Maximize size={18}/>{busy ? '화면 전환 중…' : '가로 전체 화면으로 시작'}</button>

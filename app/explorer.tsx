@@ -4,6 +4,7 @@ import { useEffect, useMemo, useRef, useState } from 'react';
 import { ArrowUpRight, Footprints, MapPin, Map, RotateCcw, Pause, MoveUpRight, ArrowUp, ArrowDown, ArrowLeft, ArrowRight, Compass, CircleHelp, Plus, Minus, MessageCircle } from 'lucide-react';
 import * as THREE from 'three';
 import { GLTFLoader } from 'three/addons/loaders/GLTFLoader.js';
+import { Sky } from 'three/addons/objects/Sky.js';
 import { movePlayer, moveOnFloors, reachableFloor, worldObstacles, solidCollider, worldFloors, floorHeight, currentPlace, type World } from '@/lib/world';
 import { destinations, type DestinationId } from '@/lib/destinations';
 import { appDestinationFromSearch } from '@/lib/app-destination';
@@ -113,6 +114,21 @@ export default function Explorer() {
       cleanups.push(()=>{canvas.removeEventListener('webglcontextlost',lost);canvas.removeEventListener('webglcontextrestored',restored);});
       scene.background = new THREE.Color('#bbd9e6');
       scene.fog = new THREE.Fog('#bbd9e6', selectedId !== 'geumseonggwan' ? 650 : 260, selectedId !== 'geumseonggwan' ? 1350 : 690);
+      // One small prefiltered daylight map gives the authored water and glazing
+      // real sky reflections without fetching a panorama or rendering probes per frame.
+      if(selectedId==='yeongsanpo'){
+        const sky=new Sky();sky.scale.setScalar(900);
+        sky.material.uniforms.turbidity.value=6;sky.material.uniforms.rayleigh.value=1.4;
+        sky.material.uniforms.mieCoefficient.value=.004;sky.material.uniforms.mieDirectionalG.value=.75;
+        sky.material.uniforms.sunPosition.value.set(-220,320,110);
+        sky.material.uniforms.showSunDisc.value=false;
+        const lightingSky=new THREE.Scene();lightingSky.add(sky);
+        const pmrem=new THREE.PMREMGenerator(renderer);
+        const daylight=pmrem.fromScene(lightingSky,.025,.1,1200,{size:128});
+        scene.environment=daylight.texture;scene.environmentIntensity=.045;
+        pmrem.dispose();sky.geometry.dispose();sky.material.dispose();
+        cleanups.push(()=>{scene.environment=null;daylight.dispose();});
+      }
       scene.add(new THREE.HemisphereLight('#e1f3ff', '#918673', data.lighting?.ambient??(data.verticalNavigation ? 1.5 : 2.8)));
       const sun = new THREE.DirectionalLight('#fff0d1', data.lighting?.sun??3.1);
       sun.position.set(-80, 145, 65); sun.castShadow = true;
@@ -126,6 +142,12 @@ export default function Explorer() {
         sun.shadow.camera.right=sun.shadow.camera.top=115;
         sun.shadow.normalBias=.018;sun.shadow.bias=-.00006;
         sun.shadow.radius=2;
+      }
+      if(selectedId==='yeongsanpo'){
+        sun.position.set(-250,320,210);sun.target.position.set(-30,0,100);scene.add(sun.target);
+        sun.shadow.camera.left=sun.shadow.camera.bottom=-300;
+        sun.shadow.camera.right=sun.shadow.camera.top=300;sun.shadow.camera.far=1000;
+        sun.shadow.normalBias=.025;sun.shadow.bias=-.00005;
       }
       if(selectedId==='bitgaram-kentech'){
         sun.position.set(-220,420,220);sun.target.position.set(30,0,20);scene.add(sun.target);
@@ -207,6 +229,7 @@ export default function Explorer() {
       const gesture = new ViewGesture();
       let orbit: number = selected.overview.angle, orbitElevation: number = selected.overview.elevation, orbitRadius: number = selected.overview.radius;
       let inspectingCeiling = false;
+      let inspectingArchitecture = false;
       const center = new THREE.Vector3(selected.overview.center[0], 0, selected.overview.center[1]);
       const keys = new Set<string>();
       const resize = () => {
@@ -231,7 +254,7 @@ export default function Explorer() {
         if(contextLost)return;
         if (matchMedia('(orientation: portrait)').matches && (matchMedia('(any-pointer: coarse)').matches || navigator.maxTouchPoints > 0)) return;
         playing = true; bird = false; setActive(true); setStarted(true); setOverview(false);
-        inspectingCeiling=false;
+        inspectingCeiling=false;inspectingArchitecture=false;
         camera.fov=60;camera.updateProjectionMatrix();
         demand.invalidate();
         canvas.focus({ preventScroll: true });
@@ -256,7 +279,7 @@ export default function Explorer() {
         reset: () => { npc?.setGesture('Idle');setNpcOpen(false);fleet.reset();px = data.spawn.x; pz = data.spawn.z; elevation=reachableFloor(px,pz,data.spawn.height??0,floors)??0; yaw = data.spawn.yaw; pitch = 0; start(); },
         overview: () => {
           pause();npc?.setGesture('Idle');setNpcOpen(false);bird=true;setOverview(true);
-          inspectingCeiling=false;
+          inspectingCeiling=false;inspectingArchitecture=false;
           center.set(selected.overview.center[0],0,selected.overview.center[1]);
           orbit=selected.overview.angle;orbitElevation=selected.overview.elevation;orbitRadius=selected.overview.radius;demand.invalidate();
           camera.fov=60;camera.updateProjectionMatrix();
@@ -264,11 +287,11 @@ export default function Explorer() {
         inspect: (id) => {
           const view=data.architectureViews?.find(v=>v.id===id);if(!view)return;
           pause();npc?.setGesture('Idle');setNpcOpen(false);bird=true;setOverview(true);
-          inspectingCeiling=view.id==='ceiling';
+          inspectingCeiling=view.id==='ceiling';inspectingArchitecture=true;
           center.fromArray(view.center);orbit=view.angle;orbitElevation=view.elevation;orbitRadius=view.radius;demand.invalidate();
           camera.fov=view.fov??60;camera.updateProjectionMatrix();
         },
-        zoom: (scale) => { orbitRadius = THREE.MathUtils.clamp(orbitRadius * scale, inspectingCeiling?3:selectedId==='geumseonggwan'?10:'parent' in selected ? 12 : 85, inspectingCeiling?6:selectedId !== 'geumseonggwan' ? 1100 : 260); demand.invalidate(); },
+        zoom: (scale) => { orbitRadius = THREE.MathUtils.clamp(orbitRadius * scale, inspectingCeiling?3:inspectingArchitecture?6:selectedId==='geumseonggwan'?10:'parent' in selected ? 12 : 85, inspectingCeiling?6:selectedId !== 'geumseonggwan' ? 1100 : 260); demand.invalidate(); },
         key: (key, down) => { if (down) keys.add(key); else keys.delete(key); },
         travel: (point,height=0) => {
           if(!canTravelTo(point,data,height))return false;
@@ -337,7 +360,7 @@ export default function Explorer() {
         if (!delta) return;
         const { dx, dy, scale } = delta;
         if (bird && scale !== 1) { engine.current?.zoom(scale); return; }
-        if (bird) { orbit -= dx * 0.005; orbitElevation = THREE.MathUtils.clamp(orbitElevation + dy * 0.003, inspectingCeiling?-1.3:center.y>0?-.1:.3, inspectingCeiling?-.25:1.3); }
+        if (bird) { orbit -= dx * 0.005; orbitElevation = THREE.MathUtils.clamp(orbitElevation + dy * 0.003, inspectingCeiling?-1.3:inspectingArchitecture?-.1:center.y>0?-.1:.3, inspectingCeiling?-.25:1.3); }
         else if (playing) { yaw -= dx * 0.0028; pitch = THREE.MathUtils.clamp(pitch - dy * 0.0028, -1.15, 1.15); }
         demand.invalidate();
       }) as EventListener);
