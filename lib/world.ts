@@ -29,6 +29,7 @@ export type World = {
   arrivals?: Record<string, Arrival>;
   portals?: Portal[];
   sceneLinks?: {label:string;target:string}[];
+  viewMode?: 'panorama';
   boats?: import('./boat-navigation.ts').BoatDefinition[];
   monorail?: import('./monorail.ts').MonorailDefinition;
   navigationWater?: import('./boat-navigation.ts').NavigationWater;

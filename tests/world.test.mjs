@@ -62,6 +62,8 @@ test('park aerial roof has an open oculus and physical supports block walking',(
 test('observatory central entrance automatically enters a safe panorama arrival without return loops',()=>{
   const park=JSON.parse(fs.readFileSync(new URL('../public/bitgaram-park-world.json',import.meta.url),'utf8'));
   const inside=JSON.parse(fs.readFileSync(new URL('../public/bitgaram-observatory-world.json',import.meta.url),'utf8'));
+  assert.equal(inside.viewMode,'panorama','Direct links and entry portals use an interior eye point');
+  assert.equal(park.viewMode,undefined,'Exterior park retains its aerial overview');
   const front=sceneArrival(park,'?at=entrance-front');
   assert.equal(front.entered,true);
   assert.equal(portalAt(park,front.x,front.z,front.height),undefined,'Entrance link stops just outside the door trigger');

@@ -92,6 +92,8 @@ export default function Explorer() {
       if(npcPlacement)data=withNpcObstacle(data,npcPlacement);
       if (disposed) return;
       setWorld(data);
+      const panoramaRoom=data.viewMode==='panorama';
+      if(panoramaRoom)setOverview(false);
       // Keep centimeter-separated landscape layers stable at city overview distances.
       renderer = new THREE.WebGLRenderer({ antialias: true, powerPreference: 'high-performance', logarithmicDepthBuffer: selectedId.startsWith('bitgaram') || selectedId==='deudeulgang' || selectedId==='dasi' });
       renderer.setPixelRatio(pixelRatioFor(qualityRef.current, window.devicePixelRatio));
@@ -101,7 +103,7 @@ export default function Explorer() {
       renderer.toneMapping = THREE.ACESFilmicToneMapping;
       renderer.toneMappingExposure = data.lighting?.exposure??1.25;
       const canvas = renderer.domElement;
-      canvas.setAttribute('aria-label', `${selected.area} 3D 탐험 화면. 화면을 끌어 시선을 움직이고, 전체 보기에서 확대·축소할 수 있습니다.`);
+      canvas.setAttribute('aria-label', `${selected.area} 3D 탐험 화면. ${panoramaRoom?'화면을 끌어 창밖을 둘러볼 수 있습니다.':'화면을 끌어 시선을 움직이고, 전체 보기에서 확대·축소할 수 있습니다.'}`);
       canvas.tabIndex = 0;
       mount.appendChild(canvas);
       const lost=(event:Event)=>{
@@ -235,7 +237,7 @@ export default function Explorer() {
       const arrival=sceneArrival(data,window.location.search);
       let px = arrival.x, pz = arrival.z, yaw = arrival.yaw, pitch = 0;
       let elevation=reachableFloor(px,pz,arrival.height??0,floors)??0;
-      let playing = false, bird = true;
+      let playing = false, bird = !panoramaRoom;
       const gesture = new ViewGesture();
       let orbit: number = selected.overview.angle, orbitElevation: number = selected.overview.elevation, orbitRadius: number = selected.overview.radius;
       let inspectingCeiling = false;
@@ -308,6 +310,7 @@ export default function Explorer() {
         npcGesture:(gesture)=>{npc?.setGesture(gesture);demand.invalidate();},
         reset: () => { npc?.setGesture('Idle');setNpcOpen(false);fleet.reset();rail?.reset();if(rail)setRailHud(rail.hud([data.spawn.x,data.spawn.z],data.spawn.height??0));px = data.spawn.x; pz = data.spawn.z; elevation=reachableFloor(px,pz,data.spawn.height??0,floors)??0; yaw = data.spawn.yaw; pitch = 0; start(); },
         overview: () => {
+          if(panoramaRoom){start();return;}
           pause();npc?.setGesture('Idle');setNpcOpen(false);bird=true;setOverview(true);
           inspectingCeiling=false;inspectingArchitecture=false;
           center.set(selected.overview.center[0],0,selected.overview.center[1]);
@@ -353,7 +356,7 @@ export default function Explorer() {
         const state = () => ({ destination: selected.name, mode: bird ? 'overview' : playing ? 'walking' : 'paused', position: { x: px, z: pz },monorail:rail?.hud([px,pz],elevation)??null, guide:npcPlacement?{character:npcPlacement.character,name:npcManifest.assets[npcPlacement.character].name,position:npcPlacement.position,modelUrl:npcManifest.assets[npcPlacement.character].modelUrl,gesture:npc?.gesture}:null, source: data.source,renderDiagnostics:renderDiagnostics() });
         const registrations = [
           { name: 'get_naju_walk_state', description: 'Read the current Naju exploration view and position.', inputSchema: { type: 'object', properties: {}, additionalProperties: false }, annotations: { readOnlyHint: true }, execute: () => state() },
-          { name: 'set_naju_walk_view', description: 'Switch the same exploration view as the visible overview, walk, or pause controls.', inputSchema: { type: 'object', properties: { view: { type: 'string', enum: ['overview', 'walk', 'pause'] } }, required: ['view'], additionalProperties: false }, annotations: { readOnlyHint: false }, execute: async (input: unknown) => {
+          { name: 'set_naju_walk_view', description: 'Switch the same exploration view as the visible overview, walk, or pause controls.', inputSchema: { type: 'object', properties: { view: { type: 'string', enum: panoramaRoom?['walk', 'pause']:['overview', 'walk', 'pause'] } }, required: ['view'], additionalProperties: false }, annotations: { readOnlyHint: false }, execute: async (input: unknown) => {
             if (!input || typeof input !== 'object' || Object.keys(input).some(k => k !== 'view')) throw new Error('Expected only a view field.');
             const requested = (input as { view?: string }).view;
             if (requested === 'overview') engine.current?.overview(); else if (requested === 'walk') start(); else if (requested === 'pause') pause(); else throw new Error('View must be overview, walk, or pause.');
@@ -397,8 +400,9 @@ export default function Explorer() {
       }) as EventListener);
       listen(canvas, 'wheel', ((e: WheelEvent) => { if (bird) { e.preventDefault(); engine.current?.zoom(Math.exp(e.deltaY * .001)); } }) as EventListener, { passive: false });
       modelReady=true;setReady(!contextLost);if(!contextLost)setError('');
-      // Door travel opens at eye level. Pointer lock still waits for a user gesture.
-      if(arrival.entered && !contextLost && !(innerWidth < innerHeight && navigator.maxTouchPoints > 0)){playing=true;bird=false;setActive(true);setStarted(true);setOverview(false);canvas.focus({preventScroll:true});}
+      // A panorama is authored for an interior eye point, including direct links without an arrival.
+      if(panoramaRoom){setStarted(true);start();}
+      else if(arrival.entered)start();
       let changingScene=false;
       let last = performance.now(), lastHud = 0, lastLightUpdate=-Infinity;
       let shadowBird: boolean|undefined;
@@ -480,7 +484,7 @@ export default function Explorer() {
       <div className="scene" ref={host} /><div className="vignette" />
       <header className="topbar">
         <div className="brand"><span className="brand-mark"><Compass size={25} strokeWidth={1.4} /></span><div><strong>나주 산책</strong><span>{destination.area}</span></div></div>
-        <div className="topbar-tools"><div className="view-actions" role="group" aria-label="보기 방식"><button aria-pressed={overview} className={overview ? 'active' : ''} onClick={() => engine.current?.overview()} disabled={!ready || !!error}><MoveUpRight size={16} />전체 보기</button><button aria-pressed={!overview} className={!overview ? 'active' : ''} onClick={() => boatHud?.aboard?engine.current?.boatAction('deck'):engine.current?.start()} disabled={!ready || !!error}><Footprints size={16} />걷기</button></div><button className="screen-button" onClick={openGuide} aria-label="산책 안내와 화면 설정" title="산책 안내와 화면 설정"><CircleHelp size={19}/></button><FullscreenButton/></div>
+        <div className="topbar-tools"><div className="view-actions" role="group" aria-label="보기 방식">{world?.viewMode!=='panorama'&&<button aria-pressed={overview} className={overview ? 'active' : ''} onClick={() => engine.current?.overview()} disabled={!ready || !!error}><MoveUpRight size={16} />전체 보기</button>}<button aria-pressed={!overview} className={!overview ? 'active' : ''} onClick={() => boatHud?.aboard?engine.current?.boatAction('deck'):engine.current?.start()} disabled={!ready || !!error}><Footprints size={16} />걷기</button></div><button className="screen-button" onClick={openGuide} aria-label="산책 안내와 화면 설정" title="산책 안내와 화면 설정"><CircleHelp size={19}/></button><FullscreenButton/></div>
       </header>
       <nav className="destination-nav" aria-label="나주 전체 지도와 장소 선택">
         <button onClick={openMap}><Map size={18}/><span>나주 전체 · 장소 선택</span></button>

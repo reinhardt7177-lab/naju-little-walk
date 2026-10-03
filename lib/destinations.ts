@@ -43,7 +43,7 @@ export const destinations = {
   },
   'bitgaram-observatory': {
     coordinates:{lat:35.016925,lon:126.790447},parent:'bitgaram',
-    name:'빛가람 전망실',area:'빛가람 전망대 내부',worldUrl:'/bitgaram-observatory-world.json?v=observatory-entry-v84',modelUrl:'/models/bitgaram-observatory.glb.gz?v=palette-20260920',
+    name:'빛가람 전망실',area:'빛가람 전망대 내부',worldUrl:'/bitgaram-observatory-world.json?v=panorama-eye-v85',modelUrl:'/models/bitgaram-observatory.glb.gz?v=palette-20260920',
     heading:['유리창 너머,','빛가람을 바라보다.'],introduction:['곡면 창을 따라 전망실을 둘러보세요.','밖으로 나가기 푯말로 산책로에 돌아갑니다.'],
     sourceUrl:'https://www.youtube.com/watch?v=tQJsYaXqsIg',sourceLabel:'현장 사진·탐방 영상 참고',
     limitation:'창밖: 영상 참고 AI 합성 파노라마 · 실제 360도 촬영 아님',overview:{center:[0,0],radius:32,elevation:.9,angle:.4},
