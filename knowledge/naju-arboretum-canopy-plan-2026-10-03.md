@@ -27,6 +27,8 @@ v87 배포 후 사용자가 확인 질문에 **“가운데 긴 직선 가로수
 
 모델의 저장본·압축 파일 해시는 [v88 전송량 기록](sources/arboretum/central-platanus-v88-metrics.json)에 남긴다. v87 작업과 지형 계획은 아래 별도 기록으로 유지한다.
 
+구현 커밋 `666b5025eac8b23fa5713d86a6831bfdb90bedb5`의 Vercel 배포 `7xrZE5WYDnLbERENdUXGMsVCDgQ5`가 성공했다. 운영 HTML·앱 코드·압축 모델·world 안내 데이터의 HTTP 200 응답과 로컬 파일 일치를 확인했다. [v88 배포 검증 기록](sources/arboretum/central-platanus-v88-deployment.json). [최신 수목원 열기](https://naju-little-walk.vercel.app/?place=naju-arboretum&v=central-platanus-v88).
+
 ## v87 초기 분석 기록
 
 현재 나무가 없는 것이 아니라 **잎 무리가 작고 흩어져 있어 수관 사이로 빈 하늘과 잔디가 과하게 드러나는 문제**다. 중앙길의 가지 끝을 기존 작은 수관 범위 안에 가두었던 v74가 특히 영향을 받는다. 방문 사진은 머리 위 가지와 잎이 이어지며, 나무 아래에는 맥문동 형태의 식재와 낮은 관목이 있어 눈높이에서도 숲이 여러 층으로 보인다.
