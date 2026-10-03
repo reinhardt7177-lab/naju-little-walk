@@ -10,7 +10,7 @@ import { destinations, type DestinationId } from '@/lib/destinations';
 import { appDestinationFromSearch } from '@/lib/app-destination';
 import { batchStaticSceneInSlices, updateVegetationDetail } from '@/lib/static-scene';
 import { createLocalLights } from '@/lib/local-lights';
-import { unpackModel } from '@/lib/model-transport';
+import { fetchModelData } from '@/lib/model-transport';
 import { sceneArrival, portalAt, portalHref } from '@/lib/scene-travel';
 import { canTravelTo } from '@/lib/map-navigation';
 import type { Point } from '@/lib/world';
@@ -51,6 +51,7 @@ export default function Explorer() {
   const npcOpenRef=useRef(false);npcOpenRef.current=npcOpen;
   const [npcHud,setNpcHud]=useState<{name:string;near:boolean}|null>(null);
   const [loadStage, setLoadStage] = useState('지도를 준비하고 있습니다');
+  const [loadPercent, setLoadPercent] = useState<number|undefined>(undefined);
   const [error, setError] = useState('');
   const [boatHud,setBoatHud] = useState<BoatHud|null>(null);
   const [railHud,setRailHud] = useState<RailHud|null>(null);
@@ -69,7 +70,7 @@ export default function Explorer() {
   useEffect(() => {
     const selectedId = appDestinationFromSearch(window.location.search);
     setReady(false); setError(''); setActive(false); setStarted(false); setOverview(true);
-    setBoatHud(null);setRailHud(null); setNpcHud(null);setNpcOpen(false);setWorld(null); setLoadStage('지도를 준비하고 있습니다');
+    setBoatHud(null);setRailHud(null); setNpcHud(null);setNpcOpen(false);setWorld(null); setLoadStage('지도를 준비하고 있습니다');setLoadPercent(undefined);
     const selected = destinations[selectedId];
     const optimizedCampus=selectedId==='bitgaram-park'||selectedId==='bitgaram-kepco'||selectedId==='bitgaram-kentech'||selectedId==='naju-arboretum'||selectedId==='deudeulgang'||selectedId==='dasi';
     setDestinationId(selectedId);
@@ -85,7 +86,7 @@ export default function Explorer() {
       const response = await fetch(selected.worldUrl,{signal:abort.signal});
       if (!response.ok) throw new Error('도시 자료를 불러오지 못했습니다.');
       let data: World = await response.json();
-      const npcResponse=await fetch('/npc-placements.json?v=rigged-guides-v6-repaired-20261002',{signal:abort.signal,cache:'no-store'});
+      const npcResponse=await fetch('/npc-placements.json?v=forecourt-ground-v86',{signal:abort.signal,cache:'no-store'});
       if(!npcResponse.ok)throw new Error('지역 안내 캐릭터 자료를 불러오지 못했습니다.');
       const npcManifest:NpcManifest=await npcResponse.json();
       const npcPlacement=npcManifest.placements[selectedId];
@@ -172,13 +173,17 @@ export default function Explorer() {
         scene.add(light);
       }
       const loader=new GLTFLoader();
-      setLoadStage('건물과 산책로를 불러오고 있습니다');
-      const gltf = await (async()=>{
-        if(!selected.modelUrl.split('?')[0].endsWith('.gz'))return loader.loadAsync(selected.modelUrl);
-        const response=await fetch(selected.modelUrl,{signal:abort.signal});
-        if(!response.ok)throw new Error('도시 모델을 불러오지 못했습니다.');
-        return loader.parseAsync(await unpackModel(await response.arrayBuffer()),'');
-      })();
+      const model=await fetchModelData(selected.modelUrl,{signal:abort.signal,onProgress:progress=>{
+        if(disposed)return;
+        if(progress.phase==='retry'){setLoadPercent(undefined);setLoadStage('연결을 다시 시도하고 있습니다');return;}
+        if(progress.phase==='unpack'){setLoadPercent(undefined);setLoadStage('모델 압축을 풀고 있습니다');return;}
+        const mb=(bytes:number)=>(bytes/1_000_000).toFixed(1);
+        setLoadPercent(progress.total?Math.min(100,Math.round(progress.received/progress.total*100)):undefined);
+        setLoadStage(`건물·산책로 다운로드 · ${mb(progress.received)}${progress.total?` / ${mb(progress.total)}`:''} MB`);
+      }});
+      if(disposed)return;
+      setLoadStage('건물과 산책로를 배치하고 있습니다');
+      const gltf=await loader.parseAsync(model,'');
       if (disposed) { gltf.scene.traverse(disposeObject); return; }
       gltf.scene.traverse(o => { if (o instanceof THREE.Mesh) {
         const landscape=selectedId.startsWith('bitgaram')&&/^(context_ground|lake_osm_|estimated_hill|surrounding_park_lawn|mapped_park_lawn_shore|surrounding_mapped_paths|surrounding_parking|surrounding_recreation)/.test(o.name);
@@ -513,7 +518,7 @@ export default function Explorer() {
         {overview && ready && !!world?.architectureViews?.length && <div className="architecture-views" role="group" aria-label="건축 자세히 보기">{world.architectureViews.map(v=><button key={v.id} onClick={()=>engine.current?.inspect(v.id)}>{v.label}</button>)}</div>}
         {ready&&world?.monorail&&<div className="architecture-views" role="group" aria-label="모노레일 승강장으로 이동">{world.monorail.stations.map(s=><button key={s.id} onClick={()=>engine.current?.railAction('station',s.id)}>{s.id==='lower'?'모노레일 하부':'모노레일 상부'}</button>)}</div>}
         <button className="start-button" onClick={() => engine.current?.start()} disabled={!ready || !!error}><Footprints size={20} /><span>{error ? '화면을 열 수 없습니다' : !ready ? '산책 준비 중…' : started ? '이어서 걷기' : '산책 시작'}</span><ArrowUpRight size={21} /></button>
-        {!ready && !error && <div className="load-status" role="status"><span className="loading-line"/>{loadStage}</div>}
+        {!ready && !error && <><div className="load-status" role="status">{loadPercent===undefined?<span className="loading-line"/>:<progress aria-label="3D 모델 다운로드" value={loadPercent} max={100}/>}<span>{loadStage}</span></div><button className="loading-retry" onClick={()=>setAttempt(value=>value+1)}>멈췄다면 다시 불러오기</button></>}
         {welcomeExpanded && <div className="welcome-help">{touch ? '왼쪽 버튼으로 이동 · 화면을 드래그해 둘러보기' : <><span><kbd>W A S D</kbd> 이동</span><span>드래그로 둘러보기</span></>}</div>}
       </section>}
       {error&&<section className="scene-recovery" role="alert" aria-label="3D 화면 복구"><strong>화면을 다시 열어 주세요</strong><p>{error}</p><button onClick={()=>setAttempt(value=>value+1)}>출발 위치에서 다시 불러오기</button></section>}

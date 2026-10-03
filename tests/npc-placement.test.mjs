@@ -55,3 +55,19 @@ test('public guides match their rigged Blender exports and preserve embedded mat
     assert.ok(gltf.meshes.every(m=>m.primitives.every(p=>p.attributes.JOINTS_0!==undefined&&p.attributes.WEIGHTS_0!==undefined)));
   }
 });
+
+test('KENTECH guide and visitor heights match the exported granite paving',()=>{
+  const original=JSON.parse(fs.readFileSync(new URL('../public/bitgaram-kentech-world.json',import.meta.url)));
+  const placement=manifest.placements['bitgaram-kentech'];
+  const {scene}=readModel(new URL('../public/models/bitgaram-kentech.glb',import.meta.url));
+  const [x,y,z]=placement.position;
+  const surface=new THREE.Raycaster(new THREE.Vector3(x,1,z),new THREE.Vector3(0,-1,0),0,2).intersectObject(scene,true)[0];
+  assert.ok(surface,'Authored paving exists beneath the guide');
+  assert.ok(Math.abs(surface.point.y-y)<.001,'Guide feet must match the visible GLB surface, not only collision metadata');
+  const floors=worldFloors(original.solids);
+  assert.ok(Math.abs(reachableFloor(x,z,0,floors)-surface.point.y)<.001);
+  assert.ok(Math.abs(original.spawn.height-y)<.001,'Visitors start at the same paving level');
+  const obstacle=withNpcObstacle(original,placement).solids.at(-1);
+  assert.ok(Math.abs(obstacle.position[1]-obstacle.size[1]/2-y)<.001,'Guide collision starts at the feet');
+  scene.traverse(o=>o.geometry?.dispose());
+});
