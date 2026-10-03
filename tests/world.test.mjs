@@ -62,9 +62,13 @@ test('park aerial roof has an open oculus and physical supports block walking',(
 test('observatory central entrance automatically enters a safe panorama arrival without return loops',()=>{
   const park=JSON.parse(fs.readFileSync(new URL('../public/bitgaram-park-world.json',import.meta.url),'utf8'));
   const inside=JSON.parse(fs.readFileSync(new URL('../public/bitgaram-observatory-world.json',import.meta.url),'utf8'));
+  const front=sceneArrival(park,'?at=entrance-front');
+  assert.equal(front.entered,true);
+  assert.equal(portalAt(park,front.x,front.z,front.height),undefined,'Entrance link stops just outside the door trigger');
   const before=walkRoute(park,[[0,21],[0,8]],16);
   assert.equal(portalAt(park,before.x,before.z,before.height),undefined,'Approaching the door does not enter too early');
   const atDoor=walkRoute(park,[[before.x,before.z],[0,7]],16);
+  walkRoute(park,[[front.x,front.z],[atDoor.x,atDoor.z]],front.height);
   const portal=portalAt(park,atDoor.x,atDoor.z,atDoor.height);
   assert.equal(portal?.target,'bitgaram-observatory','Walking onto the tactile entrance strip enters the interior');
   assert.equal(canTravelTo([0,5.8],park,16),false,'Glass remains solid; transition occurs in front of it');
