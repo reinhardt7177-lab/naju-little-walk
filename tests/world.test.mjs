@@ -59,6 +59,29 @@ test('park aerial roof has an open oculus and physical supports block walking',(
   assert.ok(shell&&shell.collision,'Exhibition shell retains a physical boundary');
 });
 
+test('observatory central entrance automatically enters a safe panorama arrival without return loops',()=>{
+  const park=JSON.parse(fs.readFileSync(new URL('../public/bitgaram-park-world.json',import.meta.url),'utf8'));
+  const inside=JSON.parse(fs.readFileSync(new URL('../public/bitgaram-observatory-world.json',import.meta.url),'utf8'));
+  const before=walkRoute(park,[[0,21],[0,8]],16);
+  assert.equal(portalAt(park,before.x,before.z,before.height),undefined,'Approaching the door does not enter too early');
+  const atDoor=walkRoute(park,[[before.x,before.z],[0,7]],16);
+  const portal=portalAt(park,atDoor.x,atDoor.z,atDoor.height);
+  assert.equal(portal?.target,'bitgaram-observatory','Walking onto the tactile entrance strip enters the interior');
+  assert.equal(canTravelTo([0,5.8],park,16),false,'Glass remains solid; transition occurs in front of it');
+  assert.equal(portalAt(park,0,7,0),undefined,'Ground-level visitors cannot trigger the elevated door');
+  for(const [x,z] of [[2,7],[-2,7],[0,-4.4]]){
+    assert.equal(portalAt(park,x,z,16),undefined,'Side glazing is not an entrance');
+  }
+  const href=portalHref(portal);
+  const arrival=sceneArrival(inside,href.split('?')[1]);
+  assert.equal(arrival.entered,true,'Door arrival immediately continues in walking mode');
+  assert.ok(canTravelTo([arrival.x,arrival.z],inside,arrival.height),'Interior arrival is safely on the floor');
+  assert.equal(portalAt(inside,arrival.x,arrival.z,arrival.height),undefined,'Arrival cannot send the visitor back outside');
+  const back=sceneArrival(park,'');
+  assert.equal(portalAt(park,back.x,back.z,back.height),undefined,'Outside signpost returns beyond the door trigger');
+  assert.equal(portalAt(park,park.arrivals['monorail-upper'].x,park.arrivals['monorail-upper'].z,16),undefined);
+});
+
 test('Bitgaram slide gallery and monorail boundaries are physical and the roof garden stays open',()=>{
   const w=JSON.parse(fs.readFileSync(new URL('../public/bitgaram-park-world.json',import.meta.url),'utf8'));
   const names=['slide_gallery_outer_guard','stone_slide_safety_boundary','monorail_guideway_boundary'];
