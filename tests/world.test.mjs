@@ -43,18 +43,19 @@ test('park aerial roof has an open oculus and physical supports block walking',(
   const roof=scene.getObjectByName('aerial_roof_open_oval');
   assert.ok(roof,'Detailed exterior roof is exported');
   assert.ok(!roof.userData.hide_in_overview,'Exterior roof stays visible in the aerial view');
-  const downward=(x,z)=>new THREE.Raycaster(new THREE.Vector3(x,40,z),new THREE.Vector3(0,-1,0),0,8).intersectObject(roof,true);
+  const w=JSON.parse(fs.readFileSync(new URL('../public/bitgaram-park-world.json',import.meta.url),'utf8'));
+  const upper=w.spawn.height;
+  const downward=(x,z)=>new THREE.Raycaster(new THREE.Vector3(x,upper+24,z),new THREE.Vector3(0,-1,0),0,8).intersectObject(roof,true);
   assert.equal(downward(-2,0).length,0,'Central oval opening remains open');
   assert.ok(downward(10,0).length,'Outer roof annulus covers the viewing room');
-  const w=JSON.parse(fs.readFileSync(new URL('../public/bitgaram-park-world.json',import.meta.url),'utf8'));
   const columns=w.solids.filter(s=>s.name==='aerial_column_body');
   assert.equal(columns.length,6);
   for(const c of columns){
     const pts=solidCollider(c),x=pts.reduce((s,p)=>s+p[0],0)/pts.length,z=pts.reduce((s,p)=>s+p[1],0)/pts.length;
-    assert.equal(canTravelTo([x,z],w,16),false,'Support must block visitors');
+    assert.equal(canTravelTo([x,z],w,upper),false,'Support must block visitors');
   }
-  assert.equal(canTravelTo([0,5.8],w,16),false,'The glazed entrance drum is not a pass-through prop');
-  walkRoute(w,[[0,21],[0,8]],16);
+  assert.equal(canTravelTo([0,5.8],w,upper),false,'The glazed entrance drum is not a pass-through prop');
+  walkRoute(w,[[0,21],[0,8]],upper);
   const shell=w.solids.find(s=>s.name==='photo_exhibition_shell');
   assert.ok(shell&&shell.collision,'Exhibition shell retains a physical boundary');
 });
@@ -65,18 +66,19 @@ test('observatory central entrance automatically enters a safe panorama arrival 
   assert.equal(inside.viewMode,'panorama','Direct links and entry portals use an interior eye point');
   assert.equal(park.viewMode,undefined,'Exterior park retains its aerial overview');
   const front=sceneArrival(park,'?at=entrance-front');
+  const upper=park.spawn.height;
   assert.equal(front.entered,true);
   assert.equal(portalAt(park,front.x,front.z,front.height),undefined,'Entrance link stops just outside the door trigger');
-  const before=walkRoute(park,[[0,21],[0,8]],16);
+  const before=walkRoute(park,[[0,21],[0,8]],upper);
   assert.equal(portalAt(park,before.x,before.z,before.height),undefined,'Approaching the door does not enter too early');
-  const atDoor=walkRoute(park,[[before.x,before.z],[0,7]],16);
+  const atDoor=walkRoute(park,[[before.x,before.z],[0,7]],upper);
   walkRoute(park,[[front.x,front.z],[atDoor.x,atDoor.z]],front.height);
   const portal=portalAt(park,atDoor.x,atDoor.z,atDoor.height);
   assert.equal(portal?.target,'bitgaram-observatory','Walking onto the tactile entrance strip enters the interior');
-  assert.equal(canTravelTo([0,5.8],park,16),false,'Glass remains solid; transition occurs in front of it');
+  assert.equal(canTravelTo([0,5.8],park,upper),false,'Glass remains solid; transition occurs in front of it');
   assert.equal(portalAt(park,0,7,0),undefined,'Ground-level visitors cannot trigger the elevated door');
   for(const [x,z] of [[2,7],[-2,7],[0,-4.4]]){
-    assert.equal(portalAt(park,x,z,16),undefined,'Side glazing is not an entrance');
+    assert.equal(portalAt(park,x,z,upper),undefined,'Side glazing is not an entrance');
   }
   const href=portalHref(portal);
   const arrival=sceneArrival(inside,href.split('?')[1]);
@@ -85,7 +87,7 @@ test('observatory central entrance automatically enters a safe panorama arrival 
   assert.equal(portalAt(inside,arrival.x,arrival.z,arrival.height),undefined,'Arrival cannot send the visitor back outside');
   const back=sceneArrival(park,'');
   assert.equal(portalAt(park,back.x,back.z,back.height),undefined,'Outside signpost returns beyond the door trigger');
-  assert.equal(portalAt(park,park.arrivals['monorail-upper'].x,park.arrivals['monorail-upper'].z,16),undefined);
+  assert.equal(portalAt(park,park.arrivals['monorail-upper'].x,park.arrivals['monorail-upper'].z,upper),undefined);
 });
 
 test('Bitgaram slide gallery and monorail boundaries are physical and the roof garden stays open',()=>{
@@ -100,7 +102,7 @@ test('Bitgaram slide gallery and monorail boundaries are physical and the roof g
   }
   const {scene}=readModel(new URL('../public/models/bitgaram-park.glb',import.meta.url));
   for(const name of names)assert.equal(scene.getObjectByName(name),undefined,'Collision proxies are not visible solid walls');
-  const ray=new THREE.Raycaster(new THREE.Vector3(0,20,130),new THREE.Vector3(0,-1,0),0,15);
+  const ray=new THREE.Raycaster(new THREE.Vector3(0,w.arrivals.lower.height+13.78,130),new THREE.Vector3(0,-1,0),0,15);
   assert.equal(ray.intersectObject(scene.getObjectByName('photo_exhibition_sloped_shell'),true).length,0,'Old closed roof removed');
   assert.ok(ray.intersectObject(scene.getObjectByName('context_roof_garden_paving'),true).length,'Roof terrace floor remains');
   const building=solidCollider(w.solids.find(s=>s.name==='photo_exhibition_shell'));
@@ -119,11 +121,11 @@ test('Bitgaram signs load valid scenes and preserve elevated park spawn',()=>{
     assert.ok(canTravelTo([a.x,a.z],w,a.height),id);
     for(const link of w.sceneLinks) assert.ok(destinations[link.target],link.target);
     if(id==='bitgaram-park'){
-      assert.equal(a.height,16);
+      assert.equal(a.height,w.arrivals['monorail-upper'].height);
       const access=JSON.parse(fs.readFileSync(new URL('../knowledge/sources/bitgaram/access-v69.json',import.meta.url)));
       const path=access.stairs_route.map(p=>[p[0],p[2]]);
-      const end=walkRoute(w,[[a.x,a.z],[0,12],[path[0][0],12],...path],16);
-      assert.ok(Math.abs(end.height-6.22)<.08,'Stairs reach the mapped lower exhibition terrace');
+      const end=walkRoute(w,[[a.x,a.z],[0,12],[path[0][0],12],...path],a.height);
+      assert.ok(Math.abs(end.height-w.arrivals.lower.height)<.08,'Stairs reach the mapped lower exhibition terrace');
     } else if(id==='bitgaram-observatory'){
       // Empty room: former furniture and central core positions are now walkable.
       walkRoute(w,[[0,7],[6,7],[6,2],[10,0],[7,-8],[-5,-8],[-5,-4],[-10,0],[-6,0],[-6,7],[0,7]]);

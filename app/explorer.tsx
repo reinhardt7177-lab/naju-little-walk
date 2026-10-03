@@ -86,7 +86,7 @@ export default function Explorer() {
       const response = await fetch(selected.worldUrl,{signal:abort.signal});
       if (!response.ok) throw new Error('도시 자료를 불러오지 못했습니다.');
       let data: World = await response.json();
-      const npcResponse=await fetch('/npc-placements.json?v=forecourt-ground-v86',{signal:abort.signal,cache:'no-store'});
+      const npcResponse=await fetch('/npc-placements.json?v=terrain-v89',{signal:abort.signal,cache:'no-store'});
       if(!npcResponse.ok)throw new Error('지역 안내 캐릭터 자료를 불러오지 못했습니다.');
       const npcManifest:NpcManifest=await npcResponse.json();
       const npcPlacement=npcManifest.placements[selectedId];

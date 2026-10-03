@@ -264,6 +264,8 @@ npm run build
 
 빛가람 전망대의 실제 모노레일 평면선·돌미끄럼틀 사진과 보행 연결을 대조한 내용은 [접근로 정정 기록](knowledge/bitgaram-access-correction-2026-10-01.md)에 있습니다. 경사와 세부 치수의 추정 여부도 함께 기록했습니다. [v83 운행 보완](knowledge/bitgaram-monorail-v83-2026-10-03.md)에서 별도 차량 모델과 호출·탑승·왕복·하차를 연결했습니다. 전체 보기의 ‘모노레일 하부/상부’ 버튼으로 승강장에 이동한 뒤 탑승할 수 있습니다.
 
+[v89 접근 지형 보강](knowledge/bitgaram-park-terrain-plan-2026-10-03.md)은 공개 GLO-30 표면 표고를 이용해 기존 9.78m였던 상·하부 바닥 차이를 약 34.43m로 수정하고 지형·숲길·계단·모노레일·식재·NPC 높이를 함께 맞춥니다. 새 편집본은 `outputs/terrain-v89/bitgaram-park-glo30-terrain-v89d.blend`입니다. 30m DSM에는 식생·건물 영향이 있으며 현장 지면·승강장 실측값은 아닙니다. 원래 격자, 해석한 시설 경로와 검증 기록을 별도로 보존합니다.
+
 수목원 꽃밭·목재 놀이시설의 최근 보완, 새 Blender 수정본과 검증 범위는 [제작 기록](knowledge/naju-arboretum-garden-quality-2026-10-01.md)에 정리했습니다. [향나무길 제작 기록](knowledge/naju-arboretum-juniper-quality-2026-10-01.md)에는 수형 보강과 지도 도로 정렬, 교차로·보행 바닥 갱신을 기록했습니다. 안드로이드 태블릿의 실제 조작·성능 검증은 화면 크기 검사와 구분합니다.
 
 © [OpenStreetMap 기여자](https://www.openstreetmap.org/copyright), ODbL 1.0. 지도 원본과 변경한 좌표 데이터는 `knowledge/sources` 및 `public/city-world.json`에 보관합니다. 공개 배포 시 같은 출처 표기를 유지하세요.
