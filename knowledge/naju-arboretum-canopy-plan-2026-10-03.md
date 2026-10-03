@@ -59,4 +59,12 @@
 
 세부 검증: [보존·통행 간격 검사](sources/arboretum/canopy-v87-verification.json), [전송량·메시 지표](sources/arboretum/canopy-v87-metrics.json), [수관·식재 배치 및 근거](sources/arboretum/canopy-v87.json).
 
-지형 분석을 모델에 적용하는 단계는 아직 완료되지 않았다. 이번 변경은 수관과 낮은 식재에 한정한다. 운영 배포 완료 여부는 후속 검증 결과를 아래에 추가한다.
+지형 분석을 모델에 적용하는 단계는 아직 완료되지 않았다. 이번 변경은 수관과 낮은 식재에 한정한다.
+
+## 운영 반영
+
+구현 커밋 `a963d0646b9237e8bcaeb16071989af97edee3f6`를 기존 운영 브랜치 `codex/bitgaram-place-walks`에 push했다. Vercel 배포 `98y9jo2JsiDY2777fcS445F22oJB`의 성공 상태와 운영 HTML·모델의 HTTP 200 응답을 확인했다. HTML은 Windows/Linux 줄바꿈을 정규화하면 운영 빌드와 같으며, 압축 모델 SHA-256은 로컬 최종본과 정확히 일치했다. [배포 검증 기록](sources/arboretum/canopy-v87-deployment.json)에 결과를 저장했다.
+
+[운영 수목원 열기](https://naju-little-walk.vercel.app/?place=naju-arboretum&v=canopy-v87-r4-20261003). 1024×600 가로 뷰포트에서 정원과 화면 버튼 배치도 확인했다. 이는 실제 안드로이드 기기의 터치 입력·프레임 검증과 구분한다.
+
+운영 주소에서 로딩 완료 후 산책 시작을 눌러 새 수관과 하층 식재 표시를 확인했고, [배포된 화면](../../outputs/quality-v87/avenue-production-after.png)을 저장했다.
