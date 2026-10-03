@@ -18,7 +18,7 @@
 
 - 드들강 수피·숲 바닥·풀 표현과 제목 대비: `knowledge/deudeulgang-surfaces-quality-2026-10-01.md`
 - 수목원 메타세쿼이아·활엽수의 사진 대조·수관·수피 보완: `knowledge/naju-arboretum-tree-quality-2026-10-02.md`
-- 수목원 위성·공식·블로그 리서치, 옆 길 플라타너스 수관·하층 식재 보강 및 보존 검사: `knowledge/naju-arboretum-canopy-plan-2026-10-03.md`
+- 수목원 위성·공식·블로그 리서치, 사용자 지정 중앙길 플라타너스 120그루·옆 길·하층 식재 보강 및 보존 검사: `knowledge/naju-arboretum-canopy-plan-2026-10-03.md`
 - 수목원 산기슭 지형·DSM 고도 분석과 향후 구현 단계: `knowledge/naju-arboretum-terrain-plan-2026-10-03.md`
 
 - 드들강 솔잎 수관·강 건너 숲 보완과 실제 사진/추정 구분: `knowledge/deudeulgang-pine-quality-2026-10-01.md`

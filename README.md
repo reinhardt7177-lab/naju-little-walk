@@ -254,7 +254,7 @@ npm run build
 
 드들강 수피·낮은 풀·숲 바닥 질감과 모든 탐험 장소의 제목 대비 보완은 [마감 기록](knowledge/deudeulgang-surfaces-quality-2026-10-01.md)에 있습니다. 기반 편집본 `outputs/quality-v72/deudeulgang-surfaces-v72.blend`를 보존하고 v81에서 표시 범위를 솔밭·강으로 축소했습니다. v82에서는 [강의 먼 쪽 물 면을 추가로 잘랐습니다](knowledge/deudeulgang-river-trim-v82-2026-10-03.md). 최신 편집본은 `outputs/deudeulgang-v82/deudeulgang-river-trim-v82.blend`입니다.
 
-수목원 수관과 길 가장자리의 최신 보강은 [v87 리서치·제작 계획](knowledge/naju-arboretum-canopy-plan-2026-10-03.md)에 정리합니다. 중앙 메타세쿼이아길을 유지하고 옆 길의 플라타너스 표현·낮은 식재를 보강했습니다. 새 편집본은 `outputs/quality-v87/naju-arboretum-canopy-v87-r4.blend`입니다. 이전 v74와 사용자 수정본을 보존하며, 개별 수종과 식재 위치의 해석은 실제 측량 자료와 구분합니다. [이전 수형 제작 기록](knowledge/naju-arboretum-tree-quality-2026-10-02.md)도 유지합니다.
+수목원 수관과 길 가장자리의 최신 보강은 [v88 중앙길 플라타너스 적용·리서치 계획](knowledge/naju-arboretum-canopy-plan-2026-10-03.md)에 정리합니다. 사용자가 지정한 가운데 긴 직선길 120그루를 넓은 플라타너스 수형으로 수정하고 옆 길·낮은 식재 보강을 유지했습니다. 최신 편집본은 `outputs/quality-v88/naju-arboretum-central-platanus-v88.blend`입니다. 이전 v87·v74와 사용자 수정본을 보존하며, 공식 자료의 메타세쿼이아길 명칭과 사용자 지정 수종 표현을 구분합니다. [이전 수형 제작 기록](knowledge/naju-arboretum-tree-quality-2026-10-02.md)도 유지합니다.
 
 빛가람 호수공원의 사각 셀 잔디를 지도 윤곽과 연결되는 면으로 교체한 내용은 [물가 경계 기록](knowledge/bitgaram-shore-quality-2026-10-02.md)에 있습니다. 새 편집본은 `outputs/quality-v75/bitgaram-shore-v75.blend`이며 기존 물·지형·산책로는 보존했습니다.
 

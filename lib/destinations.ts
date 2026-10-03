@@ -8,10 +8,10 @@ export const destinations = {
   },
   'naju-arboretum': {
     coordinates:{lat:35.00648,lon:126.8256689},
-    name:'나주수목원 · 산림연구원',area:'나주수목원 산책',worldUrl:'/naju-arboretum-world.json?v=juniper-v66-20261001',modelUrl:'/models/naju-arboretum.glb.gz?v=canopy-v87-r4-20261003',
-    heading:['나무가 만든 길,','나주수목원.'],introduction:['메타세쿼이아길과 정원을 걸어보세요.','공식 안내도와 위성·방문 사진을 참고해 숲길을 재현했습니다.'],
+    name:'나주수목원 · 산림연구원',area:'나주수목원 산책',worldUrl:'/naju-arboretum-world.json?v=central-platanus-v88',modelUrl:'/models/naju-arboretum.glb.gz?v=central-platanus-v88',
+    heading:['나무가 만든 길,','나주수목원.'],introduction:['중앙 가로수길과 정원을 걸어보세요.','공식 안내도와 위성·방문 사진을 참고해 숲길을 재현했습니다.'],
     sourceUrl:'https://jnforest.jeonnam.go.kr/content/view.do?menuCd=FOREST007006',sourceLabel:'공식 안내 · 현장 사진 · Esri 위성영상 참고',
-    limitation:'위성 윤곽 참고 · 촬영일 미확인 · 높이·개별 식재 추정 · 옆 길 플라타너스 배치 해석',overview:{center:[-230,-40],radius:550,elevation:.9,angle:-.65},
+    limitation:'위성 윤곽 참고 · 촬영일 미확인 · 높이·개별 식재 추정 · 중앙길 플라타너스는 사용자 지정 표현',overview:{center:[-230,-40],radius:550,elevation:.9,angle:-.65},
   },
   'bitgaram-kepco': {
     coordinates:{lat:35.026466,lon:126.784493},parent:'bitgaram',
