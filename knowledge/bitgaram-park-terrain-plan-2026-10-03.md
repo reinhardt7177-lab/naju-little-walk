@@ -58,6 +58,10 @@
 
 후속 정밀화에는 현재의 국토지리정보원 수치지형도 등고선 또는 5m 이하 지면 DEM, 승강장/궤도 준공 종단도, 현장 기준점이 필요하다. 확보 후 정상·하부·중간 교각의 기준 표고를 같은 수직 기준으로 맞춰 이번 보간과 시설 추정을 교체한다.
 
+## 배포 확인
+
+구현 커밋 `40aca1c7066534f5c85947193e7474d0968f4c0d`의 GitHub 연결 Vercel 자동 배포가 성공했다. [반영된 전망대 주변](https://naju-little-walk.vercel.app/?place=bitgaram-park&v=terrain-v89)의 HTML·앱 실행 파일·지형 GLB 압축 파일·이동 JSON·NPC 배치 JSON을 읽어 로컬 검증본과 대조했고 모두 일치했다. 결과는 `knowledge/sources/bitgaram/terrain-v89/deployment.json`에 기록했다. 이는 배포 파일 검증이며 실제 브라우저 픽셀·태블릿 조작 검증을 대신하지 않는다.
+
 재현 명령의 사용자 인자는 Blender의 `--` 뒤에 둔다. 기존 출력이 있으면 새 편집본 이름을 선택해야 한다.
 
 ```powershell
