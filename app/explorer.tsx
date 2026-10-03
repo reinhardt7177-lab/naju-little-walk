@@ -69,7 +69,7 @@ export default function Explorer() {
     setReady(false); setError(''); setActive(false); setStarted(false); setOverview(true);
     setBoatHud(null); setNpcHud(null);setNpcOpen(false);setWorld(null); setLoadStage('지도를 준비하고 있습니다');
     const selected = destinations[selectedId];
-    const optimizedCampus=selectedId==='bitgaram-park'||selectedId==='bitgaram-kepco'||selectedId==='bitgaram-kentech'||selectedId==='naju-arboretum'||selectedId==='deudeulgang';
+    const optimizedCampus=selectedId==='bitgaram-park'||selectedId==='bitgaram-kepco'||selectedId==='bitgaram-kentech'||selectedId==='naju-arboretum'||selectedId==='deudeulgang'||selectedId==='dasi';
     setDestinationId(selectedId);
     document.title = `나주 산책 — ${selected.name}`;
     const mount = host.current!;
@@ -91,7 +91,7 @@ export default function Explorer() {
       if (disposed) return;
       setWorld(data);
       // Keep centimeter-separated landscape layers stable at city overview distances.
-      renderer = new THREE.WebGLRenderer({ antialias: true, powerPreference: 'high-performance', logarithmicDepthBuffer: selectedId.startsWith('bitgaram') || selectedId==='deudeulgang' });
+      renderer = new THREE.WebGLRenderer({ antialias: true, powerPreference: 'high-performance', logarithmicDepthBuffer: selectedId.startsWith('bitgaram') || selectedId==='deudeulgang' || selectedId==='dasi' });
       renderer.setPixelRatio(pixelRatioFor(qualityRef.current, window.devicePixelRatio));
       renderer.shadowMap.enabled = true;
       renderer.shadowMap.type = THREE.PCFShadowMap;
@@ -147,6 +147,12 @@ export default function Explorer() {
         sun.position.set(-250,320,210);sun.target.position.set(-30,0,100);scene.add(sun.target);
         sun.shadow.camera.left=sun.shadow.camera.bottom=-300;
         sun.shadow.camera.right=sun.shadow.camera.top=300;sun.shadow.camera.far=1000;
+        sun.shadow.normalBias=.025;sun.shadow.bias=-.00005;
+      }
+      if(selectedId==='dasi'){
+        sun.position.set(-110,185,90);sun.target.position.set(-15,0,4);scene.add(sun.target);
+        sun.shadow.camera.left=sun.shadow.camera.bottom=-180;
+        sun.shadow.camera.right=sun.shadow.camera.top=180;sun.shadow.camera.far=550;
         sun.shadow.normalBias=.025;sun.shadow.bias=-.00005;
       }
       if(selectedId==='bitgaram-kentech'){

@@ -86,11 +86,11 @@ export const destinations = {
   },
   dasi: {
     coordinates: { lat: 35.017517, lon: 126.6400205 },
-    name: '다시초등학교', area: '다시초 주변', worldUrl: '/dasi-neighborhood-world.json?v=palette-20260920', modelUrl: '/models/dasi-neighborhood.glb.gz?v=palette-20260920',
+    name: '다시초등학교', area: '다시초 주변', worldUrl: '/dasi-neighborhood-world.json?v=detail-v80-20261003', modelUrl: '/models/dasi-neighborhood.glb.gz?v=detail-v80-20261003',
     heading: ['학교 앞에서,', '다시 한 걸음.'],
     introduction: ['운동장과 교실, 학교 앞 골목을 걸어보세요.', '다시역과 철길, 동쪽 들판까지 이어집니다.'],
-    sourceUrl: 'https://najudasi.es.jne.kr/', sourceLabel: '다시초등학교',
-    limitation: '2022년 항공영상 기준 · 높이·세부·실내 추정',
+    sourceUrl: 'https://najudasi.jge.es.kr/najudasi_es/main.do?sysId=najudasi_es', sourceLabel: '다시초등학교 공식 자료',
+    limitation: '기존 지도 배치 유지 · 2025·2026 사진으로 재질 보강 · 치수·식재·실내 추정',
     overview: { center: [0, -25], radius: 410, elevation: .82, angle: -.15 },
   },
   bogam: {

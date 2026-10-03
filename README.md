@@ -32,7 +32,7 @@
 
 `vercel.json`은 정적 웹 빌드(`npm run build`)와 배포 폴더(`dist/client`)를 지정합니다. GitHub `codex/bitgaram-place-walks` 브랜치의 최신 작업 또는 동일한 정적 빌드 결과를 배포합니다. GitHub 기본 `main` 브랜치는 변경하지 않습니다. 프레임워크 자동 감지 대신 일반 정적 프로젝트 설정을 사용합니다.
 
-`.vercelignore`는 Blender 원본·도구, 참고 자료와 임시 파일을 업로드에서 제외합니다. 지도 모델은 gzip 압축한 `.glb.gz`로 배포하며 중복된 지도 `.glb`는 포함하지 않습니다. 지도 모델 로더가 gzip 압축을 해제하므로 별도의 `Content-Encoding` 설정은 필요하지 않습니다. 기존 `?place=` 지역 주소도 현재 앱에서는 금성관으로 연결합니다. 기존 지역 모델은 원본 보존을 위해 저장소에 남아 있으며 운영 UI에서는 선택할 수 없습니다.
+`.vercelignore`는 Blender 원본·도구, 참고 자료와 임시 파일을 업로드에서 제외합니다. 지도 모델은 gzip 압축한 `.glb.gz`로 배포하며 중복된 지도 `.glb`는 포함하지 않습니다. 지도 모델 로더가 gzip 압축을 해제하므로 별도의 `Content-Encoding` 설정은 필요하지 않습니다. `?place=` 주소는 지정한 나주 지역으로 연결하며, 운영 UI의 나주 전체 지도에서 지역을 선택할 수 있습니다.
 
 설정 근거: [Vercel 프로젝트 설정](https://vercel.com/docs/project-configuration).
 
@@ -146,6 +146,13 @@ node --experimental-strip-types --test tests/world.test.mjs
 기존 `bogam-tumuli.blend`가 있으면 생성 스크립트는 중단합니다. 직접 수정한 파일을 보관한 뒤 생성본만 다시 만들 때 `--replace`를 명시하세요. 다시초·금성관 파일은 열거나 덮어쓰지 않습니다.
 
 ## 다시초등학교 추가
+
+2026-10-03 v80에서는 기존 학교 형태·배치·충돌·실내 동선을 그대로 유지한 채 벽돌·석재·보도·잔디·나무·담쟁이의 표현을 보강했습니다. 최근 학교 사진은 표면 관찰에 사용하고, 기존 가상 실내를 실제 교실로 설명하지 않습니다. 본관·정문·운동장·별동을 가까이 보는 버튼도 추가했습니다.
+
+- 고도화 편집본: `outputs/dasi-v80/dasi-neighborhood-detail-v80.blend` (기존 원본 보존)
+- 제작: `scripts/make_dasi_materials_v80.py` → `scripts/refine_dasi_v80.py` → `scripts/finalize_dasi_vegetation_v80.py`
+- 자료·실제와 추정 구분: [다시초 v80 작업 기록](knowledge/dasi-quality-v80-2026-10-03.md)
+- 데이터 보존 검증: `knowledge/sources/dasi-v80-verification.json`, `tests/dasi-quality.test.mjs`
 
 현재 학교 체험은 **다시초 주변 약 570×440m**까지 확장했습니다. 위성영상의 지붕·농지·주차 공간과 지도 건물·도로를 대조했고, 다시역 외관·호남선 두 선로·승강장을 추가했습니다. 아래 기존 학교 파일들은 보존했습니다.
 
