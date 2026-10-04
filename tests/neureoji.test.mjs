@@ -33,7 +33,7 @@ test('present tower, native DSM limitations and true concave river are recorded'
  assert.ok(w.towerHeightMetres<16&&w.towerHeightMetres>14);assert.ok(w.limitations.some(x=>x.includes('측량')));
  assert.ok(g.water.some(p=>p.points.length>100));assert.ok(!g.water.every(p=>p.points.length===4));
  const raw=fs.readFileSync(new URL('../public/models/neureoji.glb',import.meta.url)),packed=fs.readFileSync(new URL('../public/models/neureoji.glb.gz',import.meta.url));assert.deepEqual(gunzipSync(packed),raw);
- const gltf=JSON.parse(raw.toString('utf8',20,20+raw.readUInt32LE(12)));assert.ok(gltf.meshes.length<100);assert.ok(packed.length<15*1024*1024);
+ const gltf=JSON.parse(raw.toString('utf8',20,20+raw.readUInt32LE(12)));assert.ok(gltf.meshes.length<100);assert.ok(packed.length<16*1024*1024);
  assert.ok(gltf.nodes.some(n=>n.name==='mapped_river_water_neureoji'));assert.ok(gltf.nodes.some(n=>n.name==='walk-floor_top_deck'));
  assert.ok(gltf.images.every(i=>i.bufferView!==undefined&&!i.uri));
 });

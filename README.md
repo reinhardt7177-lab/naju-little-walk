@@ -1,5 +1,7 @@
 # 나주 산책
 
+[느러지 수국 보강 v95](knowledge/neureoji-hydrangea-v95-2026-10-04.md): 최근 현장 사진을 대조해 수국·산수국 749개체와 입체 꽃받침·넓은 잎·두 줄 군락을 제작했습니다. [수국길 걷기](https://naju-little-walk.vercel.app/?place=neureoji&at=hydrangea&v=neureoji-hydrangea-v95c). [전체 제작 자료 보관](knowledge/github-project-archive-2026-10-04.md).
+
 [느러지 수국길 보강 v94](knowledge/neureoji-hydrangea-v94-2026-10-04.md): 2026년 현장 사진과 지도 중심선을 참고해 전망대 주변 약 366m의 언덕길·그늘길, 수국 550개 군락과 경사 이동을 구현했습니다. [수국길 입장](https://naju-little-walk.vercel.app/?place=neureoji&at=hydrangea&v=neureoji-hydrangea-v94h) · [그늘 꽃길](https://naju-little-walk.vercel.app/?place=neureoji&at=forest&v=neureoji-hydrangea-v94h).
 
 [느러지 전망대 사진 대조 보강 v93](knowledge/neureoji-quality-v93-2026-10-04.md): 철골·계단·수국길과 정상의 강 굽이·들판·수림·먼 산을 보강했습니다. [정상 조망](https://naju-little-walk.vercel.app/?place=neureoji&at=top&v=neureoji-quality-v93d)에서 확인합니다. 실제 지도와 사진 참고 추정을 구분하고 기존 Blender 수정본을 보존했습니다.

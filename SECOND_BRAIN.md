@@ -1,5 +1,8 @@
 # 프로젝트 기록 안내
 
+- 느러지 수국·산수국 입체 꽃과 군락 보강: `knowledge/neureoji-hydrangea-v95-2026-10-04.md`
+- 전체 제작 원본 비공개 GitHub Release 보관: `knowledge/github-project-archive-2026-10-04.md`
+
 - 느러지 2026년 사진 대조, 약 366m 수국길·산수국·경사 바닥·난간과 검증: `knowledge/neureoji-hydrangea-v94-2026-10-04.md`
 
 - 느러지 철골·수국·논밭·수림·원경 보강, 정상 시선·충돌 동기화 및 검증: `knowledge/neureoji-quality-v93-2026-10-04.md`

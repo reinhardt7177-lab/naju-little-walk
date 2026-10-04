@@ -12,7 +12,7 @@ def surface(ob,kind):
     for i,m in enumerate(list(ob.data.materials)):
         if m:ob.data.materials[i]=helpers['make_mat'](kind,m)
     helpers['uv'](ob,.65 if kind=='wood' else 1)
-def export(key,out):
+def export(key,out,publish=True):
     # Keep editable text in .blend, but batch tessellated glyphs in the web copy.
     bpy.ops.object.select_all(action='DESELECT')
     text_objects=[o for o in bpy.context.scene.objects if o.type=='FONT']
@@ -37,8 +37,12 @@ def export(key,out):
     encoded=json.dumps(doc,separators=(',',':'),ensure_ascii=False).encode();encoded+=b' '*((-len(encoded))%4)
     raw=struct.pack('<4sII',b'glTF',2,20+len(encoded)+len(binary))+struct.pack('<I4s',len(encoded),b'JSON')+encoded+binary
     packed=gzip.compress(raw,9,mtime=0)
-    if len(packed)>25*1024*1024:raise RuntimeError('25 MiB model transport budget exceeded')
-    for suffix,data in [('.glb',raw),('.glb.gz',packed)]:
-        p=R/'public/models'/(key+suffix);tmp=p.with_suffix(p.suffix+'.v91.tmp');tmp.write_bytes(data);tmp.replace(p)
+    if publish:
+        if len(packed)>25*1024*1024:raise RuntimeError('25 MiB model transport budget exceeded')
+        for suffix,data in [('.glb',raw),('.glb.gz',packed)]:
+            p=R/'public/models'/(key+suffix);tmp=p.with_suffix(p.suffix+'.v91.tmp');tmp.write_bytes(data);tmp.replace(p)
+    else:
+        # Let a caller finalize normals/material metadata before applying the final budget.
+        path.write_bytes(raw)
     return dict(merged=merged,meshes=len(doc['meshes']),materials=len(doc['materials']),images=len(doc.get('images',[])),
         bytes=len(raw),gzipBytes=len(packed),sha256=hashlib.sha256(raw).hexdigest(),gzipSha256=hashlib.sha256(packed).hexdigest())
