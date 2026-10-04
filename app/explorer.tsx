@@ -142,9 +142,10 @@ export default function Explorer() {
       sun.shadow.camera.right = sun.shadow.camera.top = 165;
       sun.shadow.camera.far = 420; sun.shadow.normalBias = 0.06;
       if(selectedId==='neureoji'){
-        sun.target.position.set(0,data.spawn.height??0,0);scene.add(sun.target);
-        sun.shadow.camera.left=sun.shadow.camera.bottom=-65;
-        sun.shadow.camera.right=sun.shadow.camera.top=65;
+        sun.position.set(-150,(data.spawn.height??0)+175,85);
+        sun.target.position.set(0,data.spawn.height??0,-40);scene.add(sun.target);
+        sun.shadow.camera.left=sun.shadow.camera.bottom=-180;
+        sun.shadow.camera.right=sun.shadow.camera.top=180;
         sun.shadow.normalBias=.025;
       }
       if(selectedId==='geumseonggwan'){
@@ -194,8 +195,16 @@ export default function Explorer() {
       gltf.scene.traverse(o => { if (o instanceof THREE.Mesh) {
         const landscape=selectedId.startsWith('bitgaram')&&/^(context_ground|lake_osm_|estimated_hill|surrounding_park_lawn|mapped_park_lawn_shore|surrounding_mapped_paths|surrounding_parking|surrounding_recreation)/.test(o.name);
         const riverSurface=selectedId==='deudeulgang'&&/^(path_|road_|mapped_river_water|water_glint|pine_litter_patch|understory_moss|crop_row|satellite_field)/.test(o.name);
-        o.castShadow = !o.name.startsWith('ground')&&!landscape&&!riverSurface&&!o.userData.no_shadow;
-        o.receiveShadow = !o.userData.no_receive_shadow && !(landscape && o.name!=='estimated_hill');
+        // A Blender object with several materials becomes a group of primitives in glTF.
+        // Its authored shadow flags belong to that group and apply to every primitive.
+        let noShadow=false,noReceiveShadow=false;
+        for(let authored:THREE.Object3D|null=o;authored;authored=authored.parent){
+          noShadow ||= !!authored.userData.no_shadow;
+          noReceiveShadow ||= !!authored.userData.no_receive_shadow;
+          if(authored===gltf.scene)break;
+        }
+        o.castShadow = !o.name.startsWith('ground')&&!landscape&&!riverSurface&&!noShadow;
+        o.receiveShadow = !noReceiveShadow && !(landscape && o.name!=='estimated_hill');
         if(o.userData.photo_panorama || o.userData.sky_backdrop){
           o.castShadow=false;o.receiveShadow=false;o.renderOrder=-100;
           // Blender exports pure emission as an emissive PBR material in this version.

@@ -66,7 +66,7 @@ export default function MapTravel({destinationId,world,position,onClose,onTravel
           {arrivals.map(({place,point},i)=><button key={place.id} className="local-pin" style={{left:`${(point![0]-world.bounds[0])/span[0]*100}%`,top:`${(point![1]-world.bounds[2])/span[1]*100}%`}} onClick={()=>travel(point!,place.arrivalHeight)} aria-label={`${place.name}로 이동`} title={place.name}>{i+1}</button>)}
           <span className="local-north">장소 지도</span>
         </div>
-        <aside className="travel-list"><p>열린 길이나 번호를 누르면 이동합니다. 다른 층은 목록에서 선택하세요.</p>{arrivals.map(({place,point},i)=><button key={place.id} onClick={()=>travel(point!,place.arrivalHeight)}><span className="travel-index">{i+1}</span><div><strong>{place.name}</strong><small>{place.arrivalHeight?(place.arrivalHeight<0?'강변 아래 데크':'상부 관람 공간'):place.indoor?'실내':'산책 지점'}</small></div><Footprints size={17}/></button>)}{notice&&<p className="map-notice" role="status">{notice}</p>}</aside>
+        <aside className="travel-list"><p>열린 길이나 번호를 누르면 이동합니다. 다른 층은 목록에서 선택하세요.</p>{arrivals.map(({place,point},i)=><button key={place.id} onClick={()=>travel(point!,place.arrivalHeight)}><span className="travel-index">{i+1}</span><div><strong>{place.name}</strong><small>{place.mapLabel ?? (place.arrivalHeight?(place.arrivalHeight<0?'강변 아래 데크':'상부 관람 공간'):place.indoor?'실내':'산책 지점')}</small></div><Footprints size={17}/></button>)}{notice&&<p className="map-notice" role="status">{notice}</p>}</aside>
       </div>}
     </div>
   </dialog>;

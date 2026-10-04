@@ -1,5 +1,7 @@
 # 프로젝트 기록 안내
 
+- 느러지 2026년 사진 대조, 약 366m 수국길·산수국·경사 바닥·난간과 검증: `knowledge/neureoji-hydrangea-v94-2026-10-04.md`
+
 - 느러지 철골·수국·논밭·수림·원경 보강, 정상 시선·충돌 동기화 및 검증: `knowledge/neureoji-quality-v93-2026-10-04.md`
 
 - 원본 보존·중복 배포 모델/압축 파일/캐시 4.82 GB 정리: `knowledge/workspace-cleanup-v91-2026-10-04.md`

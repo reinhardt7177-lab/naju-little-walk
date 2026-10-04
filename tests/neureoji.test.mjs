@@ -4,7 +4,7 @@ import fs from 'node:fs';
 import {gunzipSync} from 'node:zlib';
 import {destinations} from '../lib/destinations.ts';
 import {mapArrival,canTravelTo,regionalPoint,regionalSize} from '../lib/map-navigation.ts';
-import {moveOnFloors,worldFloors,worldObstacles} from '../lib/world.ts';
+import {moveOnFloors,worldFloors,worldObstacles,reachableFloor} from '../lib/world.ts';
 import {sceneArrival} from '../lib/scene-travel.ts';
 import * as THREE from 'three';
 import {readModel} from './gltf-geometry.mjs';
@@ -71,6 +71,42 @@ test('background terrain cannot fill the mapped river or change its bank line',(
   const ray=new THREE.Raycaster(new THREE.Vector3(x,200,z),new THREE.Vector3(0,-1,0),0,210);
   assert.equal(ray.intersectObject(land,true).length,0,`Dry terrain protrudes into mapped water at ${x},${z}`);
   assert.ok(ray.intersectObject(water,true).length,`Mapped river missing at ${x},${z}`);
+ }
+ scene.traverse(o=>o.geometry?.dispose());
+});
+
+test('both hydrangea routes follow continuous slopes in both directions and connect to the tower',()=>{
+ const floors=worldFloors(w.solids),obstacles=worldObstacles(w.solids);
+ assert.ok(w.hydrangeaTrailLengthMetres>350&&w.hydrangeaTrailLengthMetres<380);
+ for(const route of Object.values(w.hydrangeaRoutes)){
+  let p={x:route[0][0],z:route[0][1],height:route[0][2]};
+  for(const [x,z,h] of [...route.slice(1),...route.slice(0,-1).reverse()]){
+   p=moveOnFloors(p.x,p.z,p.height,x-p.x,z-p.z,obstacles,floors,w.bounds,true);
+   assert.ok(Math.hypot(p.x-x,p.z-z)<.035,`flower route blocked at ${x},${z}: ${JSON.stringify(p)}`);
+   assert.ok(Math.abs(p.height-h)<.02,`Sloping visible floor differs at ${x},${z}: ${p.height} vs ${h}`);
+  }
+ }
+ // Both links meet the existing plaza, rather than leaving disconnected walkable islands.
+ let p={x:3.2,z:21,height:w.spawn.height};
+ for(const [x,z,h] of w.hydrangeaConnector.slice(1)){
+  p=moveOnFloors(p.x,p.z,p.height,x-p.x,z-p.z,obstacles,floors,w.bounds,true);
+  assert.ok(Math.hypot(p.x-x,p.z-z)<.04&&Math.abs(p.height-h)<.02,'Plaza connection must bypass the actual stair guards');
+ }
+ assert.ok(Math.hypot(p.x-5,p.z+5.1)<.04);
+ for(const key of ['hydrangea','forest','boardwalk']){const a=sceneArrival(w,'?place=neureoji&at='+key);assert.ok(a.entered);assert.ok(canTravelTo([a.x,a.z],w,a.height));}
+ const tip=w.hydrangeaRoutes['woodland-hydrangea'].at(-1);
+ assert.equal(reachableFloor(tip[0]+15,tip[1],tip[2],floors,true),null,'The landscape is scenery, not an invisible walking surface');
+});
+
+test('hydrangea walking planes agree with exported Blender triangles, including bend edges',()=>{
+ const {scene}=readModel(new URL('../public/models/neureoji.glb',import.meta.url));
+ const floors=worldFloors(w.solids),meshes=['flower-road','woodland-hydrangea'].map(id=>scene.getObjectByName('walk-floor_hydrangea_'+id));
+ assert.ok(meshes.every(Boolean));
+ for(const route of Object.values(w.hydrangeaRoutes))for(let i=2;i<route.length-2;i+=11){
+  const [x,z,h]=route[i];const hits=new THREE.Raycaster(new THREE.Vector3(x,h+.2,z),new THREE.Vector3(0,-1,0),0,.4).intersectObjects(meshes,true);
+  assert.ok(hits.length,`Sloped GLB floor missing at ${x},${z}`);
+  assert.ok(Math.abs(hits[0].point.y-h)<.005);
+  assert.ok(Math.abs(reachableFloor(x,z,h,floors,true)-hits[0].point.y)<.005);
  }
  scene.traverse(o=>o.geometry?.dispose());
 });
