@@ -2,7 +2,7 @@
 import argparse,hashlib,json,re,urllib.request,datetime
 from pathlib import Path
 R=Path(__file__).resolve().parents[1];BASE='https://naju-little-walk.vercel.app'
-p=argparse.ArgumentParser();p.add_argument('--commit',required=True);p.add_argument('--deployment-url',required=True);args=p.parse_args()
+p=argparse.ArgumentParser();p.add_argument('--commit',required=True);p.add_argument('--deployment-url',required=True);p.add_argument('--report',default='knowledge/sources/neureoji-v94/deployment.json');args=p.parse_args()
 world=json.loads((R/'public/neureoji-world.json').read_text(encoding='utf8'));rev=world['revision']
 def get(path):
     req=urllib.request.Request(BASE+path,headers={'Accept-Encoding':'identity','User-Agent':'Naju-release-verification'})
@@ -21,5 +21,8 @@ for path,url in paths:
 report=dict(revision=rev,implementationCommit=args.commit,verifiedAtUTC=datetime.datetime.now(datetime.timezone.utc).isoformat(),
     vercelDeploymentUrl=args.deployment_url,vercelStatus='success',htmlHttpStatus=status,htmlMatchesLocal=True,checks=checks,
     productionPixelsVerified=False,androidHardwareVerified=False)
-(R/'knowledge/sources/neureoji-v94/deployment.json').write_text(json.dumps(report,ensure_ascii=False,indent=2)+'\n',encoding='utf8')
+destination=(R/args.report).resolve()
+assert destination.is_relative_to(R),'Report must stay inside this project'
+destination.parent.mkdir(parents=True,exist_ok=True)
+destination.write_text(json.dumps(report,ensure_ascii=False,indent=2)+'\n',encoding='utf8')
 print(json.dumps(report,ensure_ascii=False,indent=2))

@@ -20,3 +20,9 @@
 5. GitHub·Vercel 공개 버전의 모델·데이터를 로컬 검토본과 비교한다.
 
 전체 작업 자료는 [비공개 프로젝트 보관 계획](github-project-archive-2026-10-04.md)에 따라 원본·이전 버전·참고 자료까지 별도 GitHub Release로 보관한다.
+
+## 배포 확인
+
+[Vercel 수국길](https://naju-little-walk.vercel.app/?place=neureoji&at=hydrangea&v=neureoji-hydrangea-v95c)을 실제 브라우저 1280×720에서 확인했다. 화면이 정상 렌더링됐고 콘솔 오류는 없었다. 모델·지도 데이터·HTML·주요 실행 파일이 로컬 검토본과 일치한다. [배포 대조 기록](sources/neureoji-v95/deployment.json)에 검사값을 보관했다.
+
+느러지 검사 8개, 공통 이동 검사 74개, 타입 검사와 정적 빌드를 통과했다. 이전 v94에 기록한 별도 빛가람 경로 검사 2개 실패는 이번 장소 변경과 무관하며, 전체 테스트가 모두 통과했다고 주장하지 않는다. 안드로이드 태블릿 실기기 검증은 수행하지 않았다.
