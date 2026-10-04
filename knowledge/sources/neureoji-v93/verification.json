@@ -26,6 +26,10 @@
     "contextLost": false,
     "notes": "Background desktop browser sample; not Android hardware or GPU certification."
   },
-  "production": "pending verification",
+  "production": {
+    "filesMatchLocal": true,
+    "pixelsVerified": true,
+    "modelRevision": "neureoji-quality-v93d"
+  },
   "androidHardware": "not tested"
 }
