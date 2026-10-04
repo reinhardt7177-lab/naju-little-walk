@@ -11,9 +11,9 @@ export type Solid = {
   collision?: boolean;
 };
 export type Sign = { text: string; position: Vec3; width: number; rotation?: number; color?: string };
-export type Arrival = { x: number; z: number; yaw: number; height?: number };
+export type Arrival = { x: number; z: number; yaw: number; pitch?: number; height?: number };
 export type Portal = { id: string; position: Point; radius: number; target: string; arrival: string; label: string; height?: number };
-export type Place = { id: string; name: string; description: string; position: Point; radius: number; indoor?: boolean; footprint?: Point[]; arrival?: Point; arrivalHeight?: number };
+export type Place = { id: string; name: string; description: string; position: Point; radius: number; indoor?: boolean; footprint?: Point[]; arrival?: Point; arrivalHeight?: number; arrivalYaw?: number; arrivalPitch?: number };
 export type World = {
   title: string;
   subtitle: string;

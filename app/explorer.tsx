@@ -118,7 +118,7 @@ export default function Explorer() {
       canvas.addEventListener('webglcontextlost',lost);canvas.addEventListener('webglcontextrestored',restored);
       cleanups.push(()=>{canvas.removeEventListener('webglcontextlost',lost);canvas.removeEventListener('webglcontextrestored',restored);});
       scene.background = new THREE.Color('#bbd9e6');
-      scene.fog = new THREE.Fog('#bbd9e6', selectedId==='neureoji'?2300:selectedId !== 'geumseonggwan' ? 650 : 260, selectedId==='neureoji'?5700:selectedId !== 'geumseonggwan' ? 1350 : 690);
+      scene.fog = new THREE.Fog('#bbd9e6', selectedId==='neureoji'?2500:selectedId !== 'geumseonggwan' ? 650 : 260, selectedId==='neureoji'?14500:selectedId !== 'geumseonggwan' ? 1350 : 690);
       // One small prefiltered daylight map gives the authored water and glazing
       // real sky reflections without fetching a panorama or rendering probes per frame.
       if(selectedId==='yeongsanpo'||selectedId==='neureoji'){
@@ -196,7 +196,7 @@ export default function Explorer() {
         const riverSurface=selectedId==='deudeulgang'&&/^(path_|road_|mapped_river_water|water_glint|pine_litter_patch|understory_moss|crop_row|satellite_field)/.test(o.name);
         o.castShadow = !o.name.startsWith('ground')&&!landscape&&!riverSurface&&!o.userData.no_shadow;
         o.receiveShadow = !o.userData.no_receive_shadow && !(landscape && o.name!=='estimated_hill');
-        if(o.userData.photo_panorama){
+        if(o.userData.photo_panorama || o.userData.sky_backdrop){
           o.castShadow=false;o.receiveShadow=false;o.renderOrder=-100;
           // Blender exports pure emission as an emissive PBR material in this version.
           const original=Array.isArray(o.material)?o.material:[o.material];
@@ -241,12 +241,12 @@ export default function Explorer() {
       const rail=data.monorail?new MonorailScene(data.monorail):undefined;
       if(rail)await rail.load(scene,abort.signal);
       if(disposed){scene.traverse(disposeObject);return;}
-      const camera = new THREE.PerspectiveCamera(60, 1, 0.12, selectedId==='neureoji'?7000:selectedId !== 'geumseonggwan' ? 1800 : 1000);
+      const camera = new THREE.PerspectiveCamera(60, 1, 0.12, selectedId==='neureoji'?24000:selectedId !== 'geumseonggwan' ? 1800 : 1000);
       const colliders = data.solids.filter(s => s.collision).map(solidCollider);
       const floors = worldFloors(data.solids);
       const obstacles=data.verticalNavigation?worldObstacles(data.solids):[];
       const arrival=sceneArrival(data,window.location.search);
-      let px = arrival.x, pz = arrival.z, yaw = arrival.yaw, pitch = 0;
+      let px = arrival.x, pz = arrival.z, yaw = arrival.yaw, pitch = 'pitch' in arrival ? (arrival.pitch??0) : 0;
       let elevation=reachableFloor(px,pz,arrival.height??0,floors)??0;
       let playing = false, bird = !panoramaRoom;
       const gesture = new ViewGesture();
@@ -344,7 +344,9 @@ export default function Explorer() {
           px=point[0];pz=point[1];pitch=0;keys.clear();
           elevation=reachableFloor(px,pz,height,floors)??0;
           const arrival=data.places.find(p=>p.arrival && Math.hypot(p.arrival[0]-px,p.arrival[1]-pz)<.1);
-          if(arrival && Math.hypot(arrival.position[0]-px,arrival.position[1]-pz)>1)yaw=Math.atan2(px-arrival.position[0],pz-arrival.position[1]);
+          if(arrival?.arrivalYaw!==undefined)yaw=arrival.arrivalYaw;
+          else if(arrival && Math.hypot(arrival.position[0]-px,arrival.position[1]-pz)>1)yaw=Math.atan2(px-arrival.position[0],pz-arrival.position[1]);
+          if(arrival?.arrivalPitch!==undefined)pitch=arrival.arrivalPitch;
           start();
           return true;
         },

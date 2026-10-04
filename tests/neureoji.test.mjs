@@ -44,8 +44,33 @@ test('walkers stand on exported Blender floors and the normal-height panorama si
   assert.ok(hits.length,`No visible floor at route ${n}: ${x},${z},${h}`);
   assert.ok(Math.abs(hits[0].point.y-h)<.03,`Visible floor and walking height disagree at ${n}`);
  }
- const origin=new THREE.Vector3(-1.6,w.topDeckHeightMetres+1.72,-3),target=new THREE.Vector3(-850,5,-900),direction=target.clone().sub(origin);
- const hits=new THREE.Raycaster(origin,direction.clone().normalize(),.1,200).intersectObject(scene,true);
+ const a=w.arrivals.top,origin=new THREE.Vector3(a.x,w.topDeckHeightMetres+1.72,a.z);
+ const direction=new THREE.Vector3(-Math.sin(a.yaw),Math.tan(a.pitch),-Math.cos(a.yaw)).normalize();
+ const hits=new THREE.Raycaster(origin,direction,.1,200).intersectObject(scene,true);
  assert.equal(hits.length,0,'Roof, pillars and nearby trees must not hide the peninsula view');
+ scene.traverse(o=>o.geometry?.dispose());
+});
+
+test('top arrival and map travel face the mapped peninsula from the same normal-height position',()=>{
+ const a=sceneArrival(w,'?place=neureoji&at=top'),p=w.places.find(p=>p.id==='peninsula-view');
+ assert.deepEqual(p.arrival,[a.x,a.z]);assert.equal(p.arrivalHeight,a.height);
+ assert.equal(p.arrivalYaw,a.yaw);assert.equal(p.arrivalPitch,a.pitch);
+ const [x,z]=w.panoramaTargetMetres;
+ assert.ok(Math.abs(Math.atan2(a.x-x,a.z-z)-a.yaw)<.001);
+ const v=w.architectureViews.find(v=>v.id==='peninsula');
+ assert.equal(v.center[1],a.height+1.72);assert.ok(Math.abs(a.pitch)<.15);
+});
+
+test('background terrain cannot fill the mapped river or change its bank line',()=>{
+ const {scene}=readModel(new URL('../public/models/neureoji.glb',import.meta.url));
+ const land=scene.getObjectByName('ground_native_DSM_interpreted'),water=scene.getObjectByName('mapped_river_water_neureoji');
+ assert.ok(land&&water);
+ // Water is authored as a two-sided thin surface; use the exported viewing semantics.
+ water.traverse(o=>{if(o.material)o.material=new THREE.MeshBasicMaterial({side:THREE.DoubleSide});});
+ for(const [x,z] of [[-100,-400],[-1500,-1500],[-600,-250],[-350,-200]]){
+  const ray=new THREE.Raycaster(new THREE.Vector3(x,200,z),new THREE.Vector3(0,-1,0),0,210);
+  assert.equal(ray.intersectObject(land,true).length,0,`Dry terrain protrudes into mapped water at ${x},${z}`);
+  assert.ok(ray.intersectObject(water,true).length,`Mapped river missing at ${x},${z}`);
+ }
  scene.traverse(o=>o.geometry?.dispose());
 });

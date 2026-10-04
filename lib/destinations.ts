@@ -1,7 +1,7 @@
 export const destinations = {
   neureoji: {
     coordinates:{lat:34.9159348,lon:126.5419381},
-    name:'느러지 전망대',area:'느러지 전망대와 한반도 지형',worldUrl:'/neureoji-world.json?v=neureoji-v92e',modelUrl:'/models/neureoji.glb.gz?v=neureoji-v92e',
+    name:'느러지 전망대',area:'느러지 전망대와 한반도 지형',worldUrl:'/neureoji-world.json?v=neureoji-quality-v93d',modelUrl:'/models/neureoji.glb.gz?v=neureoji-quality-v93d',
     heading:['계단을 올라,','굽이치는 영산강.'],introduction:['흰 철골 계단을 올라 원형 전망대에 도착해 보세요.','정상에서 영산강이 감싼 한반도 모양의 들판을 바라볼 수 있습니다.'],
     sourceUrl:'https://korean.visitkorea.or.kr/detail/ms_detail.do?cotid=89a5b9c9-c938-4408-ad19-08060e5d9086',sourceLabel:'한국관광공사 · 방문 사진 · OSM · Copernicus 표고 참고',
     limitation:'현재 4층 전망대 · 강 윤곽은 실제 지도 기반 · 30m 표면 표고에서 지면 추정 · 계단 치수·식재 추정',overview:{center:[.7,1],radius:29,elevation:.35,angle:-.6},
