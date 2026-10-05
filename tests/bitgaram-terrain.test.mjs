@@ -6,7 +6,7 @@ import {worldFloors,worldObstacles,moveOnFloors} from '../lib/world.ts';
 import {readModel} from './gltf-geometry.mjs';
 const read=p=>JSON.parse(fs.readFileSync(new URL('../'+p,import.meta.url),'utf8'));
 const world=read('public/bitgaram-park-world.json');
-const profiles=read('knowledge/sources/bitgaram/terrain-v89/navigation-profiles.json');
+const profiles=read(world.accessReference.profiles);
 test('park adopts the recorded native DSM height difference, not the old shallow Gaussian',()=>{
  const t=world.terrain;
  assert.equal(t.nativeResolutionMetres,30);assert.equal(t.surveyedBareEarth,false);
