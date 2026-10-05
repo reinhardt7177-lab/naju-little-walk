@@ -1,7 +1,7 @@
 export const destinations = {
   neureoji: {
     coordinates:{lat:34.9159348,lon:126.5419381},
-    name:'느러지 전망대',area:'느러지 전망대와 수국길',worldUrl:'/neureoji-world.json?v=neureoji-polish-v98',modelUrl:'/models/neureoji.glb.gz?v=neureoji-polish-v98',
+    name:'느러지 전망대',area:'느러지 전망대와 수국길',worldUrl:'/neureoji-world.json?v=neureoji-reference-v99',modelUrl:'/models/neureoji.glb.gz?v=neureoji-reference-v99',
     heading:['수국길을 걸어,','굽이치는 영산강.'],introduction:['여름 수국이 핀 언덕길과 그늘 꽃길을 걸어보세요.','흰 철골 계단을 올라 영산강이 감싼 들판을 바라볼 수 있습니다.'],
     sourceUrl:'https://korean.visitkorea.or.kr/detail/ms_detail.do?cotid=89a5b9c9-c938-4408-ad19-08060e5d9086',sourceLabel:'한국관광공사 · 방문 사진 · OSM · Copernicus 표고 참고',
     limitation:'현재 4층 전망대 · 강·길 중심선은 실제 지도 기반 · 30m 표고 지면 추정 · 꽃길 폭·식재는 2026년 사진 참고',overview:{center:[.7,1],radius:29,elevation:.35,angle:-.6},
@@ -126,5 +126,3 @@ export function destinationFromSearch(search: string): DestinationId {
   const place = new URLSearchParams(search).get('place');
   return place && Object.hasOwn(destinations,place) ? place as DestinationId : 'geumseonggwan';
 }
-
-
