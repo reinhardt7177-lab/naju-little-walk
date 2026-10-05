@@ -122,9 +122,10 @@ test('Bitgaram signs load valid scenes and preserve elevated park spawn',()=>{
     for(const link of w.sceneLinks) assert.ok(destinations[link.target],link.target);
     if(id==='bitgaram-park'){
       assert.equal(a.height,w.arrivals['monorail-upper'].height);
-      const access=JSON.parse(fs.readFileSync(new URL('../knowledge/sources/bitgaram/access-v69.json',import.meta.url)));
+      const access=JSON.parse(fs.readFileSync(new URL('../'+w.accessReference.profiles,import.meta.url)));
       const path=access.stairs_route.map(p=>[p[0],p[2]]);
-      const end=walkRoute(w,[[a.x,a.z],[0,12],[path[0][0],12],...path],a.height);
+      const approach=access.connectors.upper_gallery.map(p=>[p[0],p[2]]);
+      const end=walkRoute(w,[[a.x,a.z],...approach,...path],a.height);
       assert.ok(Math.abs(end.height-w.arrivals.lower.height)<.08,'Stairs reach the mapped lower exhibition terrace');
     } else if(id==='bitgaram-observatory'){
       // Empty room: former furniture and central core positions are now walkable.
