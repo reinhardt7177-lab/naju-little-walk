@@ -13,11 +13,12 @@ export function readModel(path) {
     const method={5121:'readUInt8',5123:'readUInt16LE',5125:'readUInt32LE',5126:'readFloatLE'}[a.componentType];
     const out=[];
     for(let i=0;i<a.count;i++)for(let j=0;j<size;j++)out.push(binary[method]((v.byteOffset??0)+(a.byteOffset??0)+i*(v.byteStride??size*bytes)+j*bytes));
+    if(a.normalized){const scale={5121:255,5123:65535,5125:4294967295}[a.componentType];if(scale)for(let i=0;i<out.length;i++)out[i]/=scale;}
     return {array:out,size};
   };
   const material=new THREE.MeshBasicMaterial({side:THREE.FrontSide});
   const nodes=gltf.nodes.map(n=>{
-    const group=new THREE.Group();group.name=n.name??'';
+    const group=new THREE.Group();group.name=n.name??'';group.userData={...(n.extras??{})};
     if(n.matrix){group.matrix.fromArray(n.matrix);group.matrix.decompose(group.position,group.quaternion,group.scale);}
     else{if(n.translation)group.position.fromArray(n.translation);if(n.rotation)group.quaternion.fromArray(n.rotation);if(n.scale)group.scale.fromArray(n.scale);}
     if(n.mesh!==undefined)for(const p of gltf.meshes[n.mesh].primitives){
